@@ -1,0 +1,213 @@
+@CHARSET "UTF-8";
+
+body {
+  font-family: sans-serif;
+}
+
+/* div { */
+/* 	border: thin solid black; */
+/* } */
+
+/* span { */
+/* 	border: thin solid gray; */
+/* } */
+
+div#header {
+  position: fixed;
+	padding: 3px; 
+  border-bottom: 5px solid #000000;
+  margin-bottom: 19px;
+  text-align: left;
+  height: 30px;
+  width: 100%;
+}
+
+div#footer {
+  position: fixed;
+	border-top: 3px solid #000000;
+  text-align: center;
+  margin-top: 19px;
+  bottom: 0;
+  width: 100%;
+  font-size: 12px;
+}
+
+div#appTitle {
+  position: fixed;
+  left: 170px;
+  top: 18px;
+}
+
+div#controlPanel {
+  position: fixed;
+  top: 60px;
+  bottom: 50px;
+  left: 0;
+  width: 300px;
+  border: thin solid black;
+}
+
+div#chartsPanel {
+  position: fixed;
+  bottom: 50px;
+  top: 60px;
+  left: 300px;
+  right: 200px;
+}
+
+div#roiChoicePanel {
+  position: fixed;
+  bottom: 50px;
+  right: 0;
+  width: 200px;
+  top: 60px;
+  text-align: center;
+  border: thin solid black;
+}
+
+.scan div#controlPanel {
+  display: none;
+}
+
+.scan div#chartsPanel {
+  left: 0px;
+  right: 0px;
+}
+
+.scan div#roiChoicePanel {
+  display: none;
+}
+
+label.fileInput, button.fileInput {
+	overflow: hidden;
+	cursor: pointer;
+	background-color: #4CAF50; /* Green */
+	border: none;
+	color: white;
+	padding: 5px;
+	text-align: center;
+	text-decoration: none;
+	display: inline-block;
+	font-size: 16px;
+	margin: 0 auto;
+}
+
+div.optionsPanel {
+	padding: 5px 18px;
+	background-color: white;
+  border-bottom: thin solid black;
+}
+
+div.optionsPanel#inputPanel, div.optionsPanel#outputPanel {
+	padding: 5px 10px;
+	text-align: center;
+}
+
+label.fileInput.disabled {
+	cursor: default;
+	background-color: #babdb6;
+	color: black;
+}
+
+label.fileInput.disabled, button.fileInput:disabled {
+	cursor: default;
+	background-color: #babdb6;
+	color: black;
+}
+
+label.fileInput input[type="file"] {
+  position: relative;
+  height: 100%;
+  width: auto;
+  opacity: 0;
+  display: none;
+}
+
+label.fileInput input[type="button"] {
+  position: relative;
+  height: 100%;
+  width: auto;
+  opacity: 0;
+  display: none;
+}
+
+div.panelTitle {
+	background-color: #eee;
+	color: #444;
+	padding: 5px 18px;
+	text-align: left;
+	outline: none;
+  border-bottom: thin solid black;
+}
+
+div#roiChoiceList {
+	position: fixed;
+	overflow-y: auto;
+	top: 136px;
+	bottom: 50px;
+	width: 200px;
+	right: 0;
+}
+
+div#roiChoiceList button {
+  background-color: white;
+  border: none;
+  color: black;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+  width: 100%;
+  font-size: 14px;
+}
+
+div#roiChoiceList button.current {
+  border-style: solid;
+  border-width: thin 8px;
+  border-color: black;
+}
+
+button#roiSelectAllButton {
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    width: 100%;
+    padding: 5px;
+}
+
+span#unselectedRoiCount, span#unscannedRoiCount, span#selectedRoiCount {
+    border: none;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    width: 33%;
+}
+
+span#unselectedRoiCount {
+    background-color: #a40000;
+    color: white;
+}
+
+span#unscannedRoiCount {
+    background-color: white;
+    color: black;
+}
+
+span#selectedRoiCount {
+    background-color: navy;
+    color: white;
+}
+
+div#roiChoiceList button.selectedRoi {
+  background-color: navy;
+  color: white;
+}
+
+div#roiChoiceList button.unselectedRoi {
+  background-color: #a40000;
+  color: white;
+}
+
+.optionsPanel input[type=number], .optionsPanel input[type=number] {
+	width: 40px;
+}
