@@ -1,198 +1,290 @@
-export default function TraceAlignmentView(model, traceAlignmentPanelHtml,
-        enableYMaxAlignmentCheckboxHtml, alignToYMaxCheckboxHtml,
-        fluorescenceMaxSpinnerHtml, fluorescenceMaxFrameSpinnerHtml,
-        enableYMinAlignmentCheckboxHtml, alignToYMinCheckboxHtml,
-        fluorescenceMinSpinnerHtml, fluorescenceMinFrameSpinnerHtml) {
-    
-    
-    this._model = model;
-    this._traceAlignmentPanelHtml = traceAlignmentPanelHtml;
-    this._enableYMaxAlignmentCheckboxHtml = enableYMaxAlignmentCheckboxHtml;
-    this._alignToYMaxCheckboxHtml = alignToYMaxCheckboxHtml;
-    this._fluorescenceMaxSpinnerHtml = fluorescenceMaxSpinnerHtml;
-    this._fluorescenceMaxFrameSpinnerHtml = fluorescenceMaxFrameSpinnerHtml;
-    this._enableYMinAlignmentCheckboxHtml = enableYMinAlignmentCheckboxHtml;
-    this._alignToYMinCheckboxHtml = alignToYMinCheckboxHtml;
-    this._fluorescenceMinSpinnerHtml = fluorescenceMinSpinnerHtml;
-    this._fluorescenceMinFrameSpinnerHtml = fluorescenceMinFrameSpinnerHtml;
+import React from "react";
+import {
+  getFrameCount,
+  getItemCount,
+  isChannel1Loaded,
+} from "./RoiDataModel.js";
 
-    var self = this;
+export default class TraceAlignmentView extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      fluorescenceMin: 0,
+      fluorescenceMax: 200,
+      fluorescenceMinFrame: 1,
+      fluorescenceMaxFrame: 1,
+      enableYMaxAlignment: false,
+      alignToYMax: false,
+      enableYMinAlignment: false,
+      alignToYMin: false,
+      datasetFrameCount: 1,
+    };
+    this.updateChart = this.updateChart.bind(this);
+    this.handleNumberChange = this.handleNumberChange.bind(this);
+    this.handleFluorescenceMinBlur = this.handleFluorescenceMinBlur.bind(this);
+    this.handleFluorescenceMaxBlur = this.handleFluorescenceMaxBlur.bind(this);
+    this.handleCheckChange = this.handleCheckChange.bind(this);
+  }
 
-    this._enableYMaxAlignmentCheckboxHtml.addEventListener("change", function(e) {
-        self.updateView();
-        self._model.updateChartAlignment(
-                self._enableYMaxAlignmentCheckboxHtml.checked,
-                self._alignToYMaxCheckboxHtml.checked,
-                self._fluorescenceMaxSpinnerHtml.value,
-                self._fluorescenceMaxFrameSpinnerHtml.value,
-                self._enableYMinAlignmentCheckboxHtml.checked,
-                self._alignToYMinCheckboxHtml.checked,
-                self._fluorescenceMinSpinnerHtml.value,
-                self._fluorescenceMinFrameSpinnerHtml.value);
-    });
+  updateChart() {
+    const { model, onModelChange } = this.props;
+    this.updateChartAlignment(
+      model,
+      onModelChange,
+      this.state.enableYMaxAlignment,
+      this.state.alignToYMax,
+      this.state.fluorescenceMax,
+      this.state.fluorescenceMaxFrame,
+      this.state.enableYMinAlignment,
+      this.state.alignToYMin,
+      this.state.fluorescenceMin,
+      this.state.fluorescenceMinFrame
+    );
+  }
 
-    this._alignToYMaxCheckboxHtml.addEventListener("change", function(e) {
-        self.updateView();
-        self._model.updateChartAlignment(
-                self._enableYMaxAlignmentCheckboxHtml.checked,
-                self._alignToYMaxCheckboxHtml.checked,
-                self._fluorescenceMaxSpinnerHtml.value,
-                self._fluorescenceMaxFrameSpinnerHtml.value,
-                self._enableYMinAlignmentCheckboxHtml.checked,
-                self._alignToYMinCheckboxHtml.checked,
-                self._fluorescenceMinSpinnerHtml.value,
-                self._fluorescenceMinFrameSpinnerHtml.value);
-    });
+  static getDerivedStateFromProps({ model }, { datasetFrameCount }) {
+    var newFrameCount = getFrameCount(model);
+    if (newFrameCount !== datasetFrameCount) {
+      return {
+        datasetFrameCount: newFrameCount,
+        fluorescenceMinFrame: newFrameCount,
+        enableYMaxAlignment: false,
+        enableYMinAlignment: false,
+      };
+    }
+    return null;
+  }
 
-    this._fluorescenceMaxSpinnerHtml.addEventListener("change", function(e) {
-        self._model.updateChartAlignment(
-                self._enableYMaxAlignmentCheckboxHtml.checked,
-                self._alignToYMaxCheckboxHtml.checked,
-                self._fluorescenceMaxSpinnerHtml.value,
-                self._fluorescenceMaxFrameSpinnerHtml.value,
-                self._enableYMinAlignmentCheckboxHtml.checked,
-                self._alignToYMinCheckboxHtml.checked,
-                self._fluorescenceMinSpinnerHtml.value,
-                self._fluorescenceMinFrameSpinnerHtml.value);
-    });
-
-    this._fluorescenceMaxFrameSpinnerHtml.addEventListener("change", function(e) {
-        self._model.updateChartAlignment(
-                self._enableYMaxAlignmentCheckboxHtml.checked,
-                self._alignToYMaxCheckboxHtml.checked,
-                self._fluorescenceMaxSpinnerHtml.value,
-                self._fluorescenceMaxFrameSpinnerHtml.value,
-                self._enableYMinAlignmentCheckboxHtml.checked,
-                self._alignToYMinCheckboxHtml.checked,
-                self._fluorescenceMinSpinnerHtml.value,
-                self._fluorescenceMinFrameSpinnerHtml.value);
-    });
-
-    this._enableYMinAlignmentCheckboxHtml.addEventListener("change", function(e) {
-        self.updateView();
-        self._model.updateChartAlignment(
-                self._enableYMaxAlignmentCheckboxHtml.checked,
-                self._alignToYMaxCheckboxHtml.checked,
-                self._fluorescenceMaxSpinnerHtml.value,
-                self._fluorescenceMaxFrameSpinnerHtml.value,
-                self._enableYMinAlignmentCheckboxHtml.checked,
-                self._alignToYMinCheckboxHtml.checked,
-                self._fluorescenceMinSpinnerHtml.value,
-                self._fluorescenceMinFrameSpinnerHtml.value);
-    });
-
-    this._alignToYMinCheckboxHtml.addEventListener("change", function(e) {
-        self.updateView();
-        self._model.updateChartAlignment(
-                self._enableYMaxAlignmentCheckboxHtml.checked,
-                self._alignToYMaxCheckboxHtml.checked,
-                self._fluorescenceMaxSpinnerHtml.value,
-                self._fluorescenceMaxFrameSpinnerHtml.value,
-                self._enableYMinAlignmentCheckboxHtml.checked,
-                self._alignToYMinCheckboxHtml.checked,
-                self._fluorescenceMinSpinnerHtml.value,
-                self._fluorescenceMinFrameSpinnerHtml.value);
-    });
-
-    this._fluorescenceMinSpinnerHtml.addEventListener("change", function(e) {
-        self._model.updateChartAlignment(
-                self._enableYMaxAlignmentCheckboxHtml.checked,
-                self._alignToYMaxCheckboxHtml.checked,
-                self._fluorescenceMaxSpinnerHtml.value,
-                self._fluorescenceMaxFrameSpinnerHtml.value,
-                self._enableYMinAlignmentCheckboxHtml.checked,
-                self._alignToYMinCheckboxHtml.checked,
-                self._fluorescenceMinSpinnerHtml.value,
-                self._fluorescenceMinFrameSpinnerHtml.value);
-    });
-
-    this._fluorescenceMinFrameSpinnerHtml.addEventListener("change", function(e) {
-        self._model.updateChartAlignment(
-                self._enableYMaxAlignmentCheckboxHtml.checked,
-                self._alignToYMaxCheckboxHtml.checked,
-                self._fluorescenceMaxSpinnerHtml.value,
-                self._fluorescenceMaxFrameSpinnerHtml.value,
-                self._enableYMinAlignmentCheckboxHtml.checked,
-                self._alignToYMinCheckboxHtml.checked,
-                self._fluorescenceMinSpinnerHtml.value,
-                self._fluorescenceMinFrameSpinnerHtml.value);
-    });
-
-    // attach model listeners
-    this._model.itemsChanged.attach(function() {
-        self.setFields();
-    });
-}
-
-TraceAlignmentView.prototype = {
-    show : function() {
-        this.setFields();
-    },
-
-    setFields : function() {
-
-        this._enableYMaxAlignmentCheckboxHtml.checked = false;
-        this._enableYMinAlignmentCheckboxHtml.checked = false;
-        
-        this._fluorescenceMaxFrameSpinnerHtml.min = 1;
-        this._fluorescenceMaxFrameSpinnerHtml.step = 1;
-
-        this._fluorescenceMinFrameSpinnerHtml.min = 1;
-        this._fluorescenceMinFrameSpinnerHtml.step = 1;
-        
-        this._fluorescenceMaxSpinnerHtml.min = -Infinity;
-        this._fluorescenceMaxSpinnerHtml.max = Infinity;
-        this._fluorescenceMaxSpinnerHtml.step = 1;
-        this._fluorescenceMaxSpinnerHtml.value = 200;
-
-        this._fluorescenceMinSpinnerHtml.min = -Infinity;
-        this._fluorescenceMinSpinnerHtml.max = Infinity;
-        this._fluorescenceMinSpinnerHtml.step = 1;
-        this._fluorescenceMinSpinnerHtml.value = 0;
-        
-        
-        if (!this._model.isChannel1Loaded()) {
-            this.setInputHtmlStatus(this._enableYMaxAlignmentCheckboxHtml, true);
-            this.updateView();
-            
-            this._fluorescenceMaxFrameSpinnerHtml.max = 1;
-            this._fluorescenceMinFrameSpinnerHtml.max = 1;
-            this._fluorescenceMaxFrameSpinnerHtml.value = 1;
-            this._fluorescenceMinFrameSpinnerHtml.value = 1;
-        }
-        else {
-            this.setInputHtmlStatus(this._enableYMaxAlignmentCheckboxHtml, false);
-            this.updateView();
-            
-            var frameCount = this._model.getFrameCount();
-            this._fluorescenceMaxFrameSpinnerHtml.max = frameCount;
-            this._fluorescenceMaxFrameSpinnerHtml.value = 1;
-            this._fluorescenceMinFrameSpinnerHtml.max = frameCount;
-            this._fluorescenceMinFrameSpinnerHtml.value = frameCount;
-        }
-    },
-    
-    setInputHtmlStatus : function(inputHtml, disabled) {
-        inputHtml.disabled = disabled;
-        // Also set the parent label
-        if (disabled) {
-            inputHtml.parentElement.classList.add("disabled");
-        } else {
-            inputHtml.parentElement.classList.remove("disabled");
-        }
-    },
-
-    updateView : function() {
-        var disabled = !this._enableYMaxAlignmentCheckboxHtml.checked;
-        this.setInputHtmlStatus(this._alignToYMaxCheckboxHtml, disabled);
-        this.setInputHtmlStatus(this._fluorescenceMaxSpinnerHtml, disabled);
-        this.setInputHtmlStatus(this._enableYMinAlignmentCheckboxHtml, disabled);
-        this.setInputHtmlStatus(this._fluorescenceMaxFrameSpinnerHtml, disabled || this._alignToYMaxCheckboxHtml.checked);
-
-        disabled = disabled || !this._enableYMinAlignmentCheckboxHtml.checked;
-        this.setInputHtmlStatus(this._alignToYMinCheckboxHtml, disabled);
-        this.setInputHtmlStatus(this._fluorescenceMinSpinnerHtml, disabled);
-        this.setInputHtmlStatus(this._fluorescenceMinFrameSpinnerHtml, disabled || this._alignToYMinCheckboxHtml.checked);
+  updateChartAlignment(
+    model,
+    onModelChange,
+    enableYMaxAlignment,
+    alignToYMax,
+    yMaxValue,
+    yMaxFrame,
+    enableYMinAlignment,
+    alignToYMin,
+    yMinValue,
+    yMinFrame
+  ) {
+    if (
+      (enableYMaxAlignment &&
+        !alignToYMax &&
+        (yMaxFrame < 1 || yMaxFrame > getFrameCount(model))) ||
+      (enableYMinAlignment &&
+        !alignToYMin &&
+        (yMinFrame < 1 || yMinFrame > getFrameCount(model)))
+    ) {
+      throw new Error("Invalid frame index: " + yMinFrame + ", " + yMaxFrame);
     }
 
-};
+    var roiCount = getItemCount(model);
+    var frameCount = getFrameCount(model);
+
+    var newChartData = [];
+
+    for (var roiIndex = 0; roiIndex < roiCount; roiIndex++) {
+      var inputRoi = model.originalTraceData[roiIndex];
+
+      var outputRoi = [...model.chartData[roiIndex]];
+
+      if (enableYMaxAlignment) {
+        var rawYMaxValue;
+        if (alignToYMax) {
+          rawYMaxValue = model.originalTraceData[roiIndex][0];
+          for (var frameIndex = 1; frameIndex < frameCount; frameIndex++) {
+            rawYMaxValue = Math.max(rawYMaxValue, inputRoi[frameIndex]);
+          }
+        } else {
+          rawYMaxValue = inputRoi[yMaxFrame - 1];
+        }
+
+        if (enableYMinAlignment) {
+          var yScale = 1;
+          var rawYMinValue;
+          if (alignToYMin) {
+            rawYMinValue = model.originalTraceData[roiIndex][0];
+            for (frameIndex = 1; frameIndex < frameCount; frameIndex++) {
+              rawYMinValue = Math.min(rawYMinValue, inputRoi[frameIndex]);
+            }
+          } else {
+            rawYMinValue = model.originalTraceData[roiIndex][yMinFrame - 1];
+          }
+          if (rawYMaxValue === rawYMinValue) {
+            yScale = 1;
+          } else {
+            yScale = (yMaxValue - yMinValue) / (rawYMaxValue - rawYMinValue);
+          }
+
+          for (frameIndex = 0; frameIndex < frameCount; frameIndex++) {
+            outputRoi[frameIndex] =
+              (inputRoi[frameIndex] - rawYMaxValue) * yScale + +yMaxValue;
+          }
+        } else {
+          for (frameIndex = 0; frameIndex < frameCount; frameIndex++) {
+            outputRoi[frameIndex] =
+              inputRoi[frameIndex] - rawYMaxValue + +yMaxValue;
+          }
+        }
+      } else {
+        outputRoi = [...inputRoi];
+      }
+      newChartData.push(outputRoi);
+    }
+    onModelChange({ chartData: newChartData });
+  }
+
+  handleNumberChange(event) {
+    this.setState(
+      {
+        [event.target.id]:
+          event.target.value === "" ? "" : Number(event.target.value),
+      },
+      this.updateChart
+    );
+  }
+
+  handleCheckChange(event) {
+    this.setState(
+      { [event.target.id]: event.target.checked },
+      this.updateChart
+    );
+  }
+
+  handleFluorescenceMaxBlur() {
+    if (this.state.fluorescenceMax <= this.state.fluorescenceMin) {
+      this.setState(
+        { fluorescenceMax: this.state.fluorescenceMin + 1 },
+        this.updateChart
+      );
+    }
+  }
+
+  handleFluorescenceMinBlur() {
+    if (this.state.fluorescenceMax <= this.state.fluorescenceMin) {
+      this.setState(
+        { fluorescenceMin: this.state.fluorescenceMax - 1 },
+        this.updateChart
+      );
+    }
+  }
+
+  createCheckbox(key, title, disabled = false) {
+    return (
+      <>
+        <label
+          htmlFor={key}
+          className={disabled ? "unselectable disabled" : "unselectable"}
+        >
+          {title}
+        </label>
+        <input
+          type="checkbox"
+          id={key}
+          checked={this.state[key]}
+          onChange={this.handleCheckChange}
+          disabled={disabled}
+        />
+      </>
+    );
+  }
+
+  render() {
+    const { model } = this.props;
+
+    var disabledMax = !this.state.enableYMaxAlignment;
+    var disabledMin = disabledMax || !this.state.enableYMinAlignment;
+
+    return (
+      <div id="traceAlignmentPanel" className="optionsPanel">
+        {this.createCheckbox(
+          "enableYMaxAlignment",
+          "Align trace maxima",
+          !isChannel1Loaded(model)
+        )}
+        {this.createCheckbox("alignToYMax", "Align to maximum", disabledMax)}
+
+        <label
+          htmlFor="fluorescenceMax"
+          className={disabledMax ? "unselectable disabled" : "unselectable"}
+        >
+          Maximum value
+        </label>
+        <input
+          id="fluorescenceMax"
+          value={this.state.fluorescenceMax}
+          onChange={this.handleNumberChange}
+          onBlur={this.handleFluorescenceMaxBlur}
+          step="1"
+          type="number"
+          disabled={disabledMax}
+        />
+
+        <label
+          htmlFor="fluorescenceMaxFrame"
+          className={
+            disabledMax || this.state.alignToYMax
+              ? "unselectable disabled"
+              : "unselectable"
+          }
+        >
+          Maximum frame
+        </label>
+        <input
+          id="fluorescenceMaxFrame"
+          value={this.state.fluorescenceMaxFrame}
+          onChange={this.handleNumberChange}
+          step="1"
+          min="1"
+          max={this.state.datasetFrameCount}
+          type="number"
+          disabled={disabledMax || this.state.alignToYMax}
+        />
+
+        {this.createCheckbox(
+          "enableYMinAlignment",
+          "Align trace minima",
+          disabledMax
+        )}
+        {this.createCheckbox("alignToYMin", "Align to minimum", disabledMin)}
+
+        <label
+          htmlFor="fluorescenceMin"
+          className={disabledMin ? "unselectable disabled" : "unselectable"}
+        >
+          Minimum value
+        </label>
+        <input
+          id="fluorescenceMin"
+          value={this.state.fluorescenceMin}
+          onChange={this.handleNumberChange}
+          onBlur={this.handleFluorescenceMinBlur}
+          step="1"
+          type="number"
+          disabled={disabledMin}
+        />
+
+        <label
+          htmlFor="fluorescenceMinFrame"
+          className={
+            disabledMin || this.state.alignToYMin
+              ? "unselectable disabled"
+              : "unselectable"
+          }
+        >
+          Minimum frame
+        </label>
+        <input
+          id="fluorescenceMinFrame"
+          value={this.state.fluorescenceMinFrame}
+          onChange={this.handleNumberChange}
+          step="1"
+          min="1"
+          max={this.state.datasetFrameCount}
+          type="number"
+          disabled={disabledMin || this.state.alignToYMin}
+        />
+      </div>
+    );
+  }
+}

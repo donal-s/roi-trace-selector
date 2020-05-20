@@ -1,108 +1,153 @@
-export default function RoiSelectionListView(model, listHtml, selectedRoiCountHtml,
-        unselectedRoiCountHtml, unscannedRoiCountHtml) {
-    this._model = model;
-    this._listHtml = listHtml;
-    this._selectedRoiCountHtml = selectedRoiCountHtml;
-    this._unselectedRoiCountHtml = unselectedRoiCountHtml;
-    this._unscannedRoiCountHtml = unscannedRoiCountHtml;
+import React from "react";
+import {
+  setCurrentIndex,
+  isItemSelected,
+  getSelectedItemCounts,
+  isItemUnselected,
+  toggleItemSelected,
+  selectAllItems,
+  isChannel1Loaded,
+} from "./RoiDataModel.js";
 
-    var self = this;
+const ACTION_SELECT_ALL = "y";
+const ACTION_UNSELECT_ALL = "n";
+const ACTION_CLEAR_ALL = "?";
 
-    // attach model listeners
-    this._model.currentIndexChanged.attach(function() {
-        self.rebuildList();
-    });
-    this._model.itemsChanged.attach(function() {
-        self.rebuildList();
-        self.updateSelectedRoiCount();
-    });
-    this._model.itemsSelectionChanged.attach(function() {
-        self.rebuildList();
-        self.updateSelectedRoiCount();
-    });
-}
+export default class RoiSelectionListView extends React.Component {
+  selectionListRef = React.createRef();
 
-RoiSelectionListView.prototype = {
-    show : function() {
-        this.rebuildList();
-        this.updateSelectedRoiCount();
-    },
+  constructor(props) {
+    super(props);
+    this.rebuildListItem = this.rebuildListItem.bind(this);
+    this.itemMouseUpHandler = this.itemMouseUpHandler.bind(this);
+  }
 
-    rebuildList : function() {
-        var self = this;
-
-        var currentIndex = this._model.getCurrentIndex();
-        var items = this._model.getItems();
-        var itemsLength = items.length;
-
-        var fragment = document.createDocumentFragment();
-        var currentItem;
-
-        for (var i = 0; i < itemsLength; i++) {
-            var item = items[i];
-            var roiChoiceItem = document.createElement("button");
-            roiChoiceItem.type = "button";
-            roiChoiceItem.addEventListener("mouseup", function(e) {
-                var index = -1;
-                var elements = e.target.parentElement.children;
-                var elementsLength = elements.length;
-                for (var j = 0; j < elementsLength; j++) {
-                    if (e.target === elements[j]) {
-                        index = j;
-                        break;
-                    }
-                }
-                self.updateCurrent(index);
-                self.toggleSelection(index);
-            });
-            if (this._model.isItemSelected(i)) {
-                roiChoiceItem.classList.add("selectedRoi");
-            } else if (this._model.isItemUnselected(i)) {
-                roiChoiceItem.classList.add("unselectedRoi");
-            }
-            if (i === currentIndex) {
-                roiChoiceItem.classList.add("current");
-                currentItem = roiChoiceItem;
-            }
-
-            roiChoiceItem.appendChild(document.createTextNode(item));
-            fragment.appendChild(roiChoiceItem);
-        }
-
-        var previousItems = this._listHtml.children;
-
-        while (this._listHtml.firstChild) {
-            var roiChoiceItem = this._listHtml.firstChild;
-            // There appears to be no clean way of removing event listeners
-            // and some debate as to whether they are automatically removed with
-            // DOM element removal
-            this._listHtml.removeChild(roiChoiceItem);
-        }
-
-        this._listHtml.appendChild(fragment);
-        if (currentItem) {
-            var itemBounding = currentItem.getBoundingClientRect();
-            var listBounding = this._listHtml.getBoundingClientRect();
-            if (itemBounding.top < listBounding.top) {
-                currentItem.scrollIntoView(true);
-            } else if (itemBounding.bottom > listBounding.bottom) {
-                currentItem.scrollIntoView(false);
-            }
-        }
-    },
-    
-    updateSelectedRoiCount : function() {
-        var itemCounts = this._model.getSelectedItemCounts();
-        this._selectedRoiCountHtml.innerHTML = itemCounts[0];
-        this._unselectedRoiCountHtml.innerHTML = itemCounts[1];
-        this._unscannedRoiCountHtml.innerHTML = itemCounts[2];
-    },
-
-    updateCurrent : function(index) {
-        this._model.setCurrentIndex(index);
-    },
-
-    toggleSelection : function(index) {
-        this._model.toggleItemSelected(index);
+  componentDidUpdate() {
+    const { currentIndex } = this.props.model;
+    if (currentIndex !== -1) {
+      var currentItem = this.selectionListRef.current.children[currentIndex];
+      var itemBounding = currentItem.getBoundingClientRect();
+      var listBounding = this.selectionListRef.current.getBoundingClientRect();
+      if (itemBounding.top < listBounding.top) {
+        currentItem.scrollIntoView(true);
+      } else if (itemBounding.bottom > listBounding.bottom) {
+        currentItem.scrollIntoView(false);
+      }
     }
-};
+  }
+
+  getElementIndex(e) {
+    var index = -1;
+    var elements = e.target.parentElement.children;
+    var elementsLength = elements.length;
+    for (var j = 0; j < elementsLength; j++) {
+      if (e.target === elements[j]) {
+        index = j;
+        break;
+      }
+    }
+    return index;
+  }
+
+  itemMouseUpHandler(e) {
+    const { model, onModelChange } = this.props;
+    var index = this.getElementIndex(e);
+    setCurrentIndex(model, onModelChange, index);
+    toggleItemSelected(model, onModelChange, index);
+  }
+
+  rebuildListItem(item, index) {
+    const { model } = this.props;
+    var className = "unselectable";
+    if (isItemSelected(model, index)) {
+      className += " selectedRoi";
+    } else if (isItemUnselected(model, index)) {
+      className += " unselectedRoi";
+    }
+    if (index === model.currentIndex) {
+      className += " current";
+    }
+
+    return (
+      <label
+        key={item}
+        onMouseUp={this.itemMouseUpHandler}
+        className={className}
+      >
+        {item}
+      </label>
+    );
+  }
+
+  getSelectAllAction([selectedCount, unselectedCount, unscannedCount]) {
+    if (selectedCount === 0 && unselectedCount === 0) {
+      return ACTION_SELECT_ALL;
+    } else if (unscannedCount === 0 && unselectedCount === 0) {
+      return ACTION_UNSELECT_ALL;
+    } else {
+      // everything else
+      return ACTION_CLEAR_ALL;
+    }
+  }
+
+  getSelectAllActionName([selectedCount, unselectedCount, unscannedCount]) {
+    if (selectedCount === 0 && unselectedCount === 0) {
+      return "Select All";
+    } else if (unscannedCount === 0 && unselectedCount === 0) {
+      return "Unselect All";
+    } else {
+      // everything else
+      return "Clear All";
+    }
+  }
+
+  render() {
+    const { model, onModelChange } = this.props;
+    const itemCounts = getSelectedItemCounts(model);
+    const [selectedCount, unselectedCount, unscannedCount] = itemCounts;
+
+    return (
+      <div id="roiChoicePanel">
+        <button
+          type="button"
+          id="roiSelectAllButton"
+          className="unselectable"
+          onClick={(event) => {
+            selectAllItems(
+              model,
+              onModelChange,
+              this.getSelectAllAction(itemCounts)
+            );
+            event.target.blur();
+          }}
+          disabled={!isChannel1Loaded(model)}
+        >
+          {this.getSelectAllActionName(itemCounts)}
+        </button>
+
+        <div className="roiTotals">
+          <span
+            id="unselectedRoiCount"
+            title="Unselected"
+            className="unselectable"
+          >
+            {unselectedCount}
+          </span>
+          <span
+            id="unscannedRoiCount"
+            title="Unscanned"
+            className="unselectable"
+          >
+            {unscannedCount}
+          </span>
+          <span id="selectedRoiCount" title="Selected" className="unselectable">
+            {selectedCount}
+          </span>
+        </div>
+        <div id="roiChoiceList" ref={this.selectionListRef}>
+          {model.items.map(this.rebuildListItem)}
+        </div>
+      </div>
+    );
+  }
+}

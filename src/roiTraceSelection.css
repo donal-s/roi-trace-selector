@@ -1,30 +1,23 @@
-@CHARSET "UTF-8";
+@charset "UTF-8";
 
 body {
   font-family: sans-serif;
+  font-size: 18px;
 }
-
-/* div { */
-/* 	border: thin solid black; */
-/* } */
-
-/* span { */
-/* 	border: thin solid gray; */
-/* } */
 
 div#header {
   position: fixed;
-	padding: 3px; 
+  padding: 3px;
   border-bottom: 5px solid #000000;
   margin-bottom: 19px;
   text-align: left;
-  height: 30px;
+  height: 34px;
   width: 100%;
 }
 
 div#footer {
   position: fixed;
-	border-top: 3px solid #000000;
+  border-top: 3px solid #000000;
   text-align: center;
   margin-top: 19px;
   bottom: 0;
@@ -35,7 +28,15 @@ div#footer {
 div#appTitle {
   position: fixed;
   left: 170px;
-  top: 18px;
+  top: 11px;
+}
+
+img#demonsoftLogo {
+  position: fixed;
+  left: 10px;
+  top: 7px;
+  width: 145px;
+  height: 30px;
 }
 
 div#controlPanel {
@@ -44,7 +45,6 @@ div#controlPanel {
   bottom: 50px;
   left: 0;
   width: 300px;
-  border: thin solid black;
 }
 
 div#chartsPanel {
@@ -55,6 +55,47 @@ div#chartsPanel {
   right: 200px;
 }
 
+button#remainingCount {
+  position: fixed;
+  top: 3px;
+  right: 210px;
+  display: block;
+}
+
+div#selectionIconPanel {
+  position: fixed;
+  top: 3px;
+  right: 60px;
+  display: block;
+}
+
+div#selectionIconPanel #selectButton,
+div#selectionIconPanel #unselectButton,
+div#selectionIconPanel #clearButton {
+  color: gray;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+div#selectionIconPanel.disabled #selectButton,
+div#selectionIconPanel.disabled #unselectButton,
+div#selectionIconPanel.disabled #clearButton {
+  color: lightgray;
+  cursor: default;
+}
+
+div#selectionIconPanel #unselectButton.selected {
+  color: #a40000;
+}
+
+div#selectionIconPanel #clearButton.selected {
+  color: black;
+}
+
+div#selectionIconPanel #selectButton.selected {
+  color: navy;
+}
+
 div#roiChoicePanel {
   position: fixed;
   bottom: 50px;
@@ -62,10 +103,10 @@ div#roiChoicePanel {
   width: 200px;
   top: 60px;
   text-align: center;
-  border: thin solid black;
 }
 
-.scan div#controlPanel {
+.scan div#controlPanel,
+.scan div#roiChoicePanel {
   display: none;
 }
 
@@ -74,45 +115,100 @@ div#roiChoicePanel {
   right: 0px;
 }
 
-.scan div#roiChoicePanel {
-  display: none;
+.inputPanel {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
 }
 
-label.fileInput, button.fileInput {
-	overflow: hidden;
-	cursor: pointer;
-	background-color: #4CAF50; /* Green */
-	border: none;
-	color: white;
-	padding: 5px;
-	text-align: center;
-	text-decoration: none;
-	display: inline-block;
-	font-size: 16px;
-	margin: 0 auto;
+label.fileInput,
+button.fileInput,
+button.exampleFileInput,
+button#remainingCount {
+  overflow: hidden;
+  cursor: pointer;
+  background-color: #4caf50; /* Green */
+  border: none;
+  color: white;
+  padding: 5px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  margin: 0 5px;
+  font-size: 18px;
+  white-space: nowrap;
+  box-sizing: content-box;
+  border-radius: 10px;
+  box-shadow: 2px 4px 8px 0 rgba(0, 0, 0, 0.4);
+}
+
+label.fileInput,
+button.fileInput {
+  width: 90px;
+  height: 22px;
+}
+
+button.exampleFileInput {
+  width: 200px;
+  height: 22px;
+}
+
+label.fileInput:active,
+button.fileInput:active,
+button.exampleFileInput:active,
+label.fileInput.disabled,
+button.fileInput:disabled,
+button.exampleFileInput:disabled,
+button#remainingCount:active,
+button#remainingCount:disabled {
+  box-shadow: none;
+}
+
+#traceAlignmentPanel {
+  display: grid;
+  grid-template-columns: 1fr 0fr;
+  grid-gap: 10px;
+}
+
+#traceAlignmentPanel input {
+  margin-right: auto;
+}
+
+#traceAlignmentPanel label {
+  text-align: left;
+}
+
+#fullscreenButton {
+  position: fixed;
+  top: 3px;
+  right: 5px;
+  color: gray;
+  background-color: white;
+  cursor: pointer;
+}
+
+#fullscreenButton.disabled {
+  color: lightgray;
+  cursor: default;
 }
 
 div.optionsPanel {
-	padding: 5px 18px;
-	background-color: white;
-  border-bottom: thin solid black;
+  padding: 10px 18px;
+  background-color: white;
 }
 
-div.optionsPanel#inputPanel, div.optionsPanel#outputPanel {
-	padding: 5px 10px;
-	text-align: center;
+div.inputPanel {
+  padding: 10px 10px;
+  text-align: center;
 }
 
-label.fileInput.disabled {
-	cursor: default;
-	background-color: #babdb6;
-	color: black;
-}
-
-label.fileInput.disabled, button.fileInput:disabled {
-	cursor: default;
-	background-color: #babdb6;
-	color: black;
+label#fullscreenButton.disabled,
+label.fileInput.disabled,
+button.fileInput:disabled,
+button#remainingCount:disabled {
+  cursor: default;
+  background-color: #babdb6;
+  color: black;
 }
 
 label.fileInput input[type="file"] {
@@ -123,33 +219,26 @@ label.fileInput input[type="file"] {
   display: none;
 }
 
-label.fileInput input[type="button"] {
-  position: relative;
-  height: 100%;
-  width: auto;
-  opacity: 0;
-  display: none;
-}
-
 div.panelTitle {
-	background-color: #eee;
-	color: #444;
-	padding: 5px 18px;
-	text-align: left;
-	outline: none;
+  background-color: #eee;
+  color: #444;
+  padding: 5px 18px;
+  text-align: left;
+  outline: none;
   border-bottom: thin solid black;
 }
 
 div#roiChoiceList {
-	position: fixed;
-	overflow-y: auto;
-	top: 136px;
-	bottom: 50px;
-	width: 200px;
-	right: 0;
+  position: fixed;
+  overflow-y: auto;
+  top: 136px;
+  bottom: 50px;
+  width: 200px;
+  right: 0;
+  border: thin solid black;
 }
 
-div#roiChoiceList button {
+div#roiChoiceList label {
   background-color: white;
   border: none;
   color: black;
@@ -157,57 +246,90 @@ div#roiChoiceList button {
   text-decoration: none;
   display: block;
   width: 100%;
-  font-size: 14px;
+  box-sizing: border-box;
 }
 
-div#roiChoiceList button.current {
+div#roiChoiceList .current {
   border-style: solid;
   border-width: thin 8px;
   border-color: black;
 }
 
-button#roiSelectAllButton {
-    border: none;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    width: 100%;
-    padding: 5px;
-}
-
-span#unselectedRoiCount, span#unscannedRoiCount, span#selectedRoiCount {
-    border: none;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    width: 33%;
-}
-
-span#unselectedRoiCount {
-    background-color: #a40000;
-    color: white;
-}
-
-span#unscannedRoiCount {
-    background-color: white;
-    color: black;
-}
-
-span#selectedRoiCount {
-    background-color: navy;
-    color: white;
-}
-
-div#roiChoiceList button.selectedRoi {
+div#roiChoiceList .selectedRoi {
   background-color: navy;
   color: white;
 }
 
-div#roiChoiceList button.unselectedRoi {
+div#roiChoiceList .unselectedRoi {
   background-color: #a40000;
   color: white;
 }
 
-.optionsPanel input[type=number], .optionsPanel input[type=number] {
-	width: 40px;
+button#roiSelectAllButton {
+  border: none;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  padding: 5px 10px;
+  margin-bottom: 10px;
+  font-size: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  background-color: #4caf50; /* Green */
+  color: white;
+  white-space: nowrap;
+  box-sizing: content-box;
+  border-radius: 10px;
+  box-shadow: 2px 4px 8px 0 rgba(0, 0, 0, 0.4);
+}
+
+button#roiSelectAllButton:active,
+button#roiSelectAllButton:disabled {
+  box-shadow: none;
+}
+
+button#roiSelectAllButton:disabled {
+  cursor: default;
+  background-color: #babdb6;
+  color: black;
+}
+
+span#unselectedRoiCount,
+span#unscannedRoiCount,
+span#selectedRoiCount {
+  border: none;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  width: 33%;
+}
+
+span#unselectedRoiCount {
+  background-color: #a40000;
+  color: white;
+}
+
+span#unscannedRoiCount {
+  background-color: white;
+  color: black;
+}
+
+span#selectedRoiCount {
+  background-color: navy;
+  color: white;
+}
+
+label.disabled {
+  color: gray;
+}
+
+.optionsPanel input[type="number"] {
+  width: 50px;
+}
+
+.unselectable {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
