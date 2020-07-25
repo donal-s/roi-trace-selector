@@ -14,7 +14,7 @@ describe("component FullscreenButton", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
 
-    document.requestFullscreen = jest.fn(
+    document.documentElement.requestFullscreen = jest.fn(
       () => (document.fullscreenElement = container)
     );
     document.exitFullscreen = jest.fn(
@@ -44,7 +44,9 @@ describe("component FullscreenButton", () => {
     // Click while disabled has no effect
     Simulate.click(fullscreenButton());
     checkButtonRender(false);
-    expect(document.requestFullscreen.mock.calls).toHaveLength(0);
+    expect(document.documentElement.requestFullscreen.mock.calls).toHaveLength(
+      0
+    );
     expect(document.fullscreenElement).toBeNull();
 
     // In fullscreen
@@ -54,7 +56,9 @@ describe("component FullscreenButton", () => {
     // Click while disabled has no effect
     Simulate.click(fullscreenButton());
     checkButtonRender(false);
-    expect(document.requestFullscreen.mock.calls).toHaveLength(0);
+    expect(document.documentElement.requestFullscreen.mock.calls).toHaveLength(
+      0
+    );
     expect(document.fullscreenElement).not.toBeNull();
   });
 
@@ -70,12 +74,16 @@ describe("component FullscreenButton", () => {
   it("enter fullscreen", () => {
     setCsvData(CSV_DATA);
     checkButtonRender(true);
-    expect(document.requestFullscreen.mock.calls).toHaveLength(0);
+    expect(document.documentElement.requestFullscreen.mock.calls).toHaveLength(
+      0
+    );
     expect(document.fullscreenElement).toBeNull();
 
     Simulate.click(fullscreenButton());
     checkButtonRender(true);
-    expect(document.requestFullscreen.mock.calls).toHaveLength(1);
+    expect(document.documentElement.requestFullscreen.mock.calls).toHaveLength(
+      1
+    );
     expect(document.fullscreenElement).not.toBeNull();
   });
 

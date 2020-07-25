@@ -11,17 +11,18 @@ export default function FullscreenButton(props) {
 
   // View in fullscreen
   async function openFullscreen() {
-    if (document.requestFullscreen) {
-      await document.requestFullscreen();
-    } else if (document.mozRequestFullScreen) {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      await elem.requestFullscreen();
+    } else if (elem.mozRequestFullScreen) {
       // Firefox
-      await document.mozRequestFullScreen();
-    } else if (document.webkitRequestFullscreen) {
+      await elem.mozRequestFullScreen();
+    } else if (elem.webkitRequestFullscreen) {
       // Chrome, Safari and Opera
-      await document.webkitRequestFullscreen();
-    } else if (document.msRequestFullscreen) {
+      await elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) {
       // IE/Edge
-      await document.msRequestFullscreen();
+      await elem.msRequestFullscreen();
     }
   }
 
