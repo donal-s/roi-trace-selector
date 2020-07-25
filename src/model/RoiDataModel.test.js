@@ -1,4 +1,4 @@
-import roiDataStore, {
+import {
   roiDataReducer,
   getSelectAllActionName,
   isItemSelected,
@@ -25,7 +25,7 @@ import {
   UPDATE_CHART_ALIGNMENT,
   RESET_STATE,
 } from "./ActionTypes.js";
-import { CSV_DATA, setCsvData, classesContain } from "../TestUtils.js";
+import { CSV_DATA } from "../TestUtils.js";
 
 const EMPTY_STATE = roiDataReducer(undefined, {});
 const LOADED_STATE = fileHandlingReducer(EMPTY_STATE, {
@@ -37,7 +37,7 @@ const LOADED_STATE = fileHandlingReducer(EMPTY_STATE, {
 describe("roiDataReducer", () => {
   // Sanity check to verify test data
   it("prebuilt states", () => {
-    expect(EMPTY_STATE).toEqual({
+    expect(EMPTY_STATE).toStrictEqual({
       channel1Filename: null,
       items: [],
       scanStatus: [],
@@ -48,7 +48,7 @@ describe("roiDataReducer", () => {
       showSingleTrace: false,
     });
 
-    expect(LOADED_STATE).toEqual({
+    expect(LOADED_STATE).toStrictEqual({
       channel1Filename: "new file",
       items: ["ROI-1", "ROI-2", "ROI-3", "ROI-4"],
       scanStatus: ["?", "?", "?", "?"],
@@ -71,43 +71,43 @@ describe("roiDataReducer", () => {
   });
 
   it("initial state", () => {
-    expect(roiDataReducer(undefined, {})).toEqual(EMPTY_STATE);
+    expect(roiDataReducer(undefined, {})).toStrictEqual(EMPTY_STATE);
   });
 
-  it("SET_FULLSCREEN_MODE", () => {
+  it("action SET_FULLSCREEN_MODE", () => {
     var inputState = { ...EMPTY_STATE, showSingleTrace: false };
     expect(
       roiDataReducer(inputState, { type: SET_FULLSCREEN_MODE, enable: true })
-    ).toEqual({ ...EMPTY_STATE, showSingleTrace: true });
+    ).toStrictEqual({ ...EMPTY_STATE, showSingleTrace: true });
 
     inputState = { ...EMPTY_STATE, showSingleTrace: true };
     expect(
       roiDataReducer(inputState, { type: SET_FULLSCREEN_MODE, enable: false })
-    ).toEqual({ ...EMPTY_STATE, showSingleTrace: false });
+    ).toStrictEqual({ ...EMPTY_STATE, showSingleTrace: false });
   });
 
-  it("SET_CURRENT_INDEX", () => {
+  it("action SET_CURRENT_INDEX", () => {
     // Out of bounds testing done elsewhere
 
     // Valid cases
     expect(
       roiDataReducer(LOADED_STATE, { type: SET_CURRENT_INDEX, index: 2 })
-    ).toEqual({ ...LOADED_STATE, currentIndex: 2 });
+    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 2 });
 
     expect(
       roiDataReducer(LOADED_STATE, { type: SET_CURRENT_INDEX, index: 1 })
-    ).toEqual({ ...LOADED_STATE, currentIndex: 1 });
+    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 1 });
   });
 
-  it("SET_CURRENT_NEXT and SET_CURRENT_PREVIOUS", () => {
+  it("action SET_CURRENT_NEXT and SET_CURRENT_PREVIOUS", () => {
     // Empty state - no effect
-    expect(roiDataReducer(EMPTY_STATE, { type: SET_CURRENT_NEXT })).toEqual(
-      EMPTY_STATE
-    );
+    expect(
+      roiDataReducer(EMPTY_STATE, { type: SET_CURRENT_NEXT })
+    ).toStrictEqual(EMPTY_STATE);
 
-    expect(roiDataReducer(EMPTY_STATE, { type: SET_CURRENT_PREVIOUS })).toEqual(
-      EMPTY_STATE
-    );
+    expect(
+      roiDataReducer(EMPTY_STATE, { type: SET_CURRENT_PREVIOUS })
+    ).toStrictEqual(EMPTY_STATE);
 
     // With data: 0 -- -> no change
     expect(
@@ -115,7 +115,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 0 },
         { type: SET_CURRENT_PREVIOUS }
       )
-    ).toEqual({ ...LOADED_STATE, currentIndex: 0 });
+    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 0 });
 
     // With data: 0 ++ -> 1
     expect(
@@ -123,7 +123,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 0 },
         { type: SET_CURRENT_NEXT }
       )
-    ).toEqual({ ...LOADED_STATE, currentIndex: 1 });
+    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 1 });
 
     // With data: 1 -- -> 0
     expect(
@@ -131,7 +131,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 1 },
         { type: SET_CURRENT_PREVIOUS }
       )
-    ).toEqual({ ...LOADED_STATE, currentIndex: 0 });
+    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 0 });
 
     // With data: 3 ++ -> no change
     expect(
@@ -139,7 +139,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 3 },
         { type: SET_CURRENT_NEXT }
       )
-    ).toEqual({ ...LOADED_STATE, currentIndex: 3 });
+    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 3 });
 
     // With data: 3 -- -> 2
     expect(
@@ -147,7 +147,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 3 },
         { type: SET_CURRENT_PREVIOUS }
       )
-    ).toEqual({ ...LOADED_STATE, currentIndex: 2 });
+    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 2 });
 
     // With data: 2 ++ -> 3
     expect(
@@ -155,14 +155,14 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 2 },
         { type: SET_CURRENT_NEXT }
       )
-    ).toEqual({ ...LOADED_STATE, currentIndex: 3 });
+    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 3 });
   });
 
-  it("SET_CURRENT_NEXT_UNSCANNED", () => {
+  it("action SET_CURRENT_NEXT_UNSCANNED", () => {
     // Empty state - no effect
     expect(
       roiDataReducer(EMPTY_STATE, { type: SET_CURRENT_NEXT_UNSCANNED })
-    ).toEqual(EMPTY_STATE);
+    ).toStrictEqual(EMPTY_STATE);
 
     // With data and no unscanned: 2 -> no change
     expect(
@@ -170,7 +170,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
         { type: SET_CURRENT_NEXT_UNSCANNED }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       currentIndex: 2,
       scanStatus: ["y", "y", "n", "n"],
@@ -182,7 +182,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 0, scanStatus: ["?", "?", "?", "?"] },
         { type: SET_CURRENT_NEXT_UNSCANNED }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       currentIndex: 1,
       scanStatus: ["?", "?", "?", "?"],
@@ -194,7 +194,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 0, scanStatus: ["?", "y", "n", "?"] },
         { type: SET_CURRENT_NEXT_UNSCANNED }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       currentIndex: 3,
       scanStatus: ["?", "y", "n", "?"],
@@ -206,21 +206,21 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 2, scanStatus: ["n", "?", "?", "y"] },
         { type: SET_CURRENT_NEXT_UNSCANNED }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       currentIndex: 1,
       scanStatus: ["n", "?", "?", "y"],
     });
   });
 
-  it("SET_CURRENT_SCANSTATUS", () => {
+  it("action SET_CURRENT_SCANSTATUS", () => {
     // Empty state - no effect
     expect(
       roiDataReducer(EMPTY_STATE, {
         type: SET_CURRENT_SCANSTATUS,
         scanStatus: "n",
       })
-    ).toEqual(EMPTY_STATE);
+    ).toStrictEqual(EMPTY_STATE);
 
     // With data
     expect(
@@ -228,7 +228,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
         { type: SET_CURRENT_SCANSTATUS, scanStatus: "?" }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       currentIndex: 2,
       scanStatus: ["y", "y", "?", "n"],
@@ -239,7 +239,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
         { type: SET_CURRENT_SCANSTATUS, scanStatus: "y" }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       currentIndex: 2,
       scanStatus: ["y", "y", "y", "n"],
@@ -250,7 +250,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 1, scanStatus: ["y", "y", "n", "n"] },
         { type: SET_CURRENT_SCANSTATUS, scanStatus: "n" }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       currentIndex: 1,
       scanStatus: ["y", "n", "n", "n"],
@@ -259,11 +259,11 @@ describe("roiDataReducer", () => {
     // TODO input validation
   });
 
-  it("TOGGLE_CURRENT_ITEM_SELECTED", () => {
+  it("action TOGGLE_CURRENT_ITEM_SELECTED", () => {
     // Empty state - no effect
     expect(
       roiDataReducer(EMPTY_STATE, { type: TOGGLE_CURRENT_ITEM_SELECTED })
-    ).toEqual(EMPTY_STATE);
+    ).toStrictEqual(EMPTY_STATE);
 
     // With data
     expect(
@@ -271,7 +271,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
         { type: TOGGLE_CURRENT_ITEM_SELECTED }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       currentIndex: 2,
       scanStatus: ["y", "y", "?", "n"],
@@ -282,7 +282,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "?", "n"] },
         { type: TOGGLE_CURRENT_ITEM_SELECTED }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       currentIndex: 2,
       scanStatus: ["y", "y", "y", "n"],
@@ -293,18 +293,18 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "y", "n"] },
         { type: TOGGLE_CURRENT_ITEM_SELECTED }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       currentIndex: 2,
       scanStatus: ["y", "y", "n", "n"],
     });
   });
 
-  it("SELECT_ALL_ITEMS", () => {
+  it("action SELECT_ALL_ITEMS", () => {
     // Empty state - no effect
-    expect(roiDataReducer(EMPTY_STATE, { type: SELECT_ALL_ITEMS })).toEqual(
-      EMPTY_STATE
-    );
+    expect(
+      roiDataReducer(EMPTY_STATE, { type: SELECT_ALL_ITEMS })
+    ).toStrictEqual(EMPTY_STATE);
 
     // With data all clear -> selected
     expect(
@@ -312,7 +312,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] },
         { type: SELECT_ALL_ITEMS }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       scanStatus: ["y", "y", "y", "y"],
     });
@@ -323,7 +323,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, scanStatus: ["y", "y", "y", "y"] },
         { type: SELECT_ALL_ITEMS }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       scanStatus: ["n", "n", "n", "n"],
     });
@@ -334,7 +334,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, scanStatus: ["n", "n", "n", "n"] },
         { type: SELECT_ALL_ITEMS }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       scanStatus: ["?", "?", "?", "?"],
     });
@@ -345,7 +345,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, scanStatus: ["?", "y", "?", "?"] },
         { type: SELECT_ALL_ITEMS }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       scanStatus: ["?", "?", "?", "?"],
     });
@@ -356,7 +356,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, scanStatus: ["?", "n", "?", "?"] },
         { type: SELECT_ALL_ITEMS }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       scanStatus: ["?", "?", "?", "?"],
     });
@@ -367,31 +367,31 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, scanStatus: ["?", "n", "y", "?"] },
         { type: SELECT_ALL_ITEMS }
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       scanStatus: ["?", "?", "?", "?"],
     });
   });
 
-  it("UPDATE_CHART_ALIGNMENT", () => {
+  it("action UPDATE_CHART_ALIGNMENT", () => {
     // Alignment disabled
     var params = getAlignmentParams(false, false, 0, 0, false, false, 0, 0);
 
     // Empty state - no effect
     expect(
       roiDataReducer(EMPTY_STATE, { type: UPDATE_CHART_ALIGNMENT, ...params })
-    ).toEqual(EMPTY_STATE);
+    ).toStrictEqual(EMPTY_STATE);
 
     // With data - no alignment
     expect(
       roiDataReducer(LOADED_STATE, { type: UPDATE_CHART_ALIGNMENT, ...params })
-    ).toEqual(LOADED_STATE);
+    ).toStrictEqual(LOADED_STATE);
 
     // Align max frame 1, value 5
     params = getAlignmentParams(true, false, 5, 1, false, false, 0, 0);
     expect(
       roiDataReducer(LOADED_STATE, { type: UPDATE_CHART_ALIGNMENT, ...params })
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       chartData: [
         [5, 4, 0, -1, -2],
@@ -405,7 +405,7 @@ describe("roiDataReducer", () => {
     params = getAlignmentParams(true, false, 5, 2, false, false, 0, 0);
     expect(
       roiDataReducer(LOADED_STATE, { type: UPDATE_CHART_ALIGNMENT, ...params })
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       chartData: [
         [6, 5, 1, 0, -1],
@@ -419,7 +419,7 @@ describe("roiDataReducer", () => {
     params = getAlignmentParams(true, true, 5, 0, false, false, 0, 0);
     expect(
       roiDataReducer(LOADED_STATE, { type: UPDATE_CHART_ALIGNMENT, ...params })
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       chartData: [
         [5, 4, 0, -1, -2],
@@ -439,7 +439,7 @@ describe("roiDataReducer", () => {
     params = getAlignmentParams(true, false, 5, 1, true, false, 1, 5);
     expect(
       roiDataReducer(LOADED_STATE, { type: UPDATE_CHART_ALIGNMENT, ...params })
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       chartData: [
         [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
@@ -453,7 +453,7 @@ describe("roiDataReducer", () => {
     params = getAlignmentParams(true, true, 5, 1, true, true, 1, 5);
     expect(
       roiDataReducer(LOADED_STATE, { type: UPDATE_CHART_ALIGNMENT, ...params })
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       chartData: [
         [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
@@ -486,14 +486,14 @@ describe("roiDataReducer", () => {
     ).toThrow("Invalid frame index: 6, 1");
   });
 
-  it("RESET_STATE", () => {
+  it("action RESET_STATE", () => {
     // Empty state - no effect
-    expect(roiDataReducer(EMPTY_STATE, { type: RESET_STATE })).toEqual(
+    expect(roiDataReducer(EMPTY_STATE, { type: RESET_STATE })).toStrictEqual(
       EMPTY_STATE
     );
 
     // Loaded state - reset
-    expect(roiDataReducer(LOADED_STATE, { type: RESET_STATE })).toEqual(
+    expect(roiDataReducer(LOADED_STATE, { type: RESET_STATE })).toStrictEqual(
       EMPTY_STATE
     );
   });
@@ -522,9 +522,9 @@ describe("roiDataReducer", () => {
 });
 
 describe("roiDataReducer actions", () => {
-  it("SET_CURRENT_SCANSTATUS", () => {
+  it("action SET_CURRENT_SCANSTATUS", () => {
     // Empty state - no effect
-    expect(roiDataReducer(EMPTY_STATE, setCurrentUnselected())).toEqual(
+    expect(roiDataReducer(EMPTY_STATE, setCurrentUnselected())).toStrictEqual(
       EMPTY_STATE
     );
 
@@ -534,7 +534,7 @@ describe("roiDataReducer actions", () => {
         { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
         setCurrentUnscanned()
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       currentIndex: 2,
       scanStatus: ["y", "y", "?", "n"],
@@ -545,7 +545,7 @@ describe("roiDataReducer actions", () => {
         { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
         setCurrentSelected()
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       currentIndex: 2,
       scanStatus: ["y", "y", "y", "n"],
@@ -556,7 +556,7 @@ describe("roiDataReducer actions", () => {
         { ...LOADED_STATE, currentIndex: 1, scanStatus: ["y", "y", "n", "n"] },
         setCurrentUnselected()
       )
-    ).toEqual({
+    ).toStrictEqual({
       ...LOADED_STATE,
       currentIndex: 1,
       scanStatus: ["y", "n", "n", "n"],
@@ -567,23 +567,40 @@ describe("roiDataReducer actions", () => {
 describe("miscellaneous functions", () => {
   it("getSelectAllActionName", () => {
     // No items
-    expect(getSelectAllActionName([0, 0, 0])).toEqual("Select All");
+    expect(getSelectAllActionName([0, 0, 0])).toStrictEqual("Select All");
     // All selected
-    expect(getSelectAllActionName([2, 0, 0])).toEqual("Unselect All");
+    expect(getSelectAllActionName([2, 0, 0])).toStrictEqual("Unselect All");
     // All unselected
-    expect(getSelectAllActionName([0, 2, 0])).toEqual("Clear All");
+    expect(getSelectAllActionName([0, 2, 0])).toStrictEqual("Clear All");
     // All clear
-    expect(getSelectAllActionName([0, 0, 2])).toEqual("Select All");
+    expect(getSelectAllActionName([0, 0, 2])).toStrictEqual("Select All");
     // Mixed items
-    expect(getSelectAllActionName([1, 1, 1])).toEqual("Clear All");
+    expect(getSelectAllActionName([1, 1, 1])).toStrictEqual("Clear All");
   });
 
   it("isChannel1Loaded", () => {
-    expect(isChannel1Loaded(EMPTY_STATE)).toBeFalsy();
-    expect(isChannel1Loaded(LOADED_STATE)).toBeTruthy();
+    expect(isChannel1Loaded(EMPTY_STATE)).toBe(false);
+    expect(isChannel1Loaded(LOADED_STATE)).toBe(true);
   });
 
   it("index out of bounds checking", () => {
+    function checkBounds(state, index) {
+      const expectedMessage = "ROI index not valid: " + index;
+
+      // reducer SET_CURRENT_INDEX
+      expect(() =>
+        roiDataReducer(EMPTY_STATE, { type: SET_CURRENT_INDEX, index: index })
+      ).toThrow(expectedMessage);
+
+      expect(() => isItemSelected(state.scanStatus, index)).toThrow(
+        expectedMessage
+      );
+
+      expect(() => isItemUnselected(state.scanStatus, index)).toThrow(
+        expectedMessage
+      );
+    }
+
     // Empty state
     checkBounds(EMPTY_STATE, 0);
     checkBounds(EMPTY_STATE, -1);
@@ -592,23 +609,6 @@ describe("miscellaneous functions", () => {
     checkBounds(LOADED_STATE, -1);
     checkBounds(LOADED_STATE, 4);
   });
-
-  function checkBounds(state, index) {
-    const expectedMessage = "ROI index not valid: " + index;
-
-    // reducer SET_CURRENT_INDEX
-    expect(() =>
-      roiDataReducer(EMPTY_STATE, { type: SET_CURRENT_INDEX, index: index })
-    ).toThrow(expectedMessage);
-
-    expect(() => isItemSelected(state.scanStatus, index)).toThrow(
-      expectedMessage
-    );
-
-    expect(() => isItemUnselected(state.scanStatus, index)).toThrow(
-      expectedMessage
-    );
-  }
 });
 
 describe("selection functions", () => {
@@ -617,33 +617,33 @@ describe("selection functions", () => {
 
   it("isItemSelected", () => {
     // Out of bounds testing done elsewhere
-    expect(isItemSelected(scanStatus, 0)).toBeFalsy();
-    expect(isItemSelected(scanStatus, 1)).toBeTruthy();
-    expect(isItemSelected(scanStatus, 2)).toBeFalsy();
+    expect(isItemSelected(scanStatus, 0)).toBe(false);
+    expect(isItemSelected(scanStatus, 1)).toBe(true);
+    expect(isItemSelected(scanStatus, 2)).toBe(false);
   });
 
   it("isItemUnselected", () => {
     // Out of bounds testing done elsewhere
-    expect(isItemUnselected(scanStatus, 0)).toBeFalsy();
-    expect(isItemUnselected(scanStatus, 1)).toBeFalsy();
-    expect(isItemUnselected(scanStatus, 2)).toBeTruthy();
+    expect(isItemUnselected(scanStatus, 0)).toBe(false);
+    expect(isItemUnselected(scanStatus, 1)).toBe(false);
+    expect(isItemUnselected(scanStatus, 2)).toBe(true);
   });
 
   it("isCurrentSelected", () => {
-    expect(isCurrentSelected({ ...model, currentIndex: 0 })).toBeFalsy();
-    expect(isCurrentSelected({ ...model, currentIndex: 1 })).toBeTruthy();
-    expect(isCurrentSelected({ ...model, currentIndex: 2 })).toBeFalsy();
+    expect(isCurrentSelected({ ...model, currentIndex: 0 })).toBe(false);
+    expect(isCurrentSelected({ ...model, currentIndex: 1 })).toBe(true);
+    expect(isCurrentSelected({ ...model, currentIndex: 2 })).toBe(false);
   });
 
   it("isCurrentUnselected", () => {
-    expect(isCurrentUnselected({ ...model, currentIndex: 0 })).toBeFalsy();
-    expect(isCurrentUnselected({ ...model, currentIndex: 1 })).toBeFalsy();
-    expect(isCurrentUnselected({ ...model, currentIndex: 2 })).toBeTruthy();
+    expect(isCurrentUnselected({ ...model, currentIndex: 0 })).toBe(false);
+    expect(isCurrentUnselected({ ...model, currentIndex: 1 })).toBe(false);
+    expect(isCurrentUnselected({ ...model, currentIndex: 2 })).toBe(true);
   });
 
   it("isCurrentUnscanned", () => {
-    expect(isCurrentUnscanned({ ...model, currentIndex: 0 })).toBeTruthy();
-    expect(isCurrentUnscanned({ ...model, currentIndex: 1 })).toBeFalsy();
-    expect(isCurrentUnscanned({ ...model, currentIndex: 2 })).toBeFalsy();
+    expect(isCurrentUnscanned({ ...model, currentIndex: 0 })).toBe(true);
+    expect(isCurrentUnscanned({ ...model, currentIndex: 1 })).toBe(false);
+    expect(isCurrentUnscanned({ ...model, currentIndex: 2 })).toBe(false);
   });
 });

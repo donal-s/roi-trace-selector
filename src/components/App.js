@@ -10,7 +10,6 @@ import SelectionIconView from "./SelectionIconView.js";
 import RemainingCountButton from "./RemainingCountButton.js";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  SET_FULLSCREEN_MODE,
   SET_CURRENT_NEXT,
   SET_CURRENT_PREVIOUS,
   TOGGLE_CURRENT_ITEM_SELECTED,

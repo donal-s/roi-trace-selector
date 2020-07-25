@@ -1,4 +1,3 @@
-import roiDataStore, { roiDataReducer } from "./RoiDataModel.js";
 import {
   fileHandlingReducer,
   loadTestData,
@@ -10,7 +9,7 @@ import { LOAD_DATA } from "./ActionTypes.js";
 import thunk from "redux-thunk";
 import sampleRoiTraces from "./sampleRoiTraces.csv";
 import FileSaver from "file-saver";
-import { CSV_DATA, setCsvData, classesContain } from "../TestUtils.js";
+import { CSV_DATA } from "../TestUtils.js";
 
 const EMPTY_STATE = {
   channel1Filename: null,
@@ -31,7 +30,7 @@ const LOADED_STATE = fileHandlingReducer(EMPTY_STATE, {
 describe("fileHandlingReducer", () => {
   // Sanity check to verify test data
   it("prebuilt state", () => {
-    expect(LOADED_STATE).toEqual({
+    expect(LOADED_STATE).toStrictEqual({
       channel1Filename: "new file",
       items: ["ROI-1", "ROI-2", "ROI-3", "ROI-4"],
       scanStatus: ["?", "?", "?", "?"],
@@ -53,14 +52,14 @@ describe("fileHandlingReducer", () => {
     });
   });
 
-  it("LOAD_DATA", () => {
+  it("action LOAD_DATA", () => {
     expect(
       fileHandlingReducer(EMPTY_STATE, {
         type: LOAD_DATA,
         csvData: CSV_DATA,
         channel1Filename: "new file",
       })
-    ).toEqual(LOADED_STATE);
+    ).toStrictEqual(LOADED_STATE);
 
     expect(
       fileHandlingReducer(LOADED_STATE, {
@@ -68,17 +67,17 @@ describe("fileHandlingReducer", () => {
         csvData: "",
         channel1Filename: null,
       })
-    ).toEqual(EMPTY_STATE);
+    ).toStrictEqual(EMPTY_STATE);
   });
 
-  it("LOAD_DATA with trailing newlines", () => {
+  it("action LOAD_DATA with trailing newlines", () => {
     expect(
       fileHandlingReducer(EMPTY_STATE, {
         type: LOAD_DATA,
         csvData: CSV_DATA + "\n\n\r\n",
         channel1Filename: "new file",
       })
-    ).toEqual(LOADED_STATE);
+    ).toStrictEqual(LOADED_STATE);
 
     expect(
       fileHandlingReducer(LOADED_STATE, {
@@ -86,7 +85,7 @@ describe("fileHandlingReducer", () => {
         csvData: "\n\n\r\n",
         channel1Filename: null,
       })
-    ).toEqual(EMPTY_STATE);
+    ).toStrictEqual(EMPTY_STATE);
   });
 });
 
@@ -105,7 +104,7 @@ describe("loadTestData", () => {
     const store = mockStore(EMPTY_STATE);
 
     store.dispatch(loadTestData());
-    expect(store.getActions()).toEqual(expectedActions);
+    expect(store.getActions()).toStrictEqual(expectedActions);
   });
 });
 
@@ -113,7 +112,8 @@ describe("loadFile", () => {
   const middlewares = [thunk];
   const mockStore = configureMockStore(middlewares);
 
-  it("success", () => {
+  it("success", async () => {
+    expect.assertions(1);
     const expectedActions = [
       {
         type: LOAD_DATA,
@@ -126,9 +126,8 @@ describe("loadFile", () => {
       type: "mimeType",
     });
     file.name = "testFile.csv";
-    return store.dispatch(loadFile([file])).then(() => {
-      expect(store.getActions()).toEqual(expectedActions);
-    });
+    await store.dispatch(loadFile([file]));
+    expect(store.getActions()).toStrictEqual(expectedActions);
   });
 
   // TODO test bad input file
@@ -158,7 +157,7 @@ describe("saveFile", () => {
     const store = mockStore(EMPTY_STATE);
 
     expect(() => store.dispatch(saveFile())).toThrow("No data file loaded");
-    expect(store.getActions()).toEqual([]);
+    expect(store.getActions()).toStrictEqual([]);
   });
 
   it("missing filename", () => {
@@ -168,17 +167,17 @@ describe("saveFile", () => {
     });
 
     expect(() => store.dispatch(saveFile())).toThrow("No data file loaded");
-    expect(store.getActions()).toEqual([]);
+    expect(store.getActions()).toStrictEqual([]);
   });
 
   it("empty selection", () => {
     const store = mockStore(LOADED_STATE);
 
     store.dispatch(saveFile());
-    expect(store.getActions()).toEqual([]);
+    expect(store.getActions()).toStrictEqual([]);
     expect(FileSaver.saveAs).toHaveBeenCalledWith(
       {
-        content: ["\n" + "1\n" + "2\n" + "3\n" + "4\n" + "5"],
+        content: ["\n1\n2\n3\n4\n5"],
         options: { endings: "native", type: "text/csv" },
       },
       "new file_output.csv"
@@ -192,7 +191,7 @@ describe("saveFile", () => {
     });
 
     store.dispatch(saveFile());
-    expect(store.getActions()).toEqual([]);
+    expect(store.getActions()).toStrictEqual([]);
     expect(FileSaver.saveAs).toHaveBeenCalledWith(
       {
         content: [
@@ -216,7 +215,7 @@ describe("saveFile", () => {
     });
 
     store.dispatch(saveFile());
-    expect(store.getActions()).toEqual([]);
+    expect(store.getActions()).toStrictEqual([]);
     expect(FileSaver.saveAs).toHaveBeenCalledWith(
       {
         content: [
@@ -246,7 +245,7 @@ describe("saveFile", () => {
     });
 
     store.dispatch(saveFile());
-    expect(store.getActions()).toEqual([]);
+    expect(store.getActions()).toStrictEqual([]);
     expect(FileSaver.saveAs).toHaveBeenCalledWith(
       {
         content: [

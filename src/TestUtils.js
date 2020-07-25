@@ -1,16 +1,4 @@
-import {
-  LOAD_DATA,
-  SET_FULLSCREEN_MODE,
-  SET_CURRENT_INDEX,
-  SET_CURRENT_NEXT,
-  SET_CURRENT_PREVIOUS,
-  SET_CURRENT_NEXT_UNSCANNED,
-  SET_CURRENT_SCANSTATUS,
-  TOGGLE_CURRENT_ITEM_SELECTED,
-  SELECT_ALL_ITEMS,
-  UPDATE_CHART_ALIGNMENT,
-  RESET_STATE,
-} from "./model/ActionTypes.js";
+import { LOAD_DATA } from "./model/ActionTypes.js";
 import roiDataStore from "./model/RoiDataModel.js";
 
 // test constants

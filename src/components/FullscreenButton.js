@@ -7,7 +7,6 @@ import { SET_FULLSCREEN_MODE } from "../model/ActionTypes.js";
 
 export default function FullscreenButton(props) {
   const channel1Loaded = useSelector(isChannel1Loaded);
-  const showSingleTrace = useSelector((state) => state.showSingleTrace);
   const dispatch = useDispatch();
 
   // View in fullscreen
