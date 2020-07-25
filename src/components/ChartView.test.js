@@ -1,0 +1,269 @@
+import React from "react";
+import { render, unmountComponentAtNode } from "react-dom";
+import { act, Simulate } from "react-dom/test-utils";
+import ChartView from "./ChartView.js";
+import roiDataStore from "../model/RoiDataModel.js";
+import { Provider } from "react-redux";
+import {
+  SET_CURRENT_INDEX,
+  LOAD_DATA,
+  SET_FULLSCREEN_MODE,
+  TOGGLE_CURRENT_ITEM_SELECTED,
+} from "../model/ActionTypes.js";
+import Chart from "chart.js";
+import { CSV_DATA, setCsvData } from "../TestUtils.js";
+
+// const CSV_DATA =
+//   " , ROI-1, ROI-2, ROI-3, ROI-4\n" +
+//   "1, 10.000,    1.5,   1.1,   1\n" +
+//   "2, 9.000,     1.5,   2.2,   2\n" +
+//   "3, 5.000,     1.5,   3.3,   3\n" +
+//   "4, 4.000,     1.5,   2.2,   4\n" +
+//   "5, 3.000,     1.5,   1.1,   5";
+
+const STATIC_CHART_DATA = {
+  labels: ["1", "2", "3", "4", "5"],
+  datasets: [
+    {
+      data: [10, 9, 5, 4, 3],
+      label: "ROI-1",
+    },
+    {
+      data: [1.5, 1.5, 1.5, 1.5, 1.5],
+      label: "ROI-2",
+    },
+    {
+      data: [1.1, 2.2, 3.3, 2.2, 1.1],
+      label: "ROI-3",
+    },
+    {
+      data: [1, 2, 3, 4, 5],
+      label: "ROI-4",
+    },
+  ],
+};
+
+jest.mock("chart.js");
+
+var container = null;
+beforeEach(() => {
+  // setup a DOM element as a render target
+  container = document.createElement("div");
+  document.body.appendChild(container);
+});
+
+afterEach(() => {
+  // cleanup on exiting
+  unmountComponentAtNode(container);
+  container.remove();
+  container = null;
+  Chart.mockClear();
+});
+
+it("ChartView initial empty chart", () => {
+  renderComponent();
+  expect(Chart).toHaveBeenCalledTimes(1);
+  expect(Chart.mock.instances[0].data).toBe(undefined);
+});
+
+describe("ChartView data tests", () => {
+  var mockChart;
+
+  beforeEach(() => {
+    renderComponent();
+    mockChart = Chart.mock.instances[0];
+    setCsvData(CSV_DATA);
+    renderComponent();
+  });
+
+  function expectAllTracesVisible() {
+    expect(mockChart.data).toMatchObject({
+      datasets: [
+        { hidden: false },
+        { hidden: false },
+        { hidden: false },
+        { hidden: false },
+      ],
+    });
+  }
+
+  function expectSelectedTraceIndex(selectedIndex) {
+    expect(mockChart.data).toMatchObject({
+      datasets: [
+        { borderWidth: selectedIndex == 0 ? "2" : "1" },
+        { borderWidth: selectedIndex == 1 ? "2" : "1" },
+        { borderWidth: selectedIndex == 2 ? "2" : "1" },
+        { borderWidth: selectedIndex == 3 ? "2" : "1" },
+      ],
+    });
+  }
+
+  it("ChartView initial chart", () => {
+    expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+    expectAllTracesVisible();
+    expectSelectedTraceIndex(0);
+    expect(mockChart.data).toMatchObject({
+      datasets: [
+        { borderColor: "black" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+      ],
+    });
+  });
+
+  it("ChartView mouse scroll to change current trace", () => {
+    // Next trace
+    act(() => {
+      Simulate.wheel(chartCanvas(), { deltaY: 5 });
+    });
+    expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+    expectAllTracesVisible();
+    expectSelectedTraceIndex(1);
+    expect(mockChart.data).toMatchObject({
+      datasets: [
+        { borderColor: "rgba(0,0,0,0.1)" },
+        { borderColor: "black" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+      ],
+    });
+
+    // Previous trace
+    act(() => {
+      Simulate.wheel(chartCanvas(), { deltaY: -5 });
+    });
+    expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+    expectAllTracesVisible();
+    expectSelectedTraceIndex(0);
+    expect(mockChart.data).toMatchObject({
+      datasets: [
+        { borderColor: "black" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+      ],
+    });
+  });
+
+  it("ChartView single trace mode", () => {
+    // Set fullscreen
+    act(() => {
+      roiDataStore.dispatch({
+        type: SET_FULLSCREEN_MODE,
+        enable: true,
+      });
+    });
+    expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+    expectSelectedTraceIndex(0);
+    expect(mockChart.data).toMatchObject({
+      datasets: [
+        {
+          borderColor: "black",
+          hidden: false,
+        },
+        {
+          borderColor: "rgba(0,0,0,0.1)",
+          hidden: true,
+        },
+        {
+          borderColor: "rgba(0,0,0,0.1)",
+          hidden: true,
+        },
+        {
+          borderColor: "rgba(0,0,0,0.1)",
+          hidden: true,
+        },
+      ],
+    });
+
+    // Unset fullscreen
+    act(() => {
+      roiDataStore.dispatch({
+        type: SET_FULLSCREEN_MODE,
+        enable: false,
+      });
+    });
+    expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+    expectAllTracesVisible();
+    expectSelectedTraceIndex(0);
+    expect(mockChart.data).toMatchObject({
+      datasets: [
+        { borderColor: "black" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+      ],
+    });
+  });
+
+  it("ChartView toggle trace", () => {
+    // Set selected
+    act(() => {
+      roiDataStore.dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED });
+    });
+    expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+    expectAllTracesVisible();
+    expectSelectedTraceIndex(0);
+    expect(mockChart.data).toMatchObject({
+      datasets: [
+        { borderColor: "navy" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+      ],
+    });
+
+    // Set unselected
+    act(() => {
+      // Next trace
+      Simulate.wheel(chartCanvas(), { deltaY: 5 });
+      roiDataStore.dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED });
+      roiDataStore.dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED });
+    });
+    expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+    expectAllTracesVisible();
+    expectSelectedTraceIndex(1);
+    expect(mockChart.data).toMatchObject({
+      datasets: [
+        { borderColor: "rgba(0,0,128,0.4)" },
+        { borderColor: "rgba(164,0,0,1)" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+      ],
+    });
+
+    // Set unknown
+    act(() => {
+      // Next trace
+      Simulate.wheel(chartCanvas(), { deltaY: 5 });
+      roiDataStore.dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED });
+      roiDataStore.dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED });
+      roiDataStore.dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED });
+    });
+    expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+    expectAllTracesVisible();
+    expectSelectedTraceIndex(2);
+    expect(mockChart.data).toMatchObject({
+      datasets: [
+        { borderColor: "rgba(0,0,128,0.4)" },
+        { borderColor: "rgba(164,0,0,0.2)" },
+        { borderColor: "black" },
+        { borderColor: "rgba(0,0,0,0.1)" },
+      ],
+    });
+  });
+});
+
+const chartCanvas = () => container.querySelector("#channel1Chart");
+
+function renderComponent() {
+  act(() => {
+    render(
+      <Provider store={roiDataStore}>
+        <ChartView />
+      </Provider>,
+      container
+    );
+  });
+}
