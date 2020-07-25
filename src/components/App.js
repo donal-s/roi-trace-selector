@@ -57,7 +57,7 @@ export default function App() {
         <img id="demonsoftLogo" src={demonsoftLogo} alt="demonsoft logo" />
 
         <div id="appTitle" className="unselectable">
-          ROI Trace Selection v0.20 -{" "}
+          ROI Trace Selection v0.21 -{" "}
           {channel1Filename != null ? channel1Filename : "[No file]"}
         </div>
         <RemainingCountButton />
