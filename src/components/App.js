@@ -9,6 +9,7 @@ import ChartView from "./ChartView.js";
 import SelectionIconView from "./SelectionIconView.js";
 import RemainingCountButton from "./RemainingCountButton.js";
 import { useDispatch, useSelector } from "react-redux";
+import version from "../version";
 import {
   SET_CURRENT_NEXT,
   SET_CURRENT_PREVIOUS,
@@ -56,7 +57,7 @@ export default function App() {
         <img id="demonsoftLogo" src={demonsoftLogo} alt="demonsoft logo" />
 
         <div id="appTitle" className="unselectable">
-          ROI Trace Selection v0.21 -{" "}
+          ROI Trace Selection v{version} -{" "}
           {channel1Filename != null ? channel1Filename : "[No file]"}
         </div>
         <RemainingCountButton />
