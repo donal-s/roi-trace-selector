@@ -187,6 +187,15 @@ button#remainingCount:disabled {
   cursor: pointer;
 }
 
+#helpButton {
+  position: fixed;
+  top: 3px;
+  right: 350px;
+  color: gray;
+  background-color: white;
+  cursor: pointer;
+}
+
 #fullscreenButton.disabled {
   color: lightgray;
   cursor: default;

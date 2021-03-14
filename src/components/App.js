@@ -8,6 +8,7 @@ import FullscreenButton from "./FullscreenButton.js";
 import ChartView from "./ChartView.js";
 import SelectionIconView from "./SelectionIconView.js";
 import RemainingCountButton from "./RemainingCountButton.js";
+import InfoIcon from "@material-ui/icons/Info";
 import { useDispatch, useSelector } from "react-redux";
 import version from "../version";
 import {
@@ -51,6 +52,14 @@ export default function App() {
   const showSingleTrace = useSelector((state) => state.showSingleTrace);
   const channel1Filename = useSelector((state) => state.channel1Filename);
 
+  function helpButton() {
+    return (
+      <a href={process.env.PUBLIC_URL + "/userguide.html"} target="_blank" rel="noreferrer">
+        <InfoIcon fontSize="large" id="helpButton" />
+      </a>
+    );
+  }
+
   return (
     <div className={"App" + (showSingleTrace ? " scan" : "")}>
       <div id="header">
@@ -60,6 +69,7 @@ export default function App() {
           ROI Trace Selection v{version} -{" "}
           {channel1Filename != null ? channel1Filename : "[No file]"}
         </div>
+        {helpButton()}
         <RemainingCountButton />
         <SelectionIconView />
         <FullscreenButton />
