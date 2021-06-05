@@ -1,4 +1,3 @@
-"use strict";
 process.env.BABEL_ENV = "development";
 process.env.NODE_ENV = "development";
 
@@ -98,16 +97,6 @@ module.exports = {
           {
             test: /\.(csv|tsv)$/,
             use: ["raw-loader"],
-          },
-          // Default loader - should be last
-          {
-            loader: require.resolve("file-loader"),
-            // Exclude `js` files to keep "css" loader working as it injects
-            // its runtime that would otherwise be processed through "file" loader.
-            // Also exclude `html` and `json` extensions so they get processed
-            // by webpacks internal loaders.
-            exclude: [/\.(js|mjs|jsx|ts|tsx)$/, /\.html$/, /\.json$/],
-            options: { name: "static/media/[name].[hash:8].[ext]" },
           },
         ],
       },

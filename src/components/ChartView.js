@@ -1,4 +1,11 @@
-import Chart from "chart.js";
+import {
+  CategoryScale,
+  Chart,
+  LinearScale,
+  LineController,
+  LineElement,
+  PointElement,
+} from "chart.js";
 import React, { useEffect } from "react";
 import {
   SCANSTATUS_SELECTED,
@@ -19,6 +26,14 @@ const SELECTED_TRACE_COLOUR = "rgba(0,0,128,0.4)";
 const UNSELECTED_TRACE_COLOUR = "rgba(164,0,0,0.2)";
 const UNSCANNED_TRACE_COLOUR = "rgba(0,0,0,0.1)";
 const DEFAULT_TRACE_WIDTH = "1";
+
+Chart.register(
+  LineController,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement
+);
 
 export default function ChartView(props) {
   const channel1Chart = React.useRef(null);
@@ -41,21 +56,9 @@ export default function ChartView(props) {
           datasets: getChartDatasets(),
         },
         options: {
-          legend: {
-            display: false,
-          },
-          animation: {
-            duration: 0,
-          },
-          hover: {
-            animationDuration: 0,
-          },
-          responsiveAnimationDuration: 0,
+          animation: false,
           maintainAspectRatio: false,
           events: ["click"],
-          tooltips: {
-            enabled: false,
-          },
           onClick: () => dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED }),
         },
       });
@@ -67,6 +70,13 @@ export default function ChartView(props) {
         labels: chartFrameLabels,
         datasets: getChartDatasets(),
       };
+      chartData.forEach((data, index) => {
+        var isCurrentTrace = currentIndex === index;
+        channel1Chart.current.setDatasetVisibility(
+          index,
+          !showSingleTrace || isCurrentTrace
+        );
+      });
       channel1Chart.current.update();
     }
 
@@ -76,14 +86,11 @@ export default function ChartView(props) {
         return {
           data: data,
           label: items[index],
-          fill: false,
-          lineTension: 0,
           borderWidth: isCurrentTrace
             ? CURRENT_TRACE_WIDTH
             : DEFAULT_TRACE_WIDTH,
           borderColor: calcTraceColour(scanStatus[index], isCurrentTrace),
           pointRadius: 0,
-          hidden: showSingleTrace && !isCurrentTrace,
         };
       });
     }

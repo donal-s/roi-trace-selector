@@ -59,23 +59,22 @@ describe("component ChartView", () => {
 
   describe("data tests", () => {
     var mockChart;
+    const visible = [true, true, true, true];
 
     beforeEach(() => {
       renderComponent();
       mockChart = Chart.mock.instances[0];
+      mockChart.show = (index) => (visible[index] = true);
+      mockChart.hide = (index) => (visible[index] = false);
+      mockChart.setDatasetVisibility = (index, state) =>
+        (visible[index] = state);
+
       setCsvData(CSV_DATA);
       renderComponent();
     });
 
     function expectAllTracesVisible() {
-      expect(mockChart.data).toMatchObject({
-        datasets: [
-          { hidden: false },
-          { hidden: false },
-          { hidden: false },
-          { hidden: false },
-        ],
-      });
+      expect(visible).toStrictEqual([true, true, true, true]);
     }
 
     function expectSelectedTraceIndex(selectedIndex) {
@@ -145,26 +144,18 @@ describe("component ChartView", () => {
           enable: true,
         });
       });
+
       expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
       expectSelectedTraceIndex(0);
+
+      expect(visible).toStrictEqual([true, false, false, false]);
+
       expect(mockChart.data).toMatchObject({
         datasets: [
-          {
-            borderColor: "black",
-            hidden: false,
-          },
-          {
-            borderColor: "rgba(0,0,0,0.1)",
-            hidden: true,
-          },
-          {
-            borderColor: "rgba(0,0,0,0.1)",
-            hidden: true,
-          },
-          {
-            borderColor: "rgba(0,0,0,0.1)",
-            hidden: true,
-          },
+          { borderColor: "black" },
+          { borderColor: "rgba(0,0,0,0.1)" },
+          { borderColor: "rgba(0,0,0,0.1)" },
+          { borderColor: "rgba(0,0,0,0.1)" },
         ],
       });
 

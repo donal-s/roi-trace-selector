@@ -67,7 +67,7 @@ export function roiDataReducer(state = initialState, action) {
     default:
       // Skip logging this one - CsvHandling will pick it up
       if (action.type !== LOAD_DATA) {
-        console.log("Unknown action: " + safeJson(action));
+        console.debug("Unknown action: " + safeJson(action));
       }
       return state;
   }
