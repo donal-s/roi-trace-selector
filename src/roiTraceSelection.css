@@ -47,12 +47,19 @@ div#controlPanel {
   width: 300px;
 }
 
-div#chartsPanel {
+div#chartsPanel,
+div#mainPanel {
   position: fixed;
   bottom: 50px;
   top: 60px;
   left: 300px;
   right: 200px;
+}
+
+div#mainPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 button#remainingCount {
@@ -261,7 +268,7 @@ div#roiChoiceList label {
 div#roiChoiceList .current {
   border-style: solid;
   border-width: thin 8px;
-  border-color: black;
+  border-color: gray;
 }
 
 div#roiChoiceList .selectedRoi {

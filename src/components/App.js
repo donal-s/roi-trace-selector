@@ -16,6 +16,7 @@ import {
   SET_CURRENT_PREVIOUS,
   TOGGLE_CURRENT_ITEM_SELECTED,
 } from "../model/ActionTypes.js";
+import { loadTestData } from "../model/CsvHandling";
 
 export default function App() {
   const dispatch = useDispatch();
@@ -54,7 +55,11 @@ export default function App() {
 
   function helpButton() {
     return (
-      <a href={process.env.PUBLIC_URL + "/userguide.html"} target="_blank" rel="noreferrer">
+      <a
+        href={process.env.PUBLIC_URL + "/userguide.html"}
+        target="_blank"
+        rel="noreferrer"
+      >
         <InfoIcon fontSize="large" id="helpButton" />
       </a>
     );
@@ -78,7 +83,23 @@ export default function App() {
         <FileAccessView />
         <TraceAlignmentView />
       </div>
-      <ChartView />
+      {channel1Filename != null ? (
+        <ChartView />
+      ) : (
+        <div id="mainPanel">
+          <button
+            type="button"
+            id="openChannel1Test"
+            className="exampleFileInput"
+            onClick={(event) => {
+              dispatch(loadTestData());
+              event.target.blur();
+            }}
+          >
+            Open Example Data
+          </button>
+        </div>
+      )}
 
       <RoiSelectionListView />
 

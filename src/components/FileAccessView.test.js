@@ -32,18 +32,6 @@ describe("component FileAccessView", () => {
     expect(saveFileButton().disabled).toBe(true);
   });
 
-  it("loadTestData", () => {
-    renderComponent();
-    expect(roiDataStore.getState().chartData).toStrictEqual([]);
-    expect(roiDataStore.getState().channel1Filename).toBeNull();
-
-    Simulate.click(loadTestFileButton());
-    renderComponent();
-    expect(roiDataStore.getState().chartData).not.toStrictEqual([]);
-    expect(roiDataStore.getState().channel1Filename).not.toBeNull();
-    expect(saveFileButton().disabled).toBe(false);
-  });
-
   it("loadFile", async () => {
     renderComponent();
     expect(roiDataStore.getState().chartData).toStrictEqual([]);
@@ -111,7 +99,6 @@ describe("component FileAccessView", () => {
   });
 
   const loadFileButton = () => container.querySelector("#csvFileInput");
-  const loadTestFileButton = () => container.querySelector("#openChannel1Test");
   const saveFileButton = () => container.querySelector("#saveChannel1");
 
   function renderComponent() {
