@@ -27,16 +27,8 @@ div#footer {
 
 div#appTitle {
   position: fixed;
-  left: 170px;
-  top: 11px;
-}
-
-img#demonsoftLogo {
-  position: fixed;
   left: 10px;
-  top: 7px;
-  width: 145px;
-  height: 30px;
+  top: 11px;
 }
 
 div#controlPanel {

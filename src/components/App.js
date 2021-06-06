@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import "../roiTraceSelection.css";
-import demonsoftLogo from "../demonsoftLogo-small.svg";
 import RoiSelectionListView from "./RoiSelectionListView.js";
 import TraceAlignmentView from "./TraceAlignmentView.js";
 import FileAccessView from "./FileAccessView.js";
@@ -68,8 +67,6 @@ export default function App() {
   return (
     <div className={"App" + (showSingleTrace ? " scan" : "")}>
       <div id="header">
-        <img id="demonsoftLogo" src={demonsoftLogo} alt="demonsoft logo" />
-
         <div id="appTitle" className="unselectable">
           ROI Trace Selection v{version} -{" "}
           {channel1Filename != null ? channel1Filename : "[No file]"}
@@ -104,7 +101,7 @@ export default function App() {
       <RoiSelectionListView />
 
       <div id="footer" className="unselectable">
-        &copy;2020 DemonSoft.org. All Rights Reserved.
+        &copy;2021 DemonSoft.org. All Rights Reserved.
       </div>
     </div>
   );
