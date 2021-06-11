@@ -6,7 +6,7 @@ import {
   LineElement,
   PointElement,
 } from "chart.js";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   SCANSTATUS_SELECTED,
   SCANSTATUS_UNSELECTED,
@@ -47,7 +47,17 @@ export default function ChartView(props) {
   const showSingleTrace = useSelector((state) => state.showSingleTrace);
   const chartFrameLabels = useSelector((state) => state.chartFrameLabels);
 
+  const prevChartDataRef = useRef();
+  const prevShowSingleTraceRef = useRef();
+  const prevCurrentIndexRef = useRef();
+  const prevScanStatusRef = useRef();
+
   useEffect(() => {
+    const prevChartData = prevChartDataRef.current;
+    const prevShowSingleTrace = prevShowSingleTraceRef.current;
+    const prevCurrentIndex = prevCurrentIndexRef.current;
+    const prevScanStatus = prevScanStatusRef.current;
+
     function createChart(chartRef) {
       const chart = new Chart(chartRef, {
         type: "line",
@@ -57,6 +67,11 @@ export default function ChartView(props) {
         },
         options: {
           animation: false,
+          elements: {
+            point: {
+              pointRadius: 0,
+            },
+          },
           maintainAspectRatio: false,
           events: ["click"],
           onClick: () => dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED }),
@@ -90,17 +105,67 @@ export default function ChartView(props) {
             ? CURRENT_TRACE_WIDTH
             : DEFAULT_TRACE_WIDTH,
           borderColor: calcTraceColour(scanStatus[index], isCurrentTrace),
-          pointRadius: 0,
         };
       });
     }
 
+    const chartDataUpdated = chartData !== prevChartData;
+    const showSingleTraceUpdated = showSingleTrace !== prevShowSingleTrace;
+    const currentIndexUpdated = currentIndex !== prevCurrentIndex;
+    const scanStatusUpdated = scanStatus !== prevScanStatus;
+
     if (channel1Chart.current === null) {
       const myChartRef = chartDOMRef.current.getContext("2d");
       channel1Chart.current = createChart(myChartRef);
-    } else {
+    } else if (chartDataUpdated) {
       updateChart();
+    } else if (showSingleTraceUpdated) {
+      const setDatasetVisibility = channel1Chart.current.setDatasetVisibility;
+      chartData.forEach((data, index) => {
+        setDatasetVisibility(index, !showSingleTrace || currentIndex === index);
+      });
+      channel1Chart.current.update();
+    } else {
+      const chartDatasets = channel1Chart.current.data.datasets;
+      if (scanStatusUpdated) {
+        scanStatus.forEach((newValue, index) => {
+          if (newValue !== prevScanStatus[index]) {
+            chartDatasets[index].borderColor = calcTraceColour(
+              scanStatus[index],
+              currentIndex === index
+            );
+          }
+        });
+      }
+
+      if (currentIndexUpdated) {
+        chartDatasets[currentIndex].borderWidth = CURRENT_TRACE_WIDTH;
+        chartDatasets[prevCurrentIndex].borderWidth = DEFAULT_TRACE_WIDTH;
+
+        chartDatasets[currentIndex].borderColor = calcTraceColour(
+          scanStatus[currentIndex],
+          true
+        );
+        chartDatasets[prevCurrentIndex].borderColor = calcTraceColour(
+          scanStatus[prevCurrentIndex],
+          false
+        );
+
+        if (showSingleTrace) {
+          const setDatasetVisibility =
+            channel1Chart.current.setDatasetVisibility;
+          setDatasetVisibility(currentIndex, true);
+          setDatasetVisibility(prevCurrentIndex, false);
+        }
+      }
+
+      channel1Chart.current.update();
     }
+
+    prevChartDataRef.current = chartData;
+    prevShowSingleTraceRef.current = showSingleTrace;
+    prevCurrentIndexRef.current = currentIndex;
+    prevScanStatusRef.current = scanStatus;
   }, [
     chartData,
     items,
