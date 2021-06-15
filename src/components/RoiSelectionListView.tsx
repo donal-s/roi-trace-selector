@@ -5,9 +5,9 @@ import {
   isItemUnselected,
   isChannel1Loaded,
   getSelectAllActionName,
-  RoiDataModelState,
+  useAppDispatch,
+  useAppSelector,
 } from "../model/RoiDataModel";
-import { useDispatch, useSelector } from "react-redux";
 import {
   setCurrentIndexAction,
   toggleCurrentItemSelectedAction,
@@ -18,10 +18,8 @@ export default function RoiSelectionListView() {
   const selectionListRef: MutableRefObject<HTMLDivElement | null> = React.useRef(
     null
   );
-  const dispatch = useDispatch();
-  const currentIndex = useSelector(
-    (state: RoiDataModelState) => state.currentIndex
-  );
+  const dispatch = useAppDispatch();
+  const currentIndex = useAppSelector((state) => state.currentIndex);
 
   useEffect(() => {
     if (currentIndex !== -1) {
@@ -55,9 +53,7 @@ export default function RoiSelectionListView() {
     dispatch(toggleCurrentItemSelectedAction());
   }
 
-  const scanStatus = useSelector(
-    (state: RoiDataModelState) => state.scanStatus
-  );
+  const scanStatus = useAppSelector((state) => state.scanStatus);
 
   function rebuildListItem(item: string, index: number) {
     const itemSelected = isItemSelected(scanStatus, index);
@@ -79,10 +75,10 @@ export default function RoiSelectionListView() {
     );
   }
 
-  const items = useSelector((state: RoiDataModelState) => state.items);
-  const itemCounts = useSelector(getSelectedItemCounts);
+  const items = useAppSelector((state) => state.items);
+  const itemCounts = useAppSelector(getSelectedItemCounts);
   const { selectedCount, unselectedCount, unscannedCount } = itemCounts;
-  const channel1Loaded = useSelector(isChannel1Loaded);
+  const channel1Loaded = useAppSelector(isChannel1Loaded);
 
   return (
     <div id="roiChoicePanel">

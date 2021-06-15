@@ -1,12 +1,16 @@
 import React from "react";
-import { isChannel1Loaded, RoiDataModelState } from "../model/RoiDataModel";
+import {
+  isChannel1Loaded,
+  RoiDataModelState,
+  useAppDispatch,
+  useAppSelector,
+} from "../model/RoiDataModel";
 import { loadFile, saveFile } from "../model/CsvHandling";
-import { useDispatch, useSelector } from "react-redux";
 
 export default function FileAccessView() {
-  const dispatch = useDispatch();
-  const channel1Loaded = useSelector(isChannel1Loaded);
-  const model = useSelector(state => state);
+  const dispatch = useAppDispatch();
+  const channel1Loaded = useAppSelector(isChannel1Loaded);
+  const model = useAppSelector((state) => state);
 
   return (
     <div className="inputPanel">

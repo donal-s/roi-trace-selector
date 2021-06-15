@@ -4,6 +4,8 @@ import {
   isCurrentSelected,
   isCurrentUnselected,
   isCurrentUnscanned,
+  useAppSelector,
+  useAppDispatch,
 } from "../model/RoiDataModel";
 import CheckCircleOutlineIcon from "@material-ui/icons/CheckCircleOutline";
 import CheckCircleIcon from "@material-ui/icons/CheckCircle";
@@ -11,7 +13,6 @@ import HelpOutlineIcon from "@material-ui/icons/HelpOutline";
 import HelpIcon from "@material-ui/icons/Help";
 import RemoveCircleOutlineIcon from "@material-ui/icons/RemoveCircleOutline";
 import RemoveCircleIcon from "@material-ui/icons/RemoveCircle";
-import { useDispatch, useSelector } from "react-redux";
 import {
   setCurrentUnselectedAction,
   setCurrentUnscannedAction,
@@ -19,12 +20,12 @@ import {
 } from "../model/Actions";
 
 export default function SelectionIconView() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
-  const channel1Loaded = useSelector(isChannel1Loaded);
-  const currentSelected = useSelector(isCurrentSelected);
-  const currentUnselected = useSelector(isCurrentUnselected);
-  const currentClear = useSelector(isCurrentUnscanned);
+  const channel1Loaded = useAppSelector(isChannel1Loaded);
+  const currentSelected = useAppSelector(isCurrentSelected);
+  const currentUnselected = useAppSelector(isCurrentUnselected);
+  const currentClear = useAppSelector(isCurrentUnscanned);
 
   return (
     <div id="selectionIconPanel" className={!channel1Loaded ? "disabled" : ""}>

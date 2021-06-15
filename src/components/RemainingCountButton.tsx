@@ -1,12 +1,16 @@
 import React from "react";
-import { getSelectedItemCounts, isChannel1Loaded } from "../model/RoiDataModel";
-import { useDispatch, useSelector } from "react-redux";
+import {
+  getSelectedItemCounts,
+  isChannel1Loaded,
+  useAppDispatch,
+  useAppSelector,
+} from "../model/RoiDataModel";
 import { setCurrentNextUnscannedAction } from "../model/Actions";
 
 export default function RemainingCountButton() {
-  const dispatch = useDispatch();
-  const { unscannedCount } = useSelector(getSelectedItemCounts);
-  const channel1Loaded = useSelector(isChannel1Loaded);
+  const dispatch = useAppDispatch();
+  const { unscannedCount } = useAppSelector(getSelectedItemCounts);
+  const channel1Loaded = useAppSelector(isChannel1Loaded);
 
   return (
     <button

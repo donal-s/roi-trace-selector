@@ -17,18 +17,15 @@ describe("component FullscreenButton", () => {
     container = document.createElement("div");
     document.body.appendChild(container);
 
-    //@ts-ignore
-    document.documentElement.requestFullscreen = jest.fn(
-      //@ts-ignore
-      () => (document.fullscreenElement = container)
-    );
-    //@ts-ignore
-    document.exitFullscreen = jest.fn(
-      //@ts-ignore
-      () => (document.fullscreenElement = null)
-    );
-    //@ts-ignore
-    document.fullscreenElement = null;
+    document.documentElement.requestFullscreen = () => {
+      (document as any).fullscreenElement = container;
+      return Promise.resolve();
+    };
+    document.exitFullscreen = () => {
+      (document as any).fullscreenElement = null;
+      return Promise.resolve();
+    };
+    (document as any).fullscreenElement = null;
 
     // To invoke document events
     document.addEventListener = jest.fn((event, callback) => {
@@ -40,8 +37,7 @@ describe("component FullscreenButton", () => {
     // cleanup on exiting
     unmountComponentAtNode(container);
     container.remove();
-    //@ts-ignore
-    document.fullscreenElement = null;
+    (document as any).fullscreenElement = null;
   });
 
   it("disabled", () => {
@@ -51,18 +47,15 @@ describe("component FullscreenButton", () => {
     // Click while disabled has no effect
     Simulate.click(fullscreenButton());
     checkButtonRender(false);
-    expect(document.documentElement.requestFullscreen).not.toHaveBeenCalled();
     expect(document.fullscreenElement).toBeNull();
 
     // In fullscreen
-    //@ts-ignore
-    document.fullscreenElement = container;
+    (document as any).fullscreenElement = container;
     checkButtonRender(false);
 
     // Click while disabled has no effect
     Simulate.click(fullscreenButton());
     checkButtonRender(false);
-    expect(document.documentElement.requestFullscreen).not.toHaveBeenCalled();
     expect(document.fullscreenElement).not.toBeNull();
   });
 
@@ -78,25 +71,20 @@ describe("component FullscreenButton", () => {
   it("enter fullscreen", () => {
     setCsvData(CSV_DATA);
     checkButtonRender(true);
-    expect(document.documentElement.requestFullscreen).not.toHaveBeenCalled();
     expect(document.fullscreenElement).toBeNull();
 
     Simulate.click(fullscreenButton());
     checkButtonRender(true);
-    expect(document.documentElement.requestFullscreen).toHaveBeenCalledTimes(1);
     expect(document.fullscreenElement).not.toBeNull();
   });
 
   it("leave fullscreen", () => {
     setCsvData(CSV_DATA);
-    //@ts-ignore
-    document.fullscreenElement = container;
+    (document as any).fullscreenElement = container;
     checkButtonRender(true);
-    expect(document.exitFullscreen).not.toHaveBeenCalled();
 
     Simulate.click(fullscreenButton());
     checkButtonRender(true);
-    expect(document.exitFullscreen).toHaveBeenCalledTimes(1);
     expect(document.fullscreenElement).toBeNull();
   });
 
@@ -107,19 +95,19 @@ describe("component FullscreenButton", () => {
     expect(roiDataStore.getState().showSingleTrace).toBe(false);
 
     // Enter fullscreen
-    //@ts-ignore
-    document.fullscreenElement = container;
-    //@ts-ignore
-    documentEventMap.fullscreenchange();
+    (document as any).fullscreenElement = container;
+    triggerFullscreenChange()
     expect(roiDataStore.getState().showSingleTrace).toBe(true);
 
     // Leave fullscreen
-    //@ts-ignore
-    document.fullscreenElement = null;
-    //@ts-ignore
-    documentEventMap.fullscreenchange();
+    (document as any).fullscreenElement = null;
+    triggerFullscreenChange()
     expect(roiDataStore.getState().showSingleTrace).toBe(false);
   });
+
+  function triggerFullscreenChange() {
+    (documentEventMap.fullscreenchange as EventListener)(new Event("fullscreen"));
+  }
 
   const fullscreenButton = (): HTMLButtonElement =>
     container.querySelector("#fullscreenButton")!;

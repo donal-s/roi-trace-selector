@@ -8,10 +8,9 @@ import ChartView from "./ChartView";
 import SelectionIconView from "./SelectionIconView";
 import RemainingCountButton from "./RemainingCountButton";
 import InfoIcon from "@material-ui/icons/Info";
-import { useDispatch, useSelector } from "react-redux";
 import version from "../version";
 import { loadTestData } from "../model/CsvHandling";
-import { RoiDataModelState } from "../model/RoiDataModel";
+import { useAppDispatch, useAppSelector } from "../model/RoiDataModel";
 import {
   setCurrentNextAction,
   setCurrentPreviousAction,
@@ -19,7 +18,7 @@ import {
 } from "../model/Actions";
 
 export default function App() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     function handleKeyEvent(event: KeyboardEvent) {
@@ -50,12 +49,8 @@ export default function App() {
     };
   }, [dispatch]);
 
-  const showSingleTrace = useSelector(
-    (state: RoiDataModelState) => state.showSingleTrace
-  );
-  const channel1Filename = useSelector(
-    (state: RoiDataModelState) => state.channel1Filename
-  );
+  const showSingleTrace = useAppSelector((state) => state.showSingleTrace);
+  const channel1Filename = useAppSelector((state) => state.channel1Filename);
 
   function helpButton() {
     return (
@@ -68,8 +63,6 @@ export default function App() {
       </a>
     );
   }
-
-  // console.log("showSingleTrace",showSingleTrace);
 
   return (
     <div className={"App" + (showSingleTrace ? " scan" : "")}>

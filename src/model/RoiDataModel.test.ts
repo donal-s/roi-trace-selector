@@ -329,10 +329,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] },
         selectAllItemsAction()
       )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      scanStatus: ["y", "y", "y", "y"],
-    });
+    ).toStrictEqual({ ...LOADED_STATE, scanStatus: ["y", "y", "y", "y"] });
 
     // With data all selected -> unselected
     expect(
@@ -340,10 +337,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, scanStatus: ["y", "y", "y", "y"] },
         selectAllItemsAction()
       )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      scanStatus: ["n", "n", "n", "n"],
-    });
+    ).toStrictEqual({ ...LOADED_STATE, scanStatus: ["n", "n", "n", "n"] });
 
     // With data all unselected -> clear
     expect(
@@ -351,10 +345,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, scanStatus: ["n", "n", "n", "n"] },
         selectAllItemsAction()
       )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      scanStatus: ["?", "?", "?", "?"],
-    });
+    ).toStrictEqual({ ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] });
 
     // With data 1 selected -> clear
     expect(
@@ -362,10 +353,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, scanStatus: ["?", "y", "?", "?"] },
         selectAllItemsAction()
       )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      scanStatus: ["?", "?", "?", "?"],
-    });
+    ).toStrictEqual({ ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] });
 
     // With data 1 unselected -> clear
     expect(
@@ -373,10 +361,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, scanStatus: ["?", "n", "?", "?"] },
         selectAllItemsAction()
       )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      scanStatus: ["?", "?", "?", "?"],
-    });
+    ).toStrictEqual({ ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] });
 
     // With data mix -> clear
     expect(
@@ -384,10 +369,7 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, scanStatus: ["?", "n", "y", "?"] },
         selectAllItemsAction()
       )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      scanStatus: ["?", "?", "?", "?"],
-    });
+    ).toStrictEqual({ ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] });
   });
 
   it("action UPDATE_CHART_ALIGNMENT", () => {
@@ -507,20 +489,14 @@ describe("roiDataReducer", () => {
     expect(
       roiDataReducer(
         EMPTY_STATE,
-        loadDataAction({
-          csvData: CSV_DATA,
-          channel1Filename: "new file",
-        })
+        loadDataAction({ csvData: CSV_DATA, channel1Filename: "new file" })
       )
     ).toStrictEqual(LOADED_STATE);
 
     expect(
       roiDataReducer(
         LOADED_STATE,
-        loadDataAction({
-          csvData: "",
-          channel1Filename: null,
-        })
+        loadDataAction({ csvData: "", channel1Filename: null })
       )
     ).toStrictEqual(EMPTY_STATE);
   });
@@ -539,10 +515,7 @@ describe("roiDataReducer", () => {
     expect(
       roiDataReducer(
         LOADED_STATE,
-        loadDataAction({
-          csvData: "\n\n\r\n",
-          channel1Filename: null,
-        })
+        loadDataAction({ csvData: "\n\n\r\n", channel1Filename: null })
       )
     ).toStrictEqual(EMPTY_STATE);
   });

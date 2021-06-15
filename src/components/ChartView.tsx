@@ -12,8 +12,7 @@ import {
   SCANSTATUS_SELECTED,
   SCANSTATUS_UNSELECTED,
 } from "../model/Types";
-import { useSelector } from "react-redux";
-import { RoiDataModelState, useAppDispatch } from "../model/RoiDataModel";
+import { useAppDispatch, useAppSelector } from "../model/RoiDataModel";
 import {
   toggleCurrentItemSelectedAction,
   setCurrentNextAction,
@@ -44,20 +43,12 @@ export default function ChartView() {
   );
   const dispatch = useAppDispatch();
 
-  const chartData = useSelector((state: RoiDataModelState) => state.chartData);
-  const items = useSelector((state: RoiDataModelState) => state.items);
-  const currentIndex = useSelector(
-    (state: RoiDataModelState) => state.currentIndex
-  );
-  const scanStatus = useSelector(
-    (state: RoiDataModelState) => state.scanStatus
-  );
-  const showSingleTrace = useSelector(
-    (state: RoiDataModelState) => state.showSingleTrace
-  );
-  const chartFrameLabels = useSelector(
-    (state: RoiDataModelState) => state.chartFrameLabels
-  );
+  const chartData = useAppSelector((state) => state.chartData);
+  const items = useAppSelector((state) => state.items);
+  const currentIndex = useAppSelector((state) => state.currentIndex);
+  const scanStatus = useAppSelector((state) => state.scanStatus);
+  const showSingleTrace = useAppSelector((state) => state.showSingleTrace);
+  const chartFrameLabels = useAppSelector((state) => state.chartFrameLabels);
 
   const prevChartDataRef: MutableRefObject<number[][] | undefined> = useRef();
   const prevShowSingleTraceRef: MutableRefObject<
@@ -83,11 +74,7 @@ export default function ChartView() {
         },
         options: {
           animation: false,
-          elements: {
-            point: {
-              radius: 0,
-            },
-          },
+          elements: { point: { radius: 0 } },
           maintainAspectRatio: false,
           events: ["click"],
           onClick: () => dispatch(toggleCurrentItemSelectedAction()),
@@ -137,7 +124,10 @@ export default function ChartView() {
       updateChart();
     } else if (showSingleTraceUpdated) {
       chartData.forEach((data, index) => {
-        channel1Chart.current!.setDatasetVisibility(index, !showSingleTrace || currentIndex === index);
+        channel1Chart.current!.setDatasetVisibility(
+          index,
+          !showSingleTrace || currentIndex === index
+        );
       });
       channel1Chart.current.update();
     } else {

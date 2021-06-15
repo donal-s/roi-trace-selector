@@ -1,13 +1,16 @@
 import React, { useEffect } from "react";
-import { isChannel1Loaded } from "../model/RoiDataModel";
+import {
+  isChannel1Loaded,
+  useAppDispatch,
+  useAppSelector,
+} from "../model/RoiDataModel";
 import FullscreenIcon from "@material-ui/icons/Fullscreen";
 import FullscreenExitIcon from "@material-ui/icons/FullscreenExit";
-import { useDispatch, useSelector } from "react-redux";
 import { fullscreenModeAction } from "../model/Actions";
 
 export default function FullscreenButton() {
-  const channel1Loaded = useSelector(isChannel1Loaded);
-  const dispatch = useDispatch();
+  const channel1Loaded = useAppSelector(isChannel1Loaded);
+  const dispatch = useAppDispatch();
 
   // View in fullscreen
   async function openFullscreen() {

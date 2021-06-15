@@ -23,7 +23,6 @@ describe("component FileAccessView", () => {
     // cleanup on exiting
     unmountComponentAtNode(container);
     container.remove();
-    jest.clearAllMocks();
   });
 
   it("initial state", () => {

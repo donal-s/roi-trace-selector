@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { getFrameCount, isChannel1Loaded } from "../model/RoiDataModel";
-import { useDispatch, useSelector } from "react-redux";
+import {
+  getFrameCount,
+  isChannel1Loaded,
+  useAppDispatch,
+  useAppSelector,
+} from "../model/RoiDataModel";
 import { updateChartAlignmentAction } from "../model/Actions";
 
 export default function TraceAlignmentView() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const [fluorescenceMin, setFluorescenceMin] = useState(0);
   const [fluorescenceMax, setFluorescenceMax] = useState(200);
@@ -126,7 +130,7 @@ export default function TraceAlignmentView() {
   let disabledMax = !enableYMaxAlignment;
   let disabledMin = disabledMax || !enableYMinAlignment;
 
-  const newFrameCount = useSelector(getFrameCount);
+  const newFrameCount = useAppSelector(getFrameCount);
   if (newFrameCount !== datasetFrameCount) {
     setFluorescenceMinFrame(newFrameCount);
     setEnableYMaxAlignment(false);
@@ -134,7 +138,7 @@ export default function TraceAlignmentView() {
     setDatasetFrameCount(newFrameCount);
   }
 
-  const channel1Loaded = useSelector(isChannel1Loaded);
+  const channel1Loaded = useAppSelector(isChannel1Loaded);
 
   return (
     <div id="traceAlignmentPanel" className="optionsPanel">
