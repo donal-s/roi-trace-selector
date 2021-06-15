@@ -1,4 +1,3 @@
-"use strict";
 process.env.BABEL_ENV = "production";
 process.env.NODE_ENV = "production";
 
@@ -28,7 +27,7 @@ module.exports = {
   context: cwd,
   bail: true,
   devtool: "source-map",
-  entry: [path.resolve("src/index.js")],
+  entry: [path.resolve("src/index.tsx")],
   output: {
     path: path.resolve("build"),
     filename: "static/js/[name].[contenthash:8].js",
@@ -68,7 +67,7 @@ module.exports = {
   },
   resolve: {
     modules: ["node_modules"],
-    extensions: ["js", "json", "jsx"].map((ext) => `.${ext}`),
+    extensions: [".tsx", ".ts", ".js", ".json", ".jsx"],
     alias: {
       // Allows for better profiling with ReactDevTools
       ...(isEnvProductionProfile && {
@@ -83,19 +82,24 @@ module.exports = {
       // Disable require.ensure as it's not a standard language feature.
       { parser: { requireEnsure: false } },
       {
+        test: [/\.bmp$/, /\.gif$/, /\.jpe?g$/, /\.png$/, /\.svg$/],
+        loader: require.resolve("url-loader"),
+        options: {
+          limit: 10000,
+          name: "static/media/[name].[hash:8].[ext]",
+        },
+      },
+      {
+        test: /\.tsx?$/,
+        use: "ts-loader",
+        exclude: /node_modules/,
+      },
+      {
         oneOf: [
-          {
-            test: [/\.bmp$/, /\.gif$/, /\.jpe?g$/, /\.png$/, /\.svg$/],
-            loader: require.resolve("url-loader"),
-            options: {
-              limit: 10000,
-              name: "static/media/[name].[hash:8].[ext]",
-            },
-          },
           // Process application JS with Babel.
           // The preset includes JSX, Flow, TypeScript, and some ESnext features.
           {
-            test: /\.(js|mjs|jsx|ts|tsx)$/,
+            test: /\.(js|mjs|jsx)$/,
             include: path.resolve("src"),
             loader: require.resolve("babel-loader"),
             options: {
@@ -142,33 +146,31 @@ module.exports = {
               inputSourceMap: true,
             },
           },
+        ],
+      },
+      {
+        test: /\.css$/,
+        use: [
           {
-            test: /\.css$/,
-            use: [
-              {
-                loader: MiniCssExtractPlugin.loader,
-                // css is located in `static/css`, use '../../' to locate index.html folder
-                options: publicUrl.startsWith(".")
-                  ? { publicPath: "../../" }
-                  : {},
-              },
-              {
-                loader: require.resolve("css-loader"),
-                options: { importLoaders: 1, sourceMap: true },
-              },
-            ],
-            sideEffects: true,
+            loader: MiniCssExtractPlugin.loader,
+            // css is located in `static/css`, use '../../' to locate index.html folder
+            options: publicUrl.startsWith(".") ? { publicPath: "../../" } : {},
           },
           {
-            test: /\.(csv|tsv)$/,
-            use: ["raw-loader"],
+            loader: require.resolve("css-loader"),
+            options: { importLoaders: 1, sourceMap: true },
           },
         ],
+        sideEffects: true,
+      },
+      {
+        test: /\.(csv|tsv)$/,
+        use: ["raw-loader"],
       },
     ],
   },
   plugins: [
-    new ESLintPlugin({ extensions: ["js", "mjs", "jsx"] }),
+    new ESLintPlugin({ extensions: ["js", "mjs", "jsx", "ts", "tsx"] }),
     new HtmlWebpackPlugin({
       inject: true,
       template: path.resolve("public/index.html"),

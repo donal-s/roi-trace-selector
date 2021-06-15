@@ -1,15 +1,13 @@
 import React from "react";
 import { render, unmountComponentAtNode } from "react-dom";
 import { act, Simulate } from "react-dom/test-utils";
-import ChartView from "./ChartView.js";
-import roiDataStore from "../model/RoiDataModel.js";
+import ChartView from "./ChartView";
+import roiDataStore from "../model/RoiDataModel";
 import { Provider } from "react-redux";
-import {
-  SET_FULLSCREEN_MODE,
-  TOGGLE_CURRENT_ITEM_SELECTED,
-} from "../model/ActionTypes.js";
-import Chart from "chart.js";
-import { CSV_DATA, setCsvData } from "../TestUtils.js";
+import {Chart} from "chart.js";
+import { CSV_DATA, setCsvData } from "../TestUtils";
+import { mocked } from "ts-jest/utils";
+import { fullscreenModeAction, toggleCurrentItemSelectedAction } from "../model/Actions";
 
 const STATIC_CHART_DATA = {
   labels: ["1", "2", "3", "4", "5"],
@@ -34,9 +32,10 @@ const STATIC_CHART_DATA = {
 };
 
 jest.mock("chart.js");
+const mockChart = mocked(Chart, true);
 
 describe("component ChartView", () => {
-  var container = null;
+  let container: HTMLElement;
   beforeEach(() => {
     // setup a DOM element as a render target
     container = document.createElement("div");
@@ -47,52 +46,50 @@ describe("component ChartView", () => {
     // cleanup on exiting
     unmountComponentAtNode(container);
     container.remove();
-    container = null;
-    Chart.mockClear();
   });
 
   it("initial empty chart", () => {
     renderComponent();
-    expect(Chart).toHaveBeenCalledTimes(1);
-    expect(Chart.mock.instances[0].data).toBeUndefined();
+    expect(mockChart).toHaveBeenCalledTimes(1);
+    expect(mockChart.mock.instances[0].data).toBeUndefined();
   });
 
   describe("data tests", () => {
-    var mockChart;
+    let chartInstance:Chart;
     const visible = [true, true, true, true];
 
     beforeEach(() => {
       renderComponent();
-      mockChart = Chart.mock.instances[0];
-      mockChart.show = (index) => (visible[index] = true);
-      mockChart.hide = (index) => (visible[index] = false);
-      mockChart.setDatasetVisibility = (index, state) =>
+      chartInstance = mockChart.mock.instances[0] as Chart;
+      chartInstance.show = (index:number) => (visible[index] = true);
+      chartInstance.hide = (index:number) => (visible[index] = false);
+      chartInstance.setDatasetVisibility = (index:number, state:boolean) =>
         (visible[index] = state);
 
       setCsvData(CSV_DATA);
-      renderComponent();
+      renderComponent(); 
     });
 
-    function expectAllTracesVisible() {
+    function expectAllTracesVisible() { 
       expect(visible).toStrictEqual([true, true, true, true]);
     }
 
-    function expectSelectedTraceIndex(selectedIndex) {
-      expect(mockChart.data).toMatchObject({
+    function expectSelectedTraceIndex(selectedIndex:number) {
+      expect(chartInstance.data).toMatchObject({
         datasets: [
-          { borderWidth: selectedIndex === 0 ? "2" : "1" },
-          { borderWidth: selectedIndex === 1 ? "2" : "1" },
-          { borderWidth: selectedIndex === 2 ? "2" : "1" },
-          { borderWidth: selectedIndex === 3 ? "2" : "1" },
+          { borderWidth: selectedIndex === 0 ? 2 : 1 },
+          { borderWidth: selectedIndex === 1 ? 2 : 1 },
+          { borderWidth: selectedIndex === 2 ? 2 : 1 },
+          { borderWidth: selectedIndex === 3 ? 2 : 1 },
         ],
       });
     }
 
     it("initial chart", () => {
-      expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+      expect(chartInstance.data).toMatchObject(STATIC_CHART_DATA);
       expectAllTracesVisible();
       expectSelectedTraceIndex(0);
-      expect(mockChart.data).toMatchObject({
+      expect(chartInstance.data).toMatchObject({
         datasets: [
           { borderColor: "black" },
           { borderColor: "rgba(0,0,0,0.1)" },
@@ -107,10 +104,10 @@ describe("component ChartView", () => {
       act(() => {
         Simulate.wheel(chartCanvas(), { deltaY: 5 });
       });
-      expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+      expect(chartInstance.data).toMatchObject(STATIC_CHART_DATA);
       expectAllTracesVisible();
       expectSelectedTraceIndex(1);
-      expect(mockChart.data).toMatchObject({
+      expect(chartInstance.data).toMatchObject({
         datasets: [
           { borderColor: "rgba(0,0,0,0.1)" },
           { borderColor: "black" },
@@ -123,10 +120,10 @@ describe("component ChartView", () => {
       act(() => {
         Simulate.wheel(chartCanvas(), { deltaY: -5 });
       });
-      expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+      expect(chartInstance.data).toMatchObject(STATIC_CHART_DATA);
       expectAllTracesVisible();
       expectSelectedTraceIndex(0);
-      expect(mockChart.data).toMatchObject({
+      expect(chartInstance.data).toMatchObject({
         datasets: [
           { borderColor: "black" },
           { borderColor: "rgba(0,0,0,0.1)" },
@@ -139,18 +136,15 @@ describe("component ChartView", () => {
     it("single trace mode", () => {
       // Set fullscreen
       act(() => {
-        roiDataStore.dispatch({
-          type: SET_FULLSCREEN_MODE,
-          enable: true,
-        });
+        roiDataStore.dispatch(fullscreenModeAction(true));
       });
 
-      expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+      expect(chartInstance.data).toMatchObject(STATIC_CHART_DATA);
       expectSelectedTraceIndex(0);
 
       expect(visible).toStrictEqual([true, false, false, false]);
 
-      expect(mockChart.data).toMatchObject({
+      expect(chartInstance.data).toMatchObject({
         datasets: [
           { borderColor: "black" },
           { borderColor: "rgba(0,0,0,0.1)" },
@@ -161,15 +155,12 @@ describe("component ChartView", () => {
 
       // Unset fullscreen
       act(() => {
-        roiDataStore.dispatch({
-          type: SET_FULLSCREEN_MODE,
-          enable: false,
-        });
+        roiDataStore.dispatch(fullscreenModeAction(false));
       });
-      expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+      expect(chartInstance.data).toMatchObject(STATIC_CHART_DATA);
       expectAllTracesVisible();
       expectSelectedTraceIndex(0);
-      expect(mockChart.data).toMatchObject({
+      expect(chartInstance.data).toMatchObject({
         datasets: [
           { borderColor: "black" },
           { borderColor: "rgba(0,0,0,0.1)" },
@@ -182,12 +173,12 @@ describe("component ChartView", () => {
     it("toggle trace", () => {
       // Set selected
       act(() => {
-        roiDataStore.dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED });
+        roiDataStore.dispatch(toggleCurrentItemSelectedAction());
       });
-      expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+      expect(chartInstance.data).toMatchObject(STATIC_CHART_DATA);
       expectAllTracesVisible();
       expectSelectedTraceIndex(0);
-      expect(mockChart.data).toMatchObject({
+      expect(chartInstance.data).toMatchObject({
         datasets: [
           { borderColor: "navy" },
           { borderColor: "rgba(0,0,0,0.1)" },
@@ -200,13 +191,13 @@ describe("component ChartView", () => {
       act(() => {
         // Next trace
         Simulate.wheel(chartCanvas(), { deltaY: 5 });
-        roiDataStore.dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED });
-        roiDataStore.dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED });
+        roiDataStore.dispatch(toggleCurrentItemSelectedAction());
+        roiDataStore.dispatch(toggleCurrentItemSelectedAction());
       });
-      expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+      expect(chartInstance.data).toMatchObject(STATIC_CHART_DATA);
       expectAllTracesVisible();
       expectSelectedTraceIndex(1);
-      expect(mockChart.data).toMatchObject({
+      expect(chartInstance.data).toMatchObject({
         datasets: [
           { borderColor: "rgba(0,0,128,0.4)" },
           { borderColor: "rgba(164,0,0,1)" },
@@ -219,14 +210,14 @@ describe("component ChartView", () => {
       act(() => {
         // Next trace
         Simulate.wheel(chartCanvas(), { deltaY: 5 });
-        roiDataStore.dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED });
-        roiDataStore.dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED });
-        roiDataStore.dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED });
+        roiDataStore.dispatch(toggleCurrentItemSelectedAction());
+        roiDataStore.dispatch(toggleCurrentItemSelectedAction());
+        roiDataStore.dispatch(toggleCurrentItemSelectedAction());
       });
-      expect(mockChart.data).toMatchObject(STATIC_CHART_DATA);
+      expect(chartInstance.data).toMatchObject(STATIC_CHART_DATA);
       expectAllTracesVisible();
       expectSelectedTraceIndex(2);
-      expect(mockChart.data).toMatchObject({
+      expect(chartInstance.data).toMatchObject({
         datasets: [
           { borderColor: "rgba(0,0,128,0.4)" },
           { borderColor: "rgba(164,0,0,0.2)" },
@@ -237,7 +228,7 @@ describe("component ChartView", () => {
     });
   });
 
-  const chartCanvas = () => container.querySelector("#channel1Chart");
+  const chartCanvas = () :HTMLCanvasElement => container.querySelector("#channel1Chart")!;
 
   function renderComponent() {
     act(() => {

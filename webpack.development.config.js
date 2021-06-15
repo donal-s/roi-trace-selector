@@ -15,7 +15,7 @@ module.exports = {
   context: cwd,
   mode: "development",
   devtool: "eval-cheap-module-source-map",
-  entry: path.resolve("src/index.js"),
+  entry: path.resolve("src/index.tsx"),
   output: {
     path: path.resolve("devbuild"),
     filename: "static/js/bundle.js",
@@ -23,20 +23,25 @@ module.exports = {
     globalObject: "this",
   },
   resolve: {
-    extensions: ["js", "json", "jsx"].map((ext) => `.${ext}`),
+    extensions: [".tsx", ".ts", ".js", ".json", ".jsx"],
   },
   module: {
     rules: [
       {
+        test: [/\.bmp$/, /\.gif$/, /\.jpe?g$/, /\.png$/, /\.svg$/],
+        loader: require.resolve("url-loader"),
+        options: {
+          limit: 10000,
+          name: "static/media/[name].[hash:8].[ext]",
+        },
+      },
+      {
+        test: /\.tsx?$/,
+        use: "ts-loader",
+        exclude: /node_modules/,
+      },
+      {
         oneOf: [
-          {
-            test: [/\.bmp$/, /\.gif$/, /\.jpe?g$/, /\.png$/, /\.svg$/],
-            loader: require.resolve("url-loader"),
-            options: {
-              limit: 10000,
-              name: "static/media/[name].[hash:8].[ext]",
-            },
-          },
           {
             test: /\.(js|mjs|jsx)$/,
             include: path.resolve("src"),
@@ -83,22 +88,22 @@ module.exports = {
               inputSourceMap: true,
             },
           },
+        ],
+      },
+      {
+        test: /\.css$/,
+        use: [
+          require.resolve("style-loader"),
           {
-            test: /\.css$/,
-            use: [
-              require.resolve("style-loader"),
-              {
-                loader: require.resolve("css-loader"),
-                options: { importLoaders: 1, sourceMap: false },
-              },
-            ],
-            sideEffects: true,
-          },
-          {
-            test: /\.(csv|tsv)$/,
-            use: ["raw-loader"],
+            loader: require.resolve("css-loader"),
+            options: { importLoaders: 1, sourceMap: false },
           },
         ],
+        sideEffects: true,
+      },
+      {
+        test: /\.(csv|tsv)$/,
+        use: ["raw-loader"],
       },
     ],
   },
@@ -110,7 +115,7 @@ module.exports = {
     hot: true,
   },
   plugins: [
-    new ESLintPlugin({ extensions: ["js", "mjs", "jsx"] }),
+    new ESLintPlugin({ extensions: ["js", "mjs", "jsx", "ts", "tsx"] }),
     // Generates an `index.html` file with the <script> injected.
     new HtmlWebpackPlugin({
       inject: true,

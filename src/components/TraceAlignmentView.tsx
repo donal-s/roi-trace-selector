@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { getFrameCount, isChannel1Loaded } from "../model/RoiDataModel.js";
+import { getFrameCount, isChannel1Loaded } from "../model/RoiDataModel";
 import { useDispatch, useSelector } from "react-redux";
-import { UPDATE_CHART_ALIGNMENT } from "../model/ActionTypes.js";
+import { updateChartAlignmentAction } from "../model/Actions";
 
 export default function TraceAlignmentView() {
   const dispatch = useDispatch();
@@ -17,17 +17,18 @@ export default function TraceAlignmentView() {
   const [datasetFrameCount, setDatasetFrameCount] = useState(1);
 
   useEffect(() => {
-    dispatch({
-      type: UPDATE_CHART_ALIGNMENT,
-      enableYMaxAlignment: enableYMaxAlignment,
-      alignToYMax: alignToYMax,
-      yMaxValue: fluorescenceMax,
-      yMaxFrame: fluorescenceMaxFrame,
-      enableYMinAlignment: enableYMinAlignment,
-      alignToYMin: alignToYMin,
-      yMinValue: fluorescenceMin,
-      yMinFrame: fluorescenceMinFrame,
-    });
+    dispatch(
+      updateChartAlignmentAction({
+        enableYMaxAlignment: enableYMaxAlignment,
+        alignToYMax: alignToYMax,
+        yMaxValue: fluorescenceMax,
+        yMaxFrame: fluorescenceMaxFrame,
+        enableYMinAlignment: enableYMinAlignment,
+        alignToYMin: alignToYMin,
+        yMinValue: fluorescenceMin,
+        yMinFrame: fluorescenceMinFrame,
+      })
+    );
   }, [
     enableYMaxAlignment,
     alignToYMax,
@@ -52,7 +53,24 @@ export default function TraceAlignmentView() {
     }
   }
 
-  function createCheckbox({ key, value, title, disabled, changeFunction }) {
+  type CreateInputParams = {
+    key: string;
+    value: any;
+    title: string;
+    disabled: boolean;
+    changeFunction: any;
+    onBlur?: any;
+    min?: number;
+    max?: number;
+  };
+
+  function createCheckbox({
+    key,
+    value,
+    title,
+    disabled,
+    changeFunction,
+  }: CreateInputParams) {
     return (
       <>
         <label
@@ -79,7 +97,7 @@ export default function TraceAlignmentView() {
     disabled,
     changeFunction,
     ...otherInputAttributes
-  }) {
+  }: CreateInputParams) {
     return (
       <>
         <label
@@ -105,8 +123,8 @@ export default function TraceAlignmentView() {
     );
   }
 
-  var disabledMax = !enableYMaxAlignment;
-  var disabledMin = disabledMax || !enableYMinAlignment;
+  let disabledMax = !enableYMaxAlignment;
+  let disabledMin = disabledMax || !enableYMinAlignment;
 
   const newFrameCount = useSelector(getFrameCount);
   if (newFrameCount !== datasetFrameCount) {

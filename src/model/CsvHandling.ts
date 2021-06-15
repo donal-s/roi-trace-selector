@@ -1,49 +1,29 @@
+//@ts-ignore
 import sampleRoiTraces from "./sampleRoiTraces.csv";
-import { LOAD_DATA } from "./ActionTypes.js";
 import { saveAs } from "file-saver";
-import {
-  SCANSTATUS_SELECTED,
-  SCANSTATUS_UNSCANNED,
-} from "../model/ScanStatus.js";
-
-export function fileHandlingReducer(state, action) {
-  switch (action.type) {
-    case LOAD_DATA:
-      return loadData(state, action);
-
-    default:
-      return state;
-  }
-}
-
-function loadData(state, action) {
-  const newCsvState = parseCsvData(action.csvData);
-  return {
-    ...state,
-    channel1Filename: action.channel1Filename,
-    ...newCsvState,
-  };
-}
+import { ScanStatus, SCANSTATUS_SELECTED, SCANSTATUS_UNSCANNED } from "./Types";
+import { AppDispatch, RoiDataModelState } from "./RoiDataModel";
+import { loadDataAction } from "./Actions";
 
 export function loadTestData() {
-  return {
-    type: LOAD_DATA,
+  return loadDataAction({
     csvData: sampleRoiTraces,
     channel1Filename: "Example data",
-  };
+  });
 }
 
-export function loadFile(files) {
-  return function (dispatch) {
+export function loadFile(files: FileList | File[]) {
+  return function (dispatch: AppDispatch) {
     if (window.FileReader) {
       const file = files[0];
       return readFileAsync(file)
         .then((csv) => {
-          dispatch({
-            type: LOAD_DATA,
-            csvData: csv,
-            channel1Filename: file.name,
-          });
+          dispatch(
+            loadDataAction({
+              csvData: csv as string,
+              channel1Filename: file.name,
+            })
+          );
         })
         .catch((err) => {
           if (err.target.error.name === "NotReadableError") {
@@ -56,7 +36,7 @@ export function loadFile(files) {
   };
 }
 
-function readFileAsync(file) {
+function readFileAsync(file: File) {
   return new Promise((resolve, reject) => {
     let reader = new FileReader();
 
@@ -69,9 +49,9 @@ function readFileAsync(file) {
     reader.readAsText(file);
   });
 }
-function parseCsvData(csv) {
-  var allTextLines = csv.split(/\r\n|\n/);
-  var lines = [];
+export function parseCsvData(csv: string) {
+  let allTextLines = csv.split(/\r\n|\n/);
+  let lines: string[][] = [];
 
   allTextLines.forEach((line) => {
     if (line.length > 0) {
@@ -81,26 +61,26 @@ function parseCsvData(csv) {
 
   lines = transpose(lines);
 
-  var chartFrameLabels = [];
-  chartFrameLabels.push.apply(chartFrameLabels, lines.shift());
+  let chartFrameLabels: string[] = [];
+  chartFrameLabels.push.apply(chartFrameLabels, lines.shift()!);
   chartFrameLabels.shift();
   chartFrameLabels = chartFrameLabels.map((s) => s.trim());
 
-  var chartData = [];
-  var originalTraceData = [];
-  var roiLabels = [];
+  let chartData: number[][] = [];
+  let originalTraceData: number[][] = [];
+  let roiLabels: string[] = [];
 
   lines.forEach((roiData, i) => {
     roiData = roiData.map((s) => s.trim());
-    var roiLabel = roiData.shift();
-    roiData = roiData.map((s) => Number(s));
+    let roiLabel: string = roiData.shift()!;
+    let roiNumberData = roiData.map((s) => Number(s));
 
-    chartData.push([...roiData]);
-    originalTraceData.push(roiData);
+    chartData.push([...roiNumberData]);
+    originalTraceData.push(roiNumberData);
     roiLabels.push(roiLabel);
   });
 
-  var scanStatus = [];
+  let scanStatus: ScanStatus[] = [];
   scanStatus.length = roiLabels.length;
   scanStatus.fill(SCANSTATUS_UNSCANNED);
 
@@ -114,22 +94,19 @@ function parseCsvData(csv) {
   };
 }
 
-export function saveFile() {
-  return function (dispatch, getState) {
-    const model = getState();
-    var data = getSelectedSubsetCsvData(model);
-    var filename = getSelectedSubsetFilename(model);
-    var blob = new Blob([data], {
-      type: "text/csv",
-      endings: "native",
-    });
-    saveAs(blob, filename);
-  };
+export function saveFile(model: RoiDataModelState) {
+  let data = getSelectedSubsetCsvData(model);
+  let filename = getSelectedSubsetFilename(model);
+  let blob = new Blob([data], {
+    type: "text/csv",
+    endings: "native",
+  });
+  saveAs(blob, filename);
 }
 
-function transpose(a) {
+function transpose(a: string[][]) {
   // Calculate the width and height of the Array
-  var w = a.length ? a.length : 0,
+  let w = a.length ? a.length : 0,
     h = a[0] instanceof Array ? a[0].length : 0;
 
   // In case it is a zero matrix, no transpose routine needed.
@@ -140,9 +117,9 @@ function transpose(a) {
   // @var {Number} i Counter
   // @var {Number} j Counter
   // @var {Array} t Transposed data is stored in this array.
-  var i,
+  let i,
     j,
-    t = [];
+    t: string[][] = [];
 
   // Loop through every item in the outer array (height)
   for (i = 0; i < h; i++) {
@@ -159,7 +136,7 @@ function transpose(a) {
   return t;
 }
 
-function getSelectedSubsetFilename({ channel1Filename }) {
+function getSelectedSubsetFilename({ channel1Filename }: RoiDataModelState) {
   if (!channel1Filename) {
     throw new Error("No data file loaded");
   }
@@ -167,25 +144,25 @@ function getSelectedSubsetFilename({ channel1Filename }) {
   return channel1Filename + "_output.csv";
 }
 
-function getSelectedSubsetCsvData(model) {
+function getSelectedSubsetCsvData(model: RoiDataModelState) {
   if (model.items.length === 0) {
     throw new Error("No data file loaded");
   }
 
-  var result = "";
-  var totalTraces = model.items.length;
-  var totalFrames = model.chartFrameLabels.length;
+  let result = "";
+  let totalTraces = model.items.length;
+  let totalFrames = model.chartFrameLabels.length;
   // Add trace names
-  for (var i = 0; i < totalTraces; i++) {
+  for (let i = 0; i < totalTraces; i++) {
     if (model.scanStatus[i] === SCANSTATUS_SELECTED) {
       result += "," + model.items[i];
     }
   }
   result += "\n";
 
-  for (var f = 0; f < totalFrames; f++) {
+  for (let f = 0; f < totalFrames; f++) {
     result += model.chartFrameLabels[f];
-    for (i = 0; i < totalTraces; i++) {
+    for (let i = 0; i < totalTraces; i++) {
       if (model.scanStatus[i] === SCANSTATUS_SELECTED) {
         result += "," + model.chartData[i][f];
       }

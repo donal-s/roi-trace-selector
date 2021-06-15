@@ -1,11 +1,11 @@
 import React from "react";
-import { getSelectedItemCounts, isChannel1Loaded } from "../model/RoiDataModel.js";
+import { getSelectedItemCounts, isChannel1Loaded } from "../model/RoiDataModel";
 import { useDispatch, useSelector } from "react-redux";
-import { SET_CURRENT_NEXT_UNSCANNED } from "../model/ActionTypes.js";
+import { setCurrentNextUnscannedAction } from "../model/Actions";
 
-export default function RemainingCountButton(props) {
+export default function RemainingCountButton() {
   const dispatch = useDispatch();
-  const [, , unscannedCount] = useSelector(getSelectedItemCounts);
+  const { unscannedCount } = useSelector(getSelectedItemCounts);
   const channel1Loaded = useSelector(isChannel1Loaded);
 
   return (
@@ -14,8 +14,8 @@ export default function RemainingCountButton(props) {
       id="remainingCount"
       disabled={!channel1Loaded}
       onClick={(event) => {
-        dispatch({ type: SET_CURRENT_NEXT_UNSCANNED });
-        event.target.blur();
+        dispatch(setCurrentNextUnscannedAction());
+        event.currentTarget.blur();
       }}
     >
       {unscannedCount + " Remaining"}

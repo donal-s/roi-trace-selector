@@ -1,28 +1,33 @@
-import React, { useEffect } from "react";
+import React, { MouseEvent, MutableRefObject, useEffect } from "react";
 import {
   isItemSelected,
   getSelectedItemCounts,
   isItemUnselected,
   isChannel1Loaded,
   getSelectAllActionName,
-} from "../model/RoiDataModel.js";
+  RoiDataModelState,
+} from "../model/RoiDataModel";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  SET_CURRENT_INDEX,
-  TOGGLE_CURRENT_ITEM_SELECTED,
-  SELECT_ALL_ITEMS,
-} from "../model/ActionTypes.js";
+  setCurrentIndexAction,
+  toggleCurrentItemSelectedAction,
+  selectAllItemsAction,
+} from "../model/Actions";
 
-export default function RoiSelectionListView(props) {
-  const selectionListRef = React.useRef();
+export default function RoiSelectionListView() {
+  const selectionListRef: MutableRefObject<HTMLDivElement | null> = React.useRef(
+    null
+  );
   const dispatch = useDispatch();
-  const currentIndex = useSelector((state) => state.currentIndex);
+  const currentIndex = useSelector(
+    (state: RoiDataModelState) => state.currentIndex
+  );
 
   useEffect(() => {
     if (currentIndex !== -1) {
-      var currentItem = selectionListRef.current.children[currentIndex];
-      var itemBounding = currentItem.getBoundingClientRect();
-      var listBounding = selectionListRef.current.getBoundingClientRect();
+      let currentItem = selectionListRef.current!.children[currentIndex];
+      let itemBounding = currentItem.getBoundingClientRect();
+      let listBounding = selectionListRef.current!.getBoundingClientRect();
       if (itemBounding.top < listBounding.top) {
         currentItem.scrollIntoView(true);
       } else if (itemBounding.bottom > listBounding.bottom) {
@@ -31,11 +36,11 @@ export default function RoiSelectionListView(props) {
     }
   });
 
-  function getElementIndex(e) {
-    var index = -1;
-    var elements = e.target.parentElement.children;
-    var elementsLength = elements.length;
-    for (var j = 0; j < elementsLength; j++) {
+  function getElementIndex(e: MouseEvent<HTMLLabelElement>) {
+    let index = -1;
+    let elements = (e.target as HTMLElement)!.parentElement!.children;
+    let elementsLength = elements.length;
+    for (let j = 0; j < elementsLength; j++) {
       if (e.target === elements[j]) {
         index = j;
         break;
@@ -44,18 +49,20 @@ export default function RoiSelectionListView(props) {
     return index;
   }
 
-  function itemMouseUpHandler(e) {
-    var index = getElementIndex(e);
-    dispatch({ type: SET_CURRENT_INDEX, index: index });
-    dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED });
+  function itemMouseUpHandler(e: MouseEvent<HTMLLabelElement>) {
+    let index = getElementIndex(e);
+    dispatch(setCurrentIndexAction(index));
+    dispatch(toggleCurrentItemSelectedAction());
   }
 
-  const scanStatus = useSelector((state) => state.scanStatus);
+  const scanStatus = useSelector(
+    (state: RoiDataModelState) => state.scanStatus
+  );
 
-  function rebuildListItem(item, index) {
+  function rebuildListItem(item: string, index: number) {
     const itemSelected = isItemSelected(scanStatus, index);
     const itemUnselected = isItemUnselected(scanStatus, index);
-    var className = "unselectable";
+    let className = "unselectable";
     if (itemSelected) {
       className += " selectedRoi";
     } else if (itemUnselected) {
@@ -72,9 +79,9 @@ export default function RoiSelectionListView(props) {
     );
   }
 
-  const items = useSelector((state) => state.items);
+  const items = useSelector((state: RoiDataModelState) => state.items);
   const itemCounts = useSelector(getSelectedItemCounts);
-  const [selectedCount, unselectedCount, unscannedCount] = itemCounts;
+  const { selectedCount, unselectedCount, unscannedCount } = itemCounts;
   const channel1Loaded = useSelector(isChannel1Loaded);
 
   return (
@@ -84,8 +91,8 @@ export default function RoiSelectionListView(props) {
         id="roiSelectAllButton"
         className="unselectable"
         onClick={(event) => {
-          dispatch({ type: SELECT_ALL_ITEMS });
-          event.target.blur();
+          dispatch(selectAllItemsAction());
+          event.currentTarget.blur();
         }}
         disabled={!channel1Loaded}
       >

@@ -1,17 +1,17 @@
 import React, { useEffect } from "react";
-import { isChannel1Loaded } from "../model/RoiDataModel.js";
+import { isChannel1Loaded } from "../model/RoiDataModel";
 import FullscreenIcon from "@material-ui/icons/Fullscreen";
 import FullscreenExitIcon from "@material-ui/icons/FullscreenExit";
 import { useDispatch, useSelector } from "react-redux";
-import { SET_FULLSCREEN_MODE } from "../model/ActionTypes.js";
+import { fullscreenModeAction } from "../model/Actions";
 
-export default function FullscreenButton(props) {
+export default function FullscreenButton() {
   const channel1Loaded = useSelector(isChannel1Loaded);
   const dispatch = useDispatch();
 
   // View in fullscreen
   async function openFullscreen() {
-    const elem = document.documentElement;
+    const elem: any = document.documentElement;
     if (elem.requestFullscreen) {
       await elem.requestFullscreen();
     } else if (elem.mozRequestFullScreen) {
@@ -28,44 +28,47 @@ export default function FullscreenButton(props) {
 
   // Close fullscreen
   function closeFullscreen() {
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    } else if (document.mozCancelFullScreen) {
+    const castDocument: any = document;
+    if (castDocument.exitFullscreen) {
+      castDocument.exitFullscreen();
+    } else if (castDocument.mozCancelFullScreen) {
       // Firefox
-      document.mozCancelFullScreen();
-    } else if (document.webkitExitFullscreen) {
+      castDocument.mozCancelFullScreen();
+    } else if (castDocument.webkitExitFullscreen) {
       // Chrome, Safari and Opera
-      document.webkitExitFullscreen();
-    } else if (document.msExitFullscreen) {
+      castDocument.webkitExitFullscreen();
+    } else if (castDocument.msExitFullscreen) {
       // IE/Edge
-      document.msExitFullscreen();
+      castDocument.msExitFullscreen();
     }
   }
 
   // Is fullscreen
   function isFullscreen() {
+    const castDocument: any = document;
     return (
-      document.fullscreenElement ||
-      document.webkitIsFullScreen ||
-      document.mozFullScreen ||
-      document.msFullscreenElement ||
+      castDocument.fullscreenElement ||
+      castDocument.webkitIsFullScreen ||
+      castDocument.mozFullScreen ||
+      castDocument.msFullscreenElement ||
       false
     );
   }
 
   useEffect(() => {
-    function setFullscreenMode(enable) {
-      dispatch({ type: SET_FULLSCREEN_MODE, enable: enable });
+    function setFullscreenMode(enable: boolean) {
+      dispatch(fullscreenModeAction(enable));
     }
 
+    const castDocument: any = document;
     const fullscreenchangeListener = () =>
-      setFullscreenMode(document.fullscreenElement !== null);
+      setFullscreenMode(castDocument.fullscreenElement !== null);
     const mozfullscreenchangeListener = () =>
-      setFullscreenMode(document.mozFullScreen);
+      setFullscreenMode(castDocument.mozFullScreen);
     const webkitfullscreenchangeListener = () =>
-      setFullscreenMode(document.webkitIsFullScreen);
+      setFullscreenMode(castDocument.webkitIsFullScreen);
     const msfullscreenchangeListener = () =>
-      setFullscreenMode(document.msFullscreenElement !== null);
+      setFullscreenMode(castDocument.msFullscreenElement !== null);
 
     // Monitor changes to fullscreen
     document.addEventListener(
@@ -110,7 +113,7 @@ export default function FullscreenButton(props) {
     };
   }, [dispatch]);
 
-  function handleClick(event) {
+  function handleClick() {
     if (channel1Loaded) {
       if (isFullscreen()) {
         closeFullscreen();

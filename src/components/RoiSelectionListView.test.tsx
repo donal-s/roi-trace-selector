@@ -3,13 +3,13 @@
 import React from "react";
 import { render, unmountComponentAtNode } from "react-dom";
 import { act, Simulate } from "react-dom/test-utils";
-import RoiSelectionListView from "./RoiSelectionListView.js";
-import roiDataStore from "../model/RoiDataModel.js";
+import RoiSelectionListView from "./RoiSelectionListView";
+import roiDataStore from "../model/RoiDataModel";
 import { Provider } from "react-redux";
-import { CSV_DATA, setCsvData, classesContain } from "../TestUtils.js";
+import { CSV_DATA, setCsvData, classesContain } from "../TestUtils";
 
 describe("component RoiSelectionListView", () => {
-  var container = null;
+  let container: HTMLElement;
   beforeEach(() => {
     // setup a DOM element as a render target
     container = document.createElement("div");
@@ -20,7 +20,6 @@ describe("component RoiSelectionListView", () => {
     // cleanup on exiting
     unmountComponentAtNode(container);
     container.remove();
-    container = null;
   });
 
   it("initialisation", () => {
@@ -72,33 +71,40 @@ describe("component RoiSelectionListView", () => {
   });
 
   // Class filters
-  const CURRENT = (value) => classesContain(value, "current");
-  const SELECTED = (value) =>
+  type ClassFilter = (value: string) => boolean;
+
+  const CURRENT: ClassFilter = (value) => classesContain(value, "current");
+  const SELECTED: ClassFilter = (value) =>
     classesContain(value, "selectedRoi") &&
     !classesContain(value, "unselectedRoi");
-  const UNSELECTED = (value) =>
+  const UNSELECTED: ClassFilter = (value) =>
     classesContain(value, "unselectedRoi") &&
     !classesContain(value, "selectedRoi");
-  const CLEAR = (value) =>
+  const CLEAR: ClassFilter = (value) =>
     !classesContain(value, "selectedRoi") &&
     !classesContain(value, "unselectedRoi");
 
   // DOM accessors
-  const roiItemList = () => container.querySelector("#roiChoiceList");
-  const unselectedRoiCount = () =>
-    container.querySelector("#unselectedRoiCount");
-  const unscannedRoiCount = () => container.querySelector("#unscannedRoiCount");
-  const selectedRoiCount = () => container.querySelector("#selectedRoiCount");
+  const roiItemList = (): Element => container.querySelector("#roiChoiceList")!;
+  const unselectedRoiCount = (): Element =>
+    container.querySelector("#unselectedRoiCount")!;
+  const unscannedRoiCount = (): Element =>
+    container.querySelector("#unscannedRoiCount")!;
+  const selectedRoiCount = (): Element =>
+    container.querySelector("#selectedRoiCount")!;
 
-  function checkChartListSelections(expectedSelections, expectedCurrentIndex) {
+  function checkChartListSelections(
+    expectedSelections: ClassFilter[],
+    expectedCurrentIndex: number
+  ) {
     expect(roiItemList().childElementCount).toBe(expectedSelections.length);
 
-    var expectedSelectedCount = expectedSelections.filter((e) => e === SELECTED)
+    let expectedSelectedCount = expectedSelections.filter((e) => e === SELECTED)
       .length;
-    var expectedUnselectedCount = expectedSelections.filter(
+    let expectedUnselectedCount = expectedSelections.filter(
       (e) => e === UNSELECTED
     ).length;
-    var expectedClearCount = expectedSelections.filter((e) => e === CLEAR)
+    let expectedClearCount = expectedSelections.filter((e) => e === CLEAR)
       .length;
 
     expect(unselectedRoiCount().textContent).toBe("" + expectedUnselectedCount);
@@ -106,7 +112,7 @@ describe("component RoiSelectionListView", () => {
     expect(selectedRoiCount().textContent).toBe("" + expectedSelectedCount);
 
     expectedSelections.forEach((expectedSelection, index) => {
-      var element = roiItemList().children[index];
+      let element = roiItemList().children[index];
       const classes = element.className;
       // Ensure element classes contains expected class
       expect(expectedSelection(classes)).toBe(true);
@@ -116,6 +122,6 @@ describe("component RoiSelectionListView", () => {
     });
   }
 
-  const clickListItem = (index) =>
+  const clickListItem = (index: number ) =>
     Simulate.mouseUp(roiItemList().children[index]);
 });

@@ -4,10 +4,7 @@ import {
   isCurrentSelected,
   isCurrentUnselected,
   isCurrentUnscanned,
-  setCurrentSelected,
-  setCurrentUnselected,
-  setCurrentUnscanned,
-} from "../model/RoiDataModel.js";
+} from "../model/RoiDataModel";
 import CheckCircleOutlineIcon from "@material-ui/icons/CheckCircleOutline";
 import CheckCircleIcon from "@material-ui/icons/CheckCircle";
 import HelpOutlineIcon from "@material-ui/icons/HelpOutline";
@@ -15,6 +12,11 @@ import HelpIcon from "@material-ui/icons/Help";
 import RemoveCircleOutlineIcon from "@material-ui/icons/RemoveCircleOutline";
 import RemoveCircleIcon from "@material-ui/icons/RemoveCircle";
 import { useDispatch, useSelector } from "react-redux";
+import {
+  setCurrentUnselectedAction,
+  setCurrentUnscannedAction,
+  setCurrentSelectedAction,
+} from "../model/Actions";
 
 export default function SelectionIconView() {
   const dispatch = useDispatch();
@@ -36,7 +38,7 @@ export default function SelectionIconView() {
         <RemoveCircleOutlineIcon
           fontSize="large"
           id="unselectButton"
-          onClick={() => dispatch(setCurrentUnselected())}
+          onClick={() => dispatch(setCurrentUnselectedAction())}
         />
       )}
 
@@ -46,7 +48,7 @@ export default function SelectionIconView() {
         <HelpOutlineIcon
           fontSize="large"
           id="clearButton"
-          onClick={() => dispatch(setCurrentUnscanned())}
+          onClick={() => dispatch(setCurrentUnscannedAction())}
         />
       )}
 
@@ -60,7 +62,7 @@ export default function SelectionIconView() {
         <CheckCircleOutlineIcon
           fontSize="large"
           id="selectButton"
-          onClick={() => dispatch(setCurrentSelected())}
+          onClick={() => dispatch(setCurrentSelectedAction())}
         />
       )}
     </div>

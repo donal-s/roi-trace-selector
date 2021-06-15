@@ -1,27 +1,27 @@
 import React from "react";
 import { render, unmountComponentAtNode } from "react-dom";
 import { act, Simulate } from "react-dom/test-utils";
-import App from "./App.js";
-import roiDataStore from "../model/RoiDataModel.js";
+import App from "./App";
+import roiDataStore from "../model/RoiDataModel";
 import { Provider } from "react-redux";
-import { CSV_DATA, setCsvData } from "../TestUtils.js";
-import { RESET_STATE } from "../model/ActionTypes.js";
+import { CSV_DATA, setCsvData } from "../TestUtils";
+import { resetStateAction } from "../model/Actions";
 
 describe("component App", () => {
-  var container = null;
+  let container: HTMLElement;
   beforeEach(() => {
     // setup a DOM element as a render target
     container = document.createElement("div");
     document.body.appendChild(container);
     act(() => {
-      roiDataStore.dispatch({ type: RESET_STATE });
-    });  });
+      roiDataStore.dispatch(resetStateAction());
+    });
+  });
 
   afterEach(() => {
     // cleanup on exiting
     unmountComponentAtNode(container);
     container.remove();
-    container = null;
   });
 
   it("initial view", () => {
@@ -50,7 +50,6 @@ describe("component App", () => {
     expect(saveFileButton().disabled).toBe(false);
     expect(loadTestFileButton()).toBeNull();
   });
-
 
   it("keyboard events", () => {
     setCsvData(CSV_DATA);
@@ -88,10 +87,12 @@ describe("component App", () => {
       currentIndex: 0,
     });
   });
-  
-  const appTitle = () => container.querySelector("#appTitle");
-  const loadTestFileButton = () => container.querySelector("#openChannel1Test");
-  const saveFileButton = () => container.querySelector("#saveChannel1");
+
+  const appTitle = (): HTMLElement => container.querySelector("#appTitle")!;
+  const loadTestFileButton = (): HTMLButtonElement =>
+    container.querySelector("#openChannel1Test")!;
+  const saveFileButton = (): HTMLButtonElement =>
+    container.querySelector("#saveChannel1")!;
 
   function renderComponent() {
     act(() => {

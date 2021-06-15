@@ -3,18 +3,19 @@
 import React from "react";
 import { render, unmountComponentAtNode } from "react-dom";
 import { act, Simulate } from "react-dom/test-utils";
-import RemainingCountButton from "./RemainingCountButton.js";
-import roiDataStore, {
-  setCurrentSelected,
-  setCurrentUnselected,
-  setCurrentUnscanned,
-} from "../model/RoiDataModel.js";
+import RemainingCountButton from "./RemainingCountButton";
+import roiDataStore from "../model/RoiDataModel";
 import { Provider } from "react-redux";
-import { SET_CURRENT_INDEX } from "../model/ActionTypes.js";
-import { CSV_DATA, setCsvData } from "../TestUtils.js";
+import { CSV_DATA, setCsvData } from "../TestUtils";
+import {
+  setCurrentIndexAction,
+  setCurrentSelectedAction,
+  setCurrentUnselectedAction,
+  setCurrentUnscannedAction,
+} from "../model/Actions";
 
 describe("component RemainingCountButton", () => {
-  var container = null;
+  let container: HTMLDivElement;
   beforeEach(() => {
     // setup a DOM element as a render target
     container = document.createElement("div");
@@ -25,7 +26,6 @@ describe("component RemainingCountButton", () => {
     // cleanup on exiting
     unmountComponentAtNode(container);
     container.remove();
-    container = null;
   });
 
   it("initialisation", () => {
@@ -39,24 +39,24 @@ describe("component RemainingCountButton", () => {
     setCsvData(CSV_DATA);
     checkButtonRender("4 Remaining", false);
 
-    roiDataStore.dispatch({ type: SET_CURRENT_INDEX, index: 1 });
-    roiDataStore.dispatch(setCurrentSelected());
+    roiDataStore.dispatch(setCurrentIndexAction(1));
+    roiDataStore.dispatch(setCurrentSelectedAction());
     checkButtonRender("3 Remaining", false);
 
-    roiDataStore.dispatch({ type: SET_CURRENT_INDEX, index: 3 });
-    roiDataStore.dispatch(setCurrentUnselected());
+    roiDataStore.dispatch(setCurrentIndexAction(3));
+    roiDataStore.dispatch(setCurrentUnselectedAction());
     checkButtonRender("2 Remaining", false);
 
-    roiDataStore.dispatch(setCurrentUnscanned());
+    roiDataStore.dispatch(setCurrentUnscannedAction());
     checkButtonRender("3 Remaining", false);
   });
 
   it("clicking changes currentIndex", () => {
     setCsvData(CSV_DATA);
-    roiDataStore.dispatch({ type: SET_CURRENT_INDEX, index: 1 });
-    roiDataStore.dispatch(setCurrentSelected());
-    roiDataStore.dispatch({ type: SET_CURRENT_INDEX, index: 3 });
-    roiDataStore.dispatch(setCurrentUnselected());
+    roiDataStore.dispatch(setCurrentIndexAction(1));
+    roiDataStore.dispatch(setCurrentSelectedAction());
+    roiDataStore.dispatch(setCurrentIndexAction(3));
+    roiDataStore.dispatch(setCurrentUnselectedAction());
     checkButtonRender("2 Remaining", false);
 
     Simulate.click(remainingCount()); // index 3 => 0
@@ -66,9 +66,10 @@ describe("component RemainingCountButton", () => {
     expect(roiDataStore.getState().currentIndex).toBe(2);
   });
 
-  const remainingCount = () => container.querySelector("#remainingCount");
+  const remainingCount = (): HTMLButtonElement =>
+    container.querySelector("#remainingCount")!;
 
-  function checkButtonRender(buttonText, isDisabled) {
+  function checkButtonRender(buttonText: string, isDisabled: boolean) {
     act(() => {
       render(
         <Provider store={roiDataStore}>
@@ -78,7 +79,7 @@ describe("component RemainingCountButton", () => {
       );
     });
 
-    expect(remainingCount().textContent).toBe(buttonText);
-    expect(remainingCount().disabled).toBe(isDisabled);
+    expect(remainingCount()?.textContent).toBe(buttonText);
+    expect(remainingCount()?.disabled).toBe(isDisabled);
   }
 });

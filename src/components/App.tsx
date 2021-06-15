@@ -1,40 +1,41 @@
 import React, { useEffect } from "react";
 import "../roiTraceSelection.css";
-import RoiSelectionListView from "./RoiSelectionListView.js";
-import TraceAlignmentView from "./TraceAlignmentView.js";
-import FileAccessView from "./FileAccessView.js";
-import FullscreenButton from "./FullscreenButton.js";
-import ChartView from "./ChartView.js";
-import SelectionIconView from "./SelectionIconView.js";
-import RemainingCountButton from "./RemainingCountButton.js";
+import RoiSelectionListView from "./RoiSelectionListView";
+import TraceAlignmentView from "./TraceAlignmentView";
+import FileAccessView from "./FileAccessView";
+import FullscreenButton from "./FullscreenButton";
+import ChartView from "./ChartView";
+import SelectionIconView from "./SelectionIconView";
+import RemainingCountButton from "./RemainingCountButton";
 import InfoIcon from "@material-ui/icons/Info";
 import { useDispatch, useSelector } from "react-redux";
 import version from "../version";
-import {
-  SET_CURRENT_NEXT,
-  SET_CURRENT_PREVIOUS,
-  TOGGLE_CURRENT_ITEM_SELECTED,
-} from "../model/ActionTypes.js";
 import { loadTestData } from "../model/CsvHandling";
+import { RoiDataModelState } from "../model/RoiDataModel";
+import {
+  setCurrentNextAction,
+  setCurrentPreviousAction,
+  toggleCurrentItemSelectedAction,
+} from "../model/Actions";
 
 export default function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    function handleKeyEvent(event) {
+    function handleKeyEvent(event: KeyboardEvent) {
       if (event.key === "ArrowDown") {
-        dispatch({ type: SET_CURRENT_NEXT });
+        dispatch(setCurrentNextAction());
         event.preventDefault();
       } else if (event.key === "ArrowUp") {
-        dispatch({ type: SET_CURRENT_PREVIOUS });
+        dispatch(setCurrentPreviousAction());
         event.preventDefault();
       } else if (event.key === " " || event.key === "Spacebar") {
-        dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED });
+        dispatch(toggleCurrentItemSelectedAction());
         event.preventDefault();
       }
     }
 
-    function handleUnloadEvent(event) {
+    function handleUnloadEvent(event: BeforeUnloadEvent) {
       // Prevent refreshing from nuking work in progress
       event.preventDefault();
       event.returnValue = "";
@@ -49,8 +50,12 @@ export default function App() {
     };
   }, [dispatch]);
 
-  const showSingleTrace = useSelector((state) => state.showSingleTrace);
-  const channel1Filename = useSelector((state) => state.channel1Filename);
+  const showSingleTrace = useSelector(
+    (state: RoiDataModelState) => state.showSingleTrace
+  );
+  const channel1Filename = useSelector(
+    (state: RoiDataModelState) => state.channel1Filename
+  );
 
   function helpButton() {
     return (
@@ -63,6 +68,8 @@ export default function App() {
       </a>
     );
   }
+
+  // console.log("showSingleTrace",showSingleTrace);
 
   return (
     <div className={"App" + (showSingleTrace ? " scan" : "")}>
@@ -90,7 +97,7 @@ export default function App() {
             className="exampleFileInput"
             onClick={(event) => {
               dispatch(loadTestData());
-              event.target.blur();
+              event.currentTarget.blur();
             }}
           >
             Open Example Data

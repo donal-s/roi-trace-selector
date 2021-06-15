@@ -1,21 +1,21 @@
 import React from "react";
 import { render, unmountComponentAtNode } from "react-dom";
 import { act, Simulate } from "react-dom/test-utils";
-import FileAccessView from "./FileAccessView.js";
-import roiDataStore from "../model/RoiDataModel.js";
+import FileAccessView from "./FileAccessView";
+import roiDataStore from "../model/RoiDataModel";
 import { Provider } from "react-redux";
-import { RESET_STATE, SELECT_ALL_ITEMS } from "../model/ActionTypes.js";
 import FileSaver from "file-saver";
-import { CSV_DATA, setCsvData } from "../TestUtils.js";
+import { CSV_DATA, setCsvData } from "../TestUtils";
+import { resetStateAction, selectAllItemsAction } from "../model/Actions";
 
 describe("component FileAccessView", () => {
-  var container = null;
+  let container:HTMLElement;
   beforeEach(() => {
     // setup a DOM element as a render target
     container = document.createElement("div");
     document.body.appendChild(container);
     act(() => {
-      roiDataStore.dispatch({ type: RESET_STATE });
+      roiDataStore.dispatch(resetStateAction());
     });
   });
 
@@ -23,7 +23,6 @@ describe("component FileAccessView", () => {
     // cleanup on exiting
     unmountComponentAtNode(container);
     container.remove();
-    container = null;
     jest.clearAllMocks();
   });
 
@@ -37,13 +36,13 @@ describe("component FileAccessView", () => {
     expect(roiDataStore.getState().chartData).toStrictEqual([]);
     expect(roiDataStore.getState().channel1Filename).toBeNull();
 
-    const file = new Blob([CSV_DATA], {
+    const file = new File([CSV_DATA],"testFile.csv", {
       type: "mimeType",
     });
-    file.name = "testFile.csv";
     // Create a fake target as JS really doesn't like creating FileLists arbitrarily
     const target = document.createElement("div");
     target.blur = jest.fn();
+    //@ts-ignore
     target.files = [file];
     Simulate.change(loadFileButton(), { target: target });
     // Not a fan of sleeps, but indirect async waiting doesn't work
@@ -55,12 +54,13 @@ describe("component FileAccessView", () => {
   });
 
   describe("saveFile", () => {
-    var saveAsSpy;
-    var blobSpy;
+    let saveAsSpy:jest.SpyInstance;
+    let blobSpy:jest.SpyInstance;
     beforeEach(() => {
       saveAsSpy = jest.spyOn(FileSaver, "saveAs").mockImplementation(() => {});
       blobSpy = jest
         .spyOn(global, "Blob")
+        //@ts-ignore
         .mockImplementation((content, options) => {
           return { content, options };
         });
@@ -73,7 +73,7 @@ describe("component FileAccessView", () => {
 
     it("saveFile", async () => {
       setCsvData(CSV_DATA);
-      roiDataStore.dispatch({ type: SELECT_ALL_ITEMS });
+      roiDataStore.dispatch(selectAllItemsAction());
       renderComponent();
       expect(roiDataStore.getState().chartData).not.toStrictEqual([]);
       expect(roiDataStore.getState().channel1Filename).not.toBeNull();
@@ -98,8 +98,8 @@ describe("component FileAccessView", () => {
     });
   });
 
-  const loadFileButton = () => container.querySelector("#csvFileInput");
-  const saveFileButton = () => container.querySelector("#saveChannel1");
+  const loadFileButton = ():HTMLButtonElement => container.querySelector("#csvFileInput")!;
+  const saveFileButton = ():HTMLButtonElement => container.querySelector("#saveChannel1")!;
 
   function renderComponent() {
     act(() => {
@@ -112,7 +112,7 @@ describe("component FileAccessView", () => {
     });
   }
 
-  function sleep(ms) {
+  function sleep(ms:number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 });

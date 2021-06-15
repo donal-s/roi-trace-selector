@@ -6,26 +6,28 @@ import {
   LineElement,
   PointElement,
 } from "chart.js";
-import React, { useEffect, useRef } from "react";
+import React, { MutableRefObject, useEffect, useRef } from "react";
 import {
+  ScanStatus,
   SCANSTATUS_SELECTED,
   SCANSTATUS_UNSELECTED,
-} from "../model/ScanStatus.js";
-import { useDispatch, useSelector } from "react-redux";
+} from "../model/Types";
+import { useSelector } from "react-redux";
+import { RoiDataModelState, useAppDispatch } from "../model/RoiDataModel";
 import {
-  SET_CURRENT_NEXT,
-  SET_CURRENT_PREVIOUS,
-  TOGGLE_CURRENT_ITEM_SELECTED,
-} from "../model/ActionTypes.js";
+  toggleCurrentItemSelectedAction,
+  setCurrentNextAction,
+  setCurrentPreviousAction,
+} from "../model/Actions";
 
 const SELECTED_CURRENT_TRACE_COLOUR = "navy";
 const UNSELECTED_CURRENT_TRACE_COLOUR = "rgba(164,0,0,1)";
 const UNSCANNED_CURRENT_TRACE_COLOUR = "black";
-const CURRENT_TRACE_WIDTH = "2";
+const CURRENT_TRACE_WIDTH = 2;
 const SELECTED_TRACE_COLOUR = "rgba(0,0,128,0.4)";
 const UNSELECTED_TRACE_COLOUR = "rgba(164,0,0,0.2)";
 const UNSCANNED_TRACE_COLOUR = "rgba(0,0,0,0.1)";
-const DEFAULT_TRACE_WIDTH = "1";
+const DEFAULT_TRACE_WIDTH = 1;
 
 Chart.register(
   LineController,
@@ -35,30 +37,44 @@ Chart.register(
   LineElement
 );
 
-export default function ChartView(props) {
-  const channel1Chart = React.useRef(null);
-  const chartDOMRef = React.useRef();
-  const dispatch = useDispatch();
+export default function ChartView() {
+  const channel1Chart: MutableRefObject<Chart | null> = React.useRef(null);
+  const chartDOMRef: MutableRefObject<HTMLCanvasElement | null> = React.useRef(
+    null
+  );
+  const dispatch = useAppDispatch();
 
-  const chartData = useSelector((state) => state.chartData);
-  const items = useSelector((state) => state.items);
-  const currentIndex = useSelector((state) => state.currentIndex);
-  const scanStatus = useSelector((state) => state.scanStatus);
-  const showSingleTrace = useSelector((state) => state.showSingleTrace);
-  const chartFrameLabels = useSelector((state) => state.chartFrameLabels);
+  const chartData = useSelector((state: RoiDataModelState) => state.chartData);
+  const items = useSelector((state: RoiDataModelState) => state.items);
+  const currentIndex = useSelector(
+    (state: RoiDataModelState) => state.currentIndex
+  );
+  const scanStatus = useSelector(
+    (state: RoiDataModelState) => state.scanStatus
+  );
+  const showSingleTrace = useSelector(
+    (state: RoiDataModelState) => state.showSingleTrace
+  );
+  const chartFrameLabels = useSelector(
+    (state: RoiDataModelState) => state.chartFrameLabels
+  );
 
-  const prevChartDataRef = useRef();
-  const prevShowSingleTraceRef = useRef();
-  const prevCurrentIndexRef = useRef();
-  const prevScanStatusRef = useRef();
+  const prevChartDataRef: MutableRefObject<number[][] | undefined> = useRef();
+  const prevShowSingleTraceRef: MutableRefObject<
+    boolean | undefined
+  > = useRef();
+  const prevCurrentIndexRef: MutableRefObject<number | undefined> = useRef();
+  const prevScanStatusRef: MutableRefObject<
+    ScanStatus[] | undefined
+  > = useRef();
 
   useEffect(() => {
     const prevChartData = prevChartDataRef.current;
     const prevShowSingleTrace = prevShowSingleTraceRef.current;
     const prevCurrentIndex = prevCurrentIndexRef.current;
-    const prevScanStatus = prevScanStatusRef.current;
+    const prevScanStatus: ScanStatus[] | undefined = prevScanStatusRef.current;
 
-    function createChart(chartRef) {
+    function createChart(chartRef: CanvasRenderingContext2D) {
       const chart = new Chart(chartRef, {
         type: "line",
         data: {
@@ -69,35 +85,35 @@ export default function ChartView(props) {
           animation: false,
           elements: {
             point: {
-              pointRadius: 0,
+              radius: 0,
             },
           },
           maintainAspectRatio: false,
           events: ["click"],
-          onClick: () => dispatch({ type: TOGGLE_CURRENT_ITEM_SELECTED }),
+          onClick: () => dispatch(toggleCurrentItemSelectedAction()),
         },
       });
       return chart;
     }
 
     function updateChart() {
-      channel1Chart.current.data = {
+      channel1Chart.current!.data = {
         labels: chartFrameLabels,
         datasets: getChartDatasets(),
       };
       chartData.forEach((data, index) => {
-        var isCurrentTrace = currentIndex === index;
-        channel1Chart.current.setDatasetVisibility(
+        let isCurrentTrace = currentIndex === index;
+        channel1Chart.current!.setDatasetVisibility(
           index,
           !showSingleTrace || isCurrentTrace
         );
       });
-      channel1Chart.current.update();
+      channel1Chart.current!.update();
     }
 
     function getChartDatasets() {
       return chartData.map((data, index) => {
-        var isCurrentTrace = currentIndex === index;
+        let isCurrentTrace = currentIndex === index;
         return {
           data: data,
           label: items[index],
@@ -115,21 +131,20 @@ export default function ChartView(props) {
     const scanStatusUpdated = scanStatus !== prevScanStatus;
 
     if (channel1Chart.current === null) {
-      const myChartRef = chartDOMRef.current.getContext("2d");
-      channel1Chart.current = createChart(myChartRef);
+      const myChartRef = chartDOMRef.current!.getContext("2d");
+      channel1Chart.current = createChart(myChartRef!);
     } else if (chartDataUpdated) {
       updateChart();
     } else if (showSingleTraceUpdated) {
-      const setDatasetVisibility = channel1Chart.current.setDatasetVisibility;
       chartData.forEach((data, index) => {
-        setDatasetVisibility(index, !showSingleTrace || currentIndex === index);
+        channel1Chart.current!.setDatasetVisibility(index, !showSingleTrace || currentIndex === index);
       });
       channel1Chart.current.update();
     } else {
       const chartDatasets = channel1Chart.current.data.datasets;
       if (scanStatusUpdated) {
         scanStatus.forEach((newValue, index) => {
-          if (newValue !== prevScanStatus[index]) {
+          if (!prevScanStatus || newValue !== prevScanStatus[index]) {
             chartDatasets[index].borderColor = calcTraceColour(
               scanStatus[index],
               currentIndex === index
@@ -140,22 +155,24 @@ export default function ChartView(props) {
 
       if (currentIndexUpdated) {
         chartDatasets[currentIndex].borderWidth = CURRENT_TRACE_WIDTH;
-        chartDatasets[prevCurrentIndex].borderWidth = DEFAULT_TRACE_WIDTH;
-
         chartDatasets[currentIndex].borderColor = calcTraceColour(
           scanStatus[currentIndex],
           true
         );
-        chartDatasets[prevCurrentIndex].borderColor = calcTraceColour(
-          scanStatus[prevCurrentIndex],
-          false
-        );
+
+        if (prevCurrentIndex !== undefined) {
+          chartDatasets[prevCurrentIndex].borderWidth = DEFAULT_TRACE_WIDTH;
+          chartDatasets[prevCurrentIndex].borderColor = calcTraceColour(
+            scanStatus[prevCurrentIndex],
+            false
+          );
+        }
 
         if (showSingleTrace) {
-          const setDatasetVisibility =
-            channel1Chart.current.setDatasetVisibility;
-          setDatasetVisibility(currentIndex, true);
-          setDatasetVisibility(prevCurrentIndex, false);
+          channel1Chart.current.setDatasetVisibility(currentIndex, true);
+          if (prevCurrentIndex !== undefined) {
+            channel1Chart.current.setDatasetVisibility(prevCurrentIndex, false);
+          }
         }
       }
 
@@ -178,7 +195,7 @@ export default function ChartView(props) {
     dispatch,
   ]);
 
-  function calcTraceColour(scanStatus, isCurrentTrace) {
+  function calcTraceColour(scanStatus: ScanStatus, isCurrentTrace: boolean) {
     if (scanStatus === SCANSTATUS_SELECTED) {
       return isCurrentTrace
         ? SELECTED_CURRENT_TRACE_COLOUR
@@ -195,18 +212,18 @@ export default function ChartView(props) {
     }
   }
 
-  function handleMouseWheel(event) {
-    dispatch({
-      type: event.deltaY > 0 ? SET_CURRENT_NEXT : SET_CURRENT_PREVIOUS,
-    });
-  }
-
   return (
     <div id="chartsPanel">
       <canvas
         id="channel1Chart"
         ref={chartDOMRef}
-        onWheel={handleMouseWheel}
+        onWheel={(event) =>
+          dispatch(
+            event.deltaY > 0
+              ? setCurrentNextAction()
+              : setCurrentPreviousAction()
+          )
+        }
       ></canvas>
     </div>
   );
