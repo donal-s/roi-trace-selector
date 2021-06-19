@@ -12,6 +12,8 @@ import {
 import { CSV_DATA } from "../TestUtils";
 import { Action } from "redux";
 import {
+  AXIS_H,
+  AXIS_V,
   ChartAlignment,
   ScanStatus,
   SCANSTATUS_SELECTED,
@@ -32,7 +34,9 @@ import {
   setCurrentUnscannedAction,
   setCurrentUnselectedAction,
   toggleCurrentItemSelectedAction,
+  updateAnnotationsAction,
   updateChartAlignmentAction,
+  updateEditAnnotationAction,
 } from "./Actions";
 
 const EMPTY_STATE: RoiDataModelState = {
@@ -44,6 +48,7 @@ const EMPTY_STATE: RoiDataModelState = {
   chartData: [],
   originalTraceData: [],
   showSingleTrace: false,
+  annotations: [],
 };
 const LOADED_STATE = roiDataReducer(
   EMPTY_STATE,
@@ -65,6 +70,7 @@ describe("roiDataReducer", () => {
       chartData: [],
       originalTraceData: [],
       showSingleTrace: false,
+      annotations: [],
     });
 
     expect(LOADED_STATE).toStrictEqual({
@@ -72,7 +78,7 @@ describe("roiDataReducer", () => {
       items: ["ROI-1", "ROI-2", "ROI-3", "ROI-4"],
       scanStatus: ["?", "?", "?", "?"],
       currentIndex: 0,
-      chartFrameLabels: ["1", "2", "3", "4", "5"],
+      chartFrameLabels: [1, 2, 3, 4, 5],
       chartData: [
         [10, 9, 5, 4, 3],
         [1.5, 1.5, 1.5, 1.5, 1.5],
@@ -86,6 +92,7 @@ describe("roiDataReducer", () => {
         [1, 2, 3, 4, 5],
       ],
       showSingleTrace: false,
+      annotations: [],
     });
   });
 
@@ -93,7 +100,7 @@ describe("roiDataReducer", () => {
     expect(roiDataReducer(undefined, {} as Action)).toStrictEqual(EMPTY_STATE);
   });
 
-  it("action SET_FULLSCREEN_MODE", () => {
+  it("fullscreenModeAction", () => {
     let inputState = { ...EMPTY_STATE, showSingleTrace: false };
     expect(
       roiDataReducer(inputState, fullscreenModeAction(true))
@@ -105,7 +112,7 @@ describe("roiDataReducer", () => {
     ).toStrictEqual({ ...EMPTY_STATE, showSingleTrace: false });
   });
 
-  it("action SET_CURRENT_INDEX", () => {
+  it("setCurrentIndexAction", () => {
     // Out of bounds testing done elsewhere
 
     // Valid cases
@@ -118,7 +125,7 @@ describe("roiDataReducer", () => {
     ).toStrictEqual({ ...LOADED_STATE, currentIndex: 1 });
   });
 
-  it("action SET_CURRENT_NEXT and SET_CURRENT_PREVIOUS", () => {
+  it("setCurrentNextAction and setCurrentPreviousAction", () => {
     // Empty state - no effect
     expect(roiDataReducer(EMPTY_STATE, setCurrentNextAction())).toStrictEqual(
       EMPTY_STATE
@@ -177,7 +184,7 @@ describe("roiDataReducer", () => {
     ).toStrictEqual({ ...LOADED_STATE, currentIndex: 3 });
   });
 
-  it("action SET_CURRENT_NEXT_UNSCANNED", () => {
+  it("setCurrentNextUnscannedAction", () => {
     // Empty state - no effect
     expect(
       roiDataReducer(EMPTY_STATE, setCurrentNextUnscannedAction())
@@ -232,7 +239,7 @@ describe("roiDataReducer", () => {
     });
   });
 
-  it("action SET_CURRENT_SCANSTATUS", () => {
+  it("setCurrentScanStatusAction", () => {
     // Empty state - no effect
     expect(
       roiDataReducer(
@@ -276,7 +283,7 @@ describe("roiDataReducer", () => {
     });
   });
 
-  it("action TOGGLE_CURRENT_ITEM_SELECTED", () => {
+  it("toggleCurrentItemSelectedAction", () => {
     // Empty state - no effect
     expect(
       roiDataReducer(EMPTY_STATE, toggleCurrentItemSelectedAction())
@@ -317,7 +324,7 @@ describe("roiDataReducer", () => {
     });
   });
 
-  it("action SELECT_ALL_ITEMS", () => {
+  it("selectAllItemsAction", () => {
     // Empty state - no effect
     expect(roiDataReducer(EMPTY_STATE, selectAllItemsAction())).toStrictEqual(
       EMPTY_STATE
@@ -372,7 +379,7 @@ describe("roiDataReducer", () => {
     ).toStrictEqual({ ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] });
   });
 
-  it("action UPDATE_CHART_ALIGNMENT", () => {
+  it("updateChartAlignmentAction", () => {
     // Alignment disabled
     let params = getAlignmentParams(false, false, 0, 0, false, false, 0, 0);
 
@@ -485,7 +492,7 @@ describe("roiDataReducer", () => {
     ).toThrow("Invalid frame index: 6, 1");
   });
 
-  it("action LOAD_DATA", () => {
+  it("loadDataAction", () => {
     expect(
       roiDataReducer(
         EMPTY_STATE,
@@ -501,7 +508,7 @@ describe("roiDataReducer", () => {
     ).toStrictEqual(EMPTY_STATE);
   });
 
-  it("action LOAD_DATA with trailing newlines", () => {
+  it("loadDataAction with trailing newlines", () => {
     expect(
       roiDataReducer(
         EMPTY_STATE,
@@ -520,7 +527,7 @@ describe("roiDataReducer", () => {
     ).toStrictEqual(EMPTY_STATE);
   });
 
-  it("action RESET_STATE", () => {
+  it("resetStateAction", () => {
     // Empty state - no effect
     expect(roiDataReducer(EMPTY_STATE, resetStateAction())).toStrictEqual(
       EMPTY_STATE
@@ -553,10 +560,8 @@ describe("roiDataReducer", () => {
       yMinFrame,
     };
   }
-});
 
-describe("roiDataReducer actions", () => {
-  it("action SET_CURRENT_SCANSTATUS", () => {
+  it("setCurrentUnscannedAction", () => {
     // Empty state - no effect
     expect(
       roiDataReducer(EMPTY_STATE, setCurrentUnselectedAction())
@@ -573,7 +578,9 @@ describe("roiDataReducer actions", () => {
       currentIndex: 2,
       scanStatus: ["y", "y", "?", "n"],
     });
+  });
 
+  it("setCurrentSelectedAction", () => {
     expect(
       roiDataReducer(
         { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
@@ -584,7 +591,9 @@ describe("roiDataReducer actions", () => {
       currentIndex: 2,
       scanStatus: ["y", "y", "y", "n"],
     });
+  });
 
+  it("setCurrentUnselectedAction", () => {
     expect(
       roiDataReducer(
         { ...LOADED_STATE, currentIndex: 1, scanStatus: ["y", "y", "n", "n"] },
@@ -594,6 +603,83 @@ describe("roiDataReducer actions", () => {
       ...LOADED_STATE,
       currentIndex: 1,
       scanStatus: ["y", "n", "n", "n"],
+    });
+  });
+
+  it("updateAnnotationsAction", () => {
+    // Valid cases
+    expect(
+      roiDataReducer(
+        { ...LOADED_STATE, annotations: [] },
+        updateAnnotationsAction([{ name: "test1", axis: AXIS_H, value: 5 }])
+      )
+    ).toStrictEqual({
+      ...LOADED_STATE,
+      annotations: [{ name: "test1", axis: AXIS_H, value: 5 }],
+    });
+
+    expect(
+      roiDataReducer(
+        {
+          ...LOADED_STATE,
+          annotations: [{ name: "test1", axis: AXIS_H, value: 5 }],
+        },
+        updateAnnotationsAction([
+          { name: "test1", axis: AXIS_H, value: 5 },
+          { name: "test2", axis: AXIS_V, value: 15 },
+        ])
+      )
+    ).toStrictEqual({
+      ...LOADED_STATE,
+      annotations: [
+        { name: "test1", axis: AXIS_H, value: 5 },
+        { name: "test2", axis: AXIS_V, value: 15 },
+      ],
+    });
+
+    expect(
+      roiDataReducer(
+        {
+          ...LOADED_STATE,
+          annotations: [{ name: "test1", axis: AXIS_H, value: 5 }],
+        },
+        updateAnnotationsAction([])
+      )
+    ).toStrictEqual({ ...LOADED_STATE, annotations: [] });
+  });
+
+  it("updateEditAnnotationAction", () => {
+    // Valid cases
+    expect(
+      roiDataReducer(
+        { ...LOADED_STATE, editAnnotation: undefined },
+        updateEditAnnotationAction({
+          index: 3,
+          annotation: { name: "test1", axis: AXIS_H, value: 5 },
+        })
+      )
+    ).toStrictEqual({
+      ...LOADED_STATE,
+      editAnnotation: {
+        index: 3,
+        annotation: { name: "test1", axis: AXIS_H, value: 5 },
+      },
+    });
+
+    expect(
+      roiDataReducer(
+        {
+          ...LOADED_STATE,
+          editAnnotation: {
+            index: 3,
+            annotation: { name: "test1", axis: AXIS_H, value: 5 },
+          },
+        },
+        updateEditAnnotationAction(undefined)
+      )
+    ).toStrictEqual({
+      ...LOADED_STATE,
+      editAnnotation: undefined,
     });
   });
 });

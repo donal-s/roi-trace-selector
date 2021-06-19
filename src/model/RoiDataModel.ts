@@ -6,6 +6,8 @@ import {
   DataFile,
   ChartAlignment,
   SelectedItemCounts,
+  Annotation,
+  EditAnnotation,
 } from "./Types";
 import { parseCsvData } from "./CsvHandling";
 import { configureStore, createReducer } from "@reduxjs/toolkit";
@@ -22,6 +24,8 @@ import {
   updateChartAlignmentAction,
   loadDataAction,
   resetStateAction,
+  updateAnnotationsAction,
+  updateEditAnnotationAction,
 } from "./Actions";
 
 export type RoiDataModelState = {
@@ -29,10 +33,12 @@ export type RoiDataModelState = {
   items: string[];
   scanStatus: ScanStatus[];
   currentIndex: number;
-  chartFrameLabels: string[];
+  chartFrameLabels: number[];
   chartData: number[][];
   originalTraceData: number[][];
   showSingleTrace: boolean;
+  annotations: Annotation[];
+  editAnnotation?: EditAnnotation;
 };
 
 const initialState: RoiDataModelState = {
@@ -44,6 +50,7 @@ const initialState: RoiDataModelState = {
   chartData: [],
   originalTraceData: [],
   showSingleTrace: false,
+  annotations: [],
 };
 
 export const roiDataReducer = createReducer(initialState, (builder) =>
@@ -71,6 +78,12 @@ export const roiDataReducer = createReducer(initialState, (builder) =>
     )
     .addCase(loadDataAction, (state, action) => loadData(state, action.payload))
     .addCase(resetStateAction, () => initialState)
+    .addCase(updateAnnotationsAction, (state, action) =>
+      updateAnnotations(state, action.payload)
+    )
+    .addCase(updateEditAnnotationAction, (state, action) =>
+      updateEditAnnotation(state, action.payload)
+    )
 );
 
 function setFullscreenMode(state: RoiDataModelState, enable: boolean) {
@@ -246,6 +259,20 @@ function updateChartAlignment(
 function loadData(state: RoiDataModelState, file: DataFile) {
   const newCsvState = parseCsvData(file.csvData);
   return { ...state, channel1Filename: file.channel1Filename, ...newCsvState };
+}
+
+function updateAnnotations(
+  state: RoiDataModelState,
+  annotations: Annotation[]
+) {
+  return { ...state, annotations };
+}
+
+function updateEditAnnotation(
+  state: RoiDataModelState,
+  editAnnotation?: EditAnnotation
+) {
+  return { ...state, editAnnotation };
 }
 
 const store = configureStore({ reducer: roiDataReducer });

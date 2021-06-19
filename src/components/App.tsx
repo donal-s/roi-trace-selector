@@ -16,9 +16,15 @@ import {
   setCurrentPreviousAction,
   toggleCurrentItemSelectedAction,
 } from "../model/Actions";
+import AnnotationsView from "./AnnotationsView";
 
 export default function App() {
   const dispatch = useAppDispatch();
+  const isEditingAnnotation = useAppSelector(
+    (state) => state.editAnnotation !== undefined
+  );
+  const showSingleTrace = useAppSelector((state) => state.showSingleTrace);
+  const channel1Filename = useAppSelector((state) => state.channel1Filename);
 
   useEffect(() => {
     function handleKeyEvent(event: KeyboardEvent) {
@@ -28,7 +34,10 @@ export default function App() {
       } else if (event.key === "ArrowUp") {
         dispatch(setCurrentPreviousAction());
         event.preventDefault();
-      } else if (event.key === " " || event.key === "Spacebar") {
+      } else if (
+        (event.key === " " || event.key === "Spacebar") &&
+        !isEditingAnnotation
+      ) {
         dispatch(toggleCurrentItemSelectedAction());
         event.preventDefault();
       }
@@ -47,10 +56,7 @@ export default function App() {
       document.removeEventListener("keydown", handleKeyEvent);
       window.removeEventListener("beforeunload", handleUnloadEvent);
     };
-  }, [dispatch]);
-
-  const showSingleTrace = useAppSelector((state) => state.showSingleTrace);
-  const channel1Filename = useAppSelector((state) => state.channel1Filename);
+  }, [dispatch, isEditingAnnotation]);
 
   function helpButton() {
     return (
@@ -79,6 +85,7 @@ export default function App() {
       <div id="controlPanel">
         <FileAccessView />
         <TraceAlignmentView />
+        <AnnotationsView />
       </div>
       {channel1Filename != null ? (
         <ChartView />

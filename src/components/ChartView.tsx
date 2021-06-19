@@ -6,8 +6,12 @@ import {
   LineElement,
   PointElement,
 } from "chart.js";
+import annotationPlugin from "chartjs-plugin-annotation";
 import React, { MutableRefObject, useEffect, useRef } from "react";
 import {
+  Annotation,
+  AXIS_V,
+  EditAnnotation,
   ScanStatus,
   SCANSTATUS_SELECTED,
   SCANSTATUS_UNSELECTED,
@@ -33,8 +37,20 @@ Chart.register(
   CategoryScale,
   LinearScale,
   PointElement,
-  LineElement
+  LineElement,
+  annotationPlugin
 );
+
+type LineAnnotationType = {
+  type: "line";
+  drawTime: string;
+  borderColor: string;
+  borderWidth: number;
+  value: number;
+  endValue: number;
+  scaleID: string;
+  label: Record<string, any>;
+};
 
 export default function ChartView() {
   const channel1Chart: MutableRefObject<Chart | null> = React.useRef(null);
@@ -49,6 +65,8 @@ export default function ChartView() {
   const scanStatus = useAppSelector((state) => state.scanStatus);
   const showSingleTrace = useAppSelector((state) => state.showSingleTrace);
   const chartFrameLabels = useAppSelector((state) => state.chartFrameLabels);
+  const annotations = useAppSelector((state) => state.annotations);
+  const editAnnotation = useAppSelector((state) => state.editAnnotation);
 
   const prevChartDataRef: MutableRefObject<number[][] | undefined> = useRef();
   const prevShowSingleTraceRef: MutableRefObject<
@@ -58,12 +76,65 @@ export default function ChartView() {
   const prevScanStatusRef: MutableRefObject<
     ScanStatus[] | undefined
   > = useRef();
+  const prevAnnotationsRef: MutableRefObject<
+    Annotation[] | undefined
+  > = useRef();
+  const prevEditAnnotationRef: MutableRefObject<
+    EditAnnotation | undefined
+  > = useRef();
 
   useEffect(() => {
     const prevChartData = prevChartDataRef.current;
     const prevShowSingleTrace = prevShowSingleTraceRef.current;
     const prevCurrentIndex = prevCurrentIndexRef.current;
-    const prevScanStatus: ScanStatus[] | undefined = prevScanStatusRef.current;
+    const prevScanStatus = prevScanStatusRef.current;
+    const prevAnnotations = prevAnnotationsRef.current;
+    const prevEditAnnotation = prevEditAnnotationRef.current;
+
+    function getAnnotations() {
+      const result: Record<string, any> = {};
+      annotations.forEach((annotation, index) => {
+        if (!editAnnotation || editAnnotation.index !== index) {
+          const lineAnnotation: LineAnnotationType = {
+            type: "line",
+            drawTime: "beforeDatasetsDraw",
+            borderColor: "gray",
+            borderWidth: 2,
+            scaleID: annotation.axis === AXIS_V ? "x" : "y",
+            value: annotation.value,
+            endValue: annotation.value,
+            label: {
+              content: annotation.name,
+              enabled: true,
+              position: annotation.axis === AXIS_V ? "start" : "end",
+              backgroundColor: "gray",
+            },
+          };
+          result[`line-${index}`] = lineAnnotation;
+        }
+      });
+      if (editAnnotation) {
+        const lineAnnotation: LineAnnotationType = {
+          type: "line",
+          drawTime: "beforeDatasetsDraw",
+          borderColor: "red",
+          borderWidth: 2,
+          scaleID: editAnnotation.annotation.axis === AXIS_V ? "x" : "y",
+          value: editAnnotation.annotation.value,
+          endValue: editAnnotation.annotation.value,
+          label: {
+            content: editAnnotation.annotation.name,
+            enabled: true,
+            position:
+              editAnnotation.annotation.axis === AXIS_V ? "start" : "end",
+            backgroundColor: "red",
+          },
+        };
+        result[`line-${editAnnotation.index}`] = lineAnnotation;
+      }
+
+      return result;
+    }
 
     function createChart(chartRef: CanvasRenderingContext2D) {
       const chart = new Chart(chartRef, {
@@ -78,6 +149,8 @@ export default function ChartView() {
           maintainAspectRatio: false,
           events: ["click"],
           onClick: () => dispatch(toggleCurrentItemSelectedAction()),
+          plugins: { annotation: { annotations: getAnnotations() } },
+          scales: { x: { type: "linear" } },
         },
       });
       return chart;
@@ -116,6 +189,8 @@ export default function ChartView() {
     const showSingleTraceUpdated = showSingleTrace !== prevShowSingleTrace;
     const currentIndexUpdated = currentIndex !== prevCurrentIndex;
     const scanStatusUpdated = scanStatus !== prevScanStatus;
+    const annotationsUpdated =
+      annotations !== prevAnnotations || editAnnotation !== prevEditAnnotation;
 
     if (channel1Chart.current === null) {
       const myChartRef = chartDOMRef.current!.getContext("2d");
@@ -141,6 +216,13 @@ export default function ChartView() {
             );
           }
         });
+      }
+
+      if (
+        annotationsUpdated &&
+        channel1Chart.current?.options?.plugins?.annotation
+      ) {
+        channel1Chart.current!.options!.plugins!.annotation!.annotations = getAnnotations();
       }
 
       if (currentIndexUpdated) {
@@ -173,6 +255,8 @@ export default function ChartView() {
     prevShowSingleTraceRef.current = showSingleTrace;
     prevCurrentIndexRef.current = currentIndex;
     prevScanStatusRef.current = scanStatus;
+    prevAnnotationsRef.current = annotations;
+    prevEditAnnotationRef.current = editAnnotation;
   }, [
     chartData,
     items,
@@ -182,6 +266,8 @@ export default function ChartView() {
     chartFrameLabels,
     channel1Chart,
     chartDOMRef,
+    annotations,
+    editAnnotation,
     dispatch,
   ]);
 

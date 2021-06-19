@@ -6,6 +6,8 @@ import {
   SCANSTATUS_SELECTED,
   SCANSTATUS_UNSCANNED,
   SCANSTATUS_UNSELECTED,
+  Annotation,
+  EditAnnotation,
 } from "./Types";
 
 function withPayloadType<T>() {
@@ -49,3 +51,13 @@ export const setCurrentUnselectedAction = () =>
   setCurrentScanStatusAction(SCANSTATUS_UNSELECTED);
 export const setCurrentUnscannedAction = () =>
   setCurrentScanStatusAction(SCANSTATUS_UNSCANNED);
+
+export const updateAnnotationsAction = createAction(
+  "updateAnnotations",
+  withPayloadType<Annotation[]>()
+);
+
+export const updateEditAnnotationAction = createAction(
+  "updateEditAnnotation",
+  withPayloadType<EditAnnotation | undefined>()
+);

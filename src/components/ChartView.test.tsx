@@ -10,7 +10,7 @@ import { mocked } from "ts-jest/utils";
 import { fullscreenModeAction, toggleCurrentItemSelectedAction } from "../model/Actions";
 
 const STATIC_CHART_DATA = {
-  labels: ["1", "2", "3", "4", "5"],
+  labels: [1, 2, 3, 4, 5],
   datasets: [
     {
       data: [10, 9, 5, 4, 3],

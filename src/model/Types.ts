@@ -28,3 +28,18 @@ export type DataFile = {
   csvData: string;
   channel1Filename: string | null;
 };
+
+export const AXIS_H = "h";
+export const AXIS_V = "v";
+export type Axis = typeof AXIS_H | typeof AXIS_V;
+
+export type Annotation = {
+  name: string;
+  axis: Axis;
+  value: number;
+};
+
+export type EditAnnotation = {
+  index: number;
+  annotation: Annotation;
+};

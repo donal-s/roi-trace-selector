@@ -17,6 +17,7 @@ const EMPTY_STATE: RoiDataModelState = {
   chartData: [],
   originalTraceData: [],
   showSingleTrace: false,
+  annotations: [],
 };
 const LOADED_STATE = roiDataReducer(
   EMPTY_STATE,

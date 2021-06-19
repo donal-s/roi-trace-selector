@@ -60,11 +60,10 @@ export function parseCsvData(csv: string) {
   });
 
   lines = transpose(lines);
-
-  let chartFrameLabels: string[] = [];
-  chartFrameLabels.push.apply(chartFrameLabels, lines.shift()!);
-  chartFrameLabels.shift();
-  chartFrameLabels = chartFrameLabels.map((s) => s.trim());
+  
+  const frameLabelsText = lines.shift()!;
+  frameLabelsText && frameLabelsText.shift();
+  const chartFrameLabels = frameLabelsText ? frameLabelsText.map((s) => Number(s.trim())) : [];
 
   let chartData: number[][] = [];
   let originalTraceData: number[][] = [];

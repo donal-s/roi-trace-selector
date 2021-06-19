@@ -1,4 +1,4 @@
-import React, { MouseEvent, MutableRefObject, useEffect } from "react";
+import React, { MutableRefObject, useEffect } from "react";
 import {
   isItemSelected,
   getSelectedItemCounts,
@@ -22,35 +22,23 @@ export default function RoiSelectionListView() {
   const currentIndex = useAppSelector((state) => state.currentIndex);
 
   useEffect(() => {
-    if (currentIndex !== -1) {
-      let currentItem = selectionListRef.current!.children[currentIndex];
+    if (selectionListRef.current && currentIndex !== -1) {
+      let currentItem = selectionListRef.current.children[currentIndex];
       let itemBounding = currentItem.getBoundingClientRect();
-      let listBounding = selectionListRef.current!.getBoundingClientRect();
+      let listBounding = selectionListRef.current.getBoundingClientRect();
       if (itemBounding.top < listBounding.top) {
         currentItem.scrollIntoView(true);
       } else if (itemBounding.bottom > listBounding.bottom) {
         currentItem.scrollIntoView(false);
       }
     }
-  });
+  }, [currentIndex, selectionListRef]);
 
-  function getElementIndex(e: MouseEvent<HTMLLabelElement>) {
-    let index = -1;
-    let elements = (e.target as HTMLElement)!.parentElement!.children;
-    let elementsLength = elements.length;
-    for (let j = 0; j < elementsLength; j++) {
-      if (e.target === elements[j]) {
-        index = j;
-        break;
-      }
-    }
-    return index;
-  }
-
-  function itemMouseUpHandler(e: MouseEvent<HTMLLabelElement>) {
-    let index = getElementIndex(e);
-    dispatch(setCurrentIndexAction(index));
-    dispatch(toggleCurrentItemSelectedAction());
+  function itemMouseUpHandler(index: number) {
+    return () => {
+      dispatch(setCurrentIndexAction(index));
+      dispatch(toggleCurrentItemSelectedAction());
+    };
   }
 
   const scanStatus = useAppSelector((state) => state.scanStatus);
@@ -69,7 +57,11 @@ export default function RoiSelectionListView() {
     }
 
     return (
-      <label key={item} onMouseUp={itemMouseUpHandler} className={className}>
+      <label
+        key={item}
+        onMouseUp={itemMouseUpHandler(index)}
+        className={className}
+      >
         {item}
       </label>
     );
