@@ -12,6 +12,14 @@ export const CSV_DATA =
   "4, 4.000,     1.5,   2.2,   4\n" +
   "5, 3.000,     1.5,   1.1,   5";
 
+  export const CSV_DATA_2 =
+  " , ROI-1, ROI-2, ROI-3, ROI-4\n" +
+  "1, 210.000,    21.5,   21.1,   21\n" +
+  "2, 29.000,     21.5,   22.2,   22\n" +
+  "3, 25.000,     21.5,   23.3,   23\n" +
+  "4, 24.000,     21.5,   22.2,   24\n" +
+  "5, 23.000,     21.5,   21.1,   25";
+
 // test functions
 
 export function setCsvData(csvData: string) {

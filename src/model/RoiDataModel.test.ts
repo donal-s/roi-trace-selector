@@ -8,8 +8,9 @@ import {
   isCurrentUnselected,
   isCurrentUnscanned,
   RoiDataModelState,
+  isChannel2Loaded,
 } from "./RoiDataModel";
-import { CSV_DATA } from "../TestUtils";
+import { CSV_DATA, CSV_DATA_2 } from "../TestUtils";
 import { Action } from "redux";
 import {
   AXIS_H,
@@ -21,6 +22,7 @@ import {
   SCANSTATUS_UNSCANNED,
   SCANSTATUS_UNSELECTED,
   Channel,
+  CHANNEL_2,
 } from "./Types";
 import {
   fullscreenModeAction,
@@ -55,6 +57,15 @@ const LOADED_STATE = roiDataReducer(
     csvData: CSV_DATA,
     channel: CHANNEL_1,
     filename: "new file",
+  })
+);
+
+const DUAL_CHANNEL_LOADED_STATE = roiDataReducer(
+  LOADED_STATE,
+  loadDataAction({
+    csvData: CSV_DATA_2,
+    channel: CHANNEL_2,
+    filename: "new file2",
   })
 );
 
@@ -597,30 +608,213 @@ describe("roiDataReducer", () => {
     ).toThrow("Invalid frame index: 6, 1");
   });
 
-  it("loadDataAction", () => {
-    expect(
-      roiDataReducer(
+  describe("loadDataAction", () => {
+    it("should load first channel", () => {
+      expect(
+        roiDataReducer(
+          EMPTY_STATE,
+          loadDataAction({
+            csvData: CSV_DATA,
+            channel: CHANNEL_1,
+            filename: "new file",
+          })
+        )
+      ).toStrictEqual(LOADED_STATE);
+    });
+
+    it("should load first channel with trailing newlines", () => {
+      expect(
+        roiDataReducer(
+          EMPTY_STATE,
+          loadDataAction({
+            csvData: CSV_DATA + "\n\n\r\n",
+            channel: CHANNEL_1,
+            filename: "new file",
+          })
+        )
+      ).toStrictEqual(LOADED_STATE);
+    });
+
+    it("should load first channel and retain second channel if match", () => {
+      expect(
+        roiDataReducer(
+          DUAL_CHANNEL_LOADED_STATE,
+          loadDataAction({
+            csvData: CSV_DATA,
+            channel: CHANNEL_1,
+            filename: "new file3",
+          })
+        )
+      ).toStrictEqual({
+        ...DUAL_CHANNEL_LOADED_STATE,
+        channel1Dataset: {
+          ...DUAL_CHANNEL_LOADED_STATE.channel1Dataset,
+          filename: "new file3",
+        },
+      });
+    });
+
+    it("should load first channel and remove second channel if mismatch", () => {
+      expect(
+        roiDataReducer(
+          DUAL_CHANNEL_LOADED_STATE,
+          loadDataAction({
+            csvData:
+              " , ROI-1, ROI-2, ROI-3\n" +
+              "1, 10.000,    1.5,   1.1\n" +
+              "2, 9.000,     1.5,   2.2\n" +
+              "3, 5.000,     1.5,   3.3\n" +
+              "4, 4.000,     1.5,   2.2\n" +
+              "5, 3.000,     1.5,   1.1",
+            channel: CHANNEL_1,
+            filename: "new file3",
+          })
+        )
+      ).toStrictEqual({
+        ...LOADED_STATE,
+        channel1Dataset: {
+          chartData: [
+            [10, 9, 5, 4, 3],
+            [1.5, 1.5, 1.5, 1.5, 1.5],
+            [1.1, 2.2, 3.3, 2.2, 1.1],
+          ],
+          filename: "new file3",
+          originalTraceData: [
+            [10, 9, 5, 4, 3],
+            [1.5, 1.5, 1.5, 1.5, 1.5],
+            [1.1, 2.2, 3.3, 2.2, 1.1],
+          ],
+        },
+        channel2Dataset: undefined,
+        chartFrameLabels: [1, 2, 3, 4, 5],
+        items: ["ROI-1", "ROI-2", "ROI-3"],
+        scanStatus: ["?", "?", "?"],
+      });
+    });
+
+    it("second channel should fail if first channel not loaded", () => {
+      expect(() =>
+        roiDataReducer(
+          EMPTY_STATE,
+          loadDataAction({
+            csvData: CSV_DATA_2,
+            channel: CHANNEL_2,
+            filename: "new file2",
+          })
+        )
+      ).toThrow("Channel 1 not loaded");
+    });
+
+    it("second channel should fail if item count mismatch", () => {
+      const state = roiDataReducer(
+        EMPTY_STATE,
+        loadDataAction({
+          csvData:
+            " , ROI-1, ROI-2, ROI-3\n" +
+            "1, 10.000,    1.5,   1.1\n" +
+            "2, 9.000,     1.5,   2.2\n" +
+            "3, 5.000,     1.5,   3.3\n" +
+            "4, 4.000,     1.5,   2.2\n" +
+            "5, 3.000,     1.5,   1.1",
+          channel: CHANNEL_1,
+          filename: "new file",
+        })
+      );
+      expect(() =>
+        roiDataReducer(
+          state,
+          loadDataAction({
+            csvData: CSV_DATA_2,
+            channel: CHANNEL_2,
+            filename: "new file2",
+          })
+        )
+      ).toThrow("Channel 2 item count mismatch");
+    });
+
+    it("second channel should fail if frame count mismatch", () => {
+      const state = roiDataReducer(
+        EMPTY_STATE,
+        loadDataAction({
+          csvData:
+            " , ROI-1, ROI-2, ROI-3, ROI-4\n" +
+            "1, 10.000,    1.5,   1.1,   1\n" +
+            "2, 9.000,     1.5,   2.2,   2\n" +
+            "3, 5.000,     1.5,   3.3,   3\n" +
+            "4, 4.000,     1.5,   2.2,   4",
+          channel: CHANNEL_1,
+          filename: "new file",
+        })
+      );
+      expect(() =>
+        roiDataReducer(
+          state,
+          loadDataAction({
+            csvData: CSV_DATA_2,
+            channel: CHANNEL_2,
+            filename: "new file2",
+          })
+        )
+      ).toThrow("Channel 2 frame count mismatch");
+    });
+
+    it("second channel should succeed if first channel match", () => {
+      const state = roiDataReducer(
         EMPTY_STATE,
         loadDataAction({
           csvData: CSV_DATA,
           channel: CHANNEL_1,
           filename: "new file",
         })
-      )
-    ).toStrictEqual(LOADED_STATE);
-  });
-
-  it("loadDataAction with trailing newlines", () => {
-    expect(
-      roiDataReducer(
-        EMPTY_STATE,
-        loadDataAction({
-          csvData: CSV_DATA + "\n\n\r\n",
-          channel: CHANNEL_1,
+      );
+      expect(
+        roiDataReducer(
+          state,
+          loadDataAction({
+            csvData: CSV_DATA_2,
+            channel: CHANNEL_2,
+            filename: "new file2",
+          })
+        )
+      ).toStrictEqual({
+        annotations: [],
+        channel1Dataset: {
+          chartData: [
+            [10, 9, 5, 4, 3],
+            [1.5, 1.5, 1.5, 1.5, 1.5],
+            [1.1, 2.2, 3.3, 2.2, 1.1],
+            [1, 2, 3, 4, 5],
+          ],
           filename: "new file",
-        })
-      )
-    ).toStrictEqual(LOADED_STATE);
+          originalTraceData: [
+            [10, 9, 5, 4, 3],
+            [1.5, 1.5, 1.5, 1.5, 1.5],
+            [1.1, 2.2, 3.3, 2.2, 1.1],
+            [1, 2, 3, 4, 5],
+          ],
+        },
+        channel2Dataset: {
+          chartData: [
+            [210, 29, 25, 24, 23],
+            [21.5, 21.5, 21.5, 21.5, 21.5],
+            [21.1, 22.2, 23.3, 22.2, 21.1],
+            [21, 22, 23, 24, 25],
+          ],
+          filename: "new file2",
+          originalTraceData: [
+            [210, 29, 25, 24, 23],
+            [21.5, 21.5, 21.5, 21.5, 21.5],
+            [21.1, 22.2, 23.3, 22.2, 21.1],
+            [21, 22, 23, 24, 25],
+          ],
+        },
+        chartFrameLabels: [1, 2, 3, 4, 5],
+        currentIndex: 0,
+        items: ["ROI-1", "ROI-2", "ROI-3", "ROI-4"],
+        scanStatus: ["?", "?", "?", "?"],
+        showSingleTrace: false,
+      });
+    });
   });
 
   it("resetStateAction", () => {
@@ -829,6 +1023,12 @@ describe("miscellaneous functions", () => {
   it("isChannel1Loaded", () => {
     expect(isChannel1Loaded(EMPTY_STATE)).toBe(false);
     expect(isChannel1Loaded(LOADED_STATE)).toBe(true);
+  });
+
+  it("isChannel2Loaded", () => {
+    expect(isChannel2Loaded(EMPTY_STATE)).toBe(false);
+    expect(isChannel2Loaded(LOADED_STATE)).toBe(false);
+    expect(isChannel2Loaded(DUAL_CHANNEL_LOADED_STATE)).toBe(true);
   });
 
   it("index out of bounds checking", () => {

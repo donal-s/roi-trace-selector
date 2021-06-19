@@ -267,6 +267,15 @@ function updateChartAlignment(
   return state;
 }
 
+function arraysEqual(array1: any[], array2: any[]) {
+  return (
+    array1.length == array2.length &&
+    array1.every((item, i: number) => {
+      return item === array2[i];
+    })
+  );
+}
+
 function loadData(state: RoiDataModelState, file: DataFile) {
   const {
     items,
@@ -285,12 +294,28 @@ function loadData(state: RoiDataModelState, file: DataFile) {
     ...state,
     items,
     currentIndex,
-    scanStatus,
     chartFrameLabels,
   };
   if (file.channel === CHANNEL_1) {
     result.channel1Dataset = dataset;
+    result.scanStatus = scanStatus;
+    if (
+      state.channel2Dataset &&
+      (!arraysEqual(items, state.items) ||
+        !arraysEqual(chartFrameLabels, state.chartFrameLabels))
+    ) {
+      result.channel2Dataset = undefined;
+    }
   } else {
+    if (!state.channel1Dataset) {
+      throw new Error("Channel 1 not loaded")
+    }
+    if (!arraysEqual(items, state.items)) {
+      throw new Error("Channel 2 item count mismatch")
+    }
+    if (!arraysEqual(chartFrameLabels, state.chartFrameLabels)) {
+      throw new Error("Channel 2 frame count mismatch")
+    }
     result.channel2Dataset = dataset;
   }
   return result;
@@ -318,8 +343,11 @@ export const useAppSelector: TypedUseSelectorHook<RoiDataModelState> = useSelect
 
 export default store;
 
-export const isChannel1Loaded = ({ items }: RoiDataModelState) =>
-  items.length > 0;
+export const isChannel1Loaded = ({ channel1Dataset }: RoiDataModelState) =>
+  !!channel1Dataset;
+
+export const isChannel2Loaded = ({ channel2Dataset }: RoiDataModelState) =>
+  !!channel2Dataset;
 
 function getSelectAllStatus({
   selectedCount,
