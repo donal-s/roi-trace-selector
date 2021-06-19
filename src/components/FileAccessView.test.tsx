@@ -9,7 +9,7 @@ import { CSV_DATA, setCsvData } from "../TestUtils";
 import { resetStateAction, selectAllItemsAction } from "../model/Actions";
 
 describe("component FileAccessView", () => {
-  let container:HTMLElement;
+  let container: HTMLElement;
   beforeEach(() => {
     // setup a DOM element as a render target
     container = document.createElement("div");
@@ -32,10 +32,9 @@ describe("component FileAccessView", () => {
 
   it("loadFile", async () => {
     renderComponent();
-    expect(roiDataStore.getState().chartData).toStrictEqual([]);
-    expect(roiDataStore.getState().channel1Filename).toBeNull();
+    expect(roiDataStore.getState().channel1Dataset).not.toBeDefined();
 
-    const file = new File([CSV_DATA],"testFile.csv", {
+    const file = new File([CSV_DATA], "testFile.csv", {
       type: "mimeType",
     });
     // Create a fake target as JS really doesn't like creating FileLists arbitrarily
@@ -47,14 +46,13 @@ describe("component FileAccessView", () => {
     // Not a fan of sleeps, but indirect async waiting doesn't work
     await sleep(2000);
     renderComponent();
-    expect(roiDataStore.getState().chartData).not.toStrictEqual([]);
-    expect(roiDataStore.getState().channel1Filename).not.toBeNull();
+    expect(roiDataStore.getState().channel1Dataset).toBeDefined();
     expect(saveFileButton().disabled).toBe(false);
   });
 
   describe("saveFile", () => {
-    let saveAsSpy:jest.SpyInstance;
-    let blobSpy:jest.SpyInstance;
+    let saveAsSpy: jest.SpyInstance;
+    let blobSpy: jest.SpyInstance;
     beforeEach(() => {
       saveAsSpy = jest.spyOn(FileSaver, "saveAs").mockImplementation(() => {});
       blobSpy = jest
@@ -74,8 +72,7 @@ describe("component FileAccessView", () => {
       setCsvData(CSV_DATA);
       roiDataStore.dispatch(selectAllItemsAction());
       renderComponent();
-      expect(roiDataStore.getState().chartData).not.toStrictEqual([]);
-      expect(roiDataStore.getState().channel1Filename).not.toBeNull();
+      expect(roiDataStore.getState().channel1Dataset).toBeDefined();
       expect(saveFileButton().disabled).toBe(false);
 
       Simulate.click(saveFileButton());
@@ -97,8 +94,10 @@ describe("component FileAccessView", () => {
     });
   });
 
-  const loadFileButton = ():HTMLButtonElement => container.querySelector("#csvFileInput")!;
-  const saveFileButton = ():HTMLButtonElement => container.querySelector("#saveChannel1")!;
+  const loadFileButton = (): HTMLButtonElement =>
+    container.querySelector("#csvFileInput")!;
+  const saveFileButton = (): HTMLButtonElement =>
+    container.querySelector("#saveChannel1")!;
 
   function renderComponent() {
     act(() => {
@@ -111,7 +110,7 @@ describe("component FileAccessView", () => {
     });
   }
 
-  function sleep(ms:number) {
+  function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 });

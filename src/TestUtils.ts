@@ -1,5 +1,6 @@
 import { loadDataAction } from "./model/Actions";
 import roiDataStore from "./model/RoiDataModel";
+import { CHANNEL_1 } from "./model/Types";
 
 // test constants
 
@@ -17,7 +18,8 @@ export function setCsvData(csvData: string) {
   roiDataStore.dispatch(
     loadDataAction({
       csvData: csvData,
-      channel1Filename: "Example data",
+      channel: CHANNEL_1,
+      filename: "Example data",
     })
   );
 }

@@ -4,10 +4,13 @@ import { act, Simulate } from "react-dom/test-utils";
 import ChartView from "./ChartView";
 import roiDataStore from "../model/RoiDataModel";
 import { Provider } from "react-redux";
-import {Chart} from "chart.js";
+import { Chart } from "chart.js";
 import { CSV_DATA, setCsvData } from "../TestUtils";
 import { mocked } from "ts-jest/utils";
-import { fullscreenModeAction, toggleCurrentItemSelectedAction } from "../model/Actions";
+import {
+  fullscreenModeAction,
+  toggleCurrentItemSelectedAction,
+} from "../model/Actions";
 
 const STATIC_CHART_DATA = {
   labels: [1, 2, 3, 4, 5],
@@ -50,31 +53,32 @@ describe("component ChartView", () => {
 
   it("initial empty chart", () => {
     renderComponent();
-    expect(mockChart).toHaveBeenCalledTimes(1);
-    expect(mockChart.mock.instances[0].data).toBeUndefined();
+    expect(mockChart).not.toHaveBeenCalled();
   });
 
   describe("data tests", () => {
-    let chartInstance:Chart;
+    let chartInstance: Chart;
     const visible = [true, true, true, true];
 
     beforeEach(() => {
+      setCsvData(CSV_DATA);
       renderComponent();
+
       chartInstance = mockChart.mock.instances[0] as Chart;
-      chartInstance.show = (index:number) => (visible[index] = true);
-      chartInstance.hide = (index:number) => (visible[index] = false);
-      chartInstance.setDatasetVisibility = (index:number, state:boolean) =>
+      chartInstance.show = (index: number) => (visible[index] = true);
+      chartInstance.hide = (index: number) => (visible[index] = false);
+      chartInstance.setDatasetVisibility = (index: number, state: boolean) =>
         (visible[index] = state);
 
       setCsvData(CSV_DATA);
-      renderComponent(); 
+      renderComponent();
     });
 
-    function expectAllTracesVisible() { 
+    function expectAllTracesVisible() {
       expect(visible).toStrictEqual([true, true, true, true]);
     }
 
-    function expectSelectedTraceIndex(selectedIndex:number) {
+    function expectSelectedTraceIndex(selectedIndex: number) {
       expect(chartInstance.data).toMatchObject({
         datasets: [
           { borderWidth: selectedIndex === 0 ? 2 : 1 },
@@ -228,7 +232,8 @@ describe("component ChartView", () => {
     });
   });
 
-  const chartCanvas = () :HTMLCanvasElement => container.querySelector("#channel1Chart")!;
+  const chartCanvas = (): HTMLCanvasElement =>
+    container.querySelector("#channel1Chart")!;
 
   function renderComponent() {
     act(() => {

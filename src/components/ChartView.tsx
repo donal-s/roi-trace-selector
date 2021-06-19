@@ -59,7 +59,7 @@ export default function ChartView() {
   );
   const dispatch = useAppDispatch();
 
-  const chartData = useAppSelector((state) => state.chartData);
+  const chartData = useAppSelector((state) => state.channel1Dataset?.chartData);
   const items = useAppSelector((state) => state.items);
   const currentIndex = useAppSelector((state) => state.currentIndex);
   const scanStatus = useAppSelector((state) => state.scanStatus);
@@ -94,7 +94,11 @@ export default function ChartView() {
     function getAnnotations() {
       const result: Record<string, any> = {};
       annotations.forEach((annotation, index) => {
-        if (!editAnnotation || editAnnotation.index !== index) {
+        if (
+          showSingleTrace ||
+          !editAnnotation ||
+          editAnnotation.index !== index
+        ) {
           const lineAnnotation: LineAnnotationType = {
             type: "line",
             drawTime: "beforeDatasetsDraw",
@@ -113,7 +117,7 @@ export default function ChartView() {
           result[`line-${index}`] = lineAnnotation;
         }
       });
-      if (editAnnotation) {
+      if (editAnnotation && !showSingleTrace) {
         const lineAnnotation: LineAnnotationType = {
           type: "line",
           drawTime: "beforeDatasetsDraw",
@@ -153,6 +157,7 @@ export default function ChartView() {
           scales: { x: { type: "linear" } },
         },
       });
+
       return chart;
     }
 
@@ -161,7 +166,7 @@ export default function ChartView() {
         labels: chartFrameLabels,
         datasets: getChartDatasets(),
       };
-      chartData.forEach((data, index) => {
+      chartData!.forEach((data, index) => {
         let isCurrentTrace = currentIndex === index;
         channel1Chart.current!.setDatasetVisibility(
           index,
@@ -172,7 +177,7 @@ export default function ChartView() {
     }
 
     function getChartDatasets() {
-      return chartData.map((data, index) => {
+      return chartData!.map((data, index) => {
         let isCurrentTrace = currentIndex === index;
         return {
           data: data,
@@ -192,63 +197,71 @@ export default function ChartView() {
     const annotationsUpdated =
       annotations !== prevAnnotations || editAnnotation !== prevEditAnnotation;
 
-    if (channel1Chart.current === null) {
-      const myChartRef = chartDOMRef.current!.getContext("2d");
-      channel1Chart.current = createChart(myChartRef!);
-    } else if (chartDataUpdated) {
-      updateChart();
-    } else if (showSingleTraceUpdated) {
-      chartData.forEach((data, index) => {
-        channel1Chart.current!.setDatasetVisibility(
-          index,
-          !showSingleTrace || currentIndex === index
-        );
-      });
-      channel1Chart.current.update();
-    } else {
-      const chartDatasets = channel1Chart.current.data.datasets;
-      if (scanStatusUpdated) {
-        scanStatus.forEach((newValue, index) => {
-          if (!prevScanStatus || newValue !== prevScanStatus[index]) {
-            chartDatasets[index].borderColor = calcTraceColour(
-              scanStatus[index],
-              currentIndex === index
+    if (chartData) {
+      if (channel1Chart.current === null) {
+        const myChartRef = chartDOMRef.current!.getContext("2d");
+        channel1Chart.current = createChart(myChartRef!);
+      } else if (chartDataUpdated) {
+        updateChart();
+      } else if (showSingleTraceUpdated) {
+        chartData!.forEach((data, index) => {
+          channel1Chart.current!.setDatasetVisibility(
+            index,
+            !showSingleTrace || currentIndex === index
+          );
+        });
+        if (channel1Chart.current?.options?.plugins?.annotation) {
+          channel1Chart.current!.options!.plugins!.annotation!.annotations = getAnnotations();
+        }
+        channel1Chart.current.update();
+      } else {
+        const chartDatasets = channel1Chart.current.data.datasets;
+        if (scanStatusUpdated) {
+          scanStatus.forEach((newValue, index) => {
+            if (!prevScanStatus || newValue !== prevScanStatus[index]) {
+              chartDatasets[index].borderColor = calcTraceColour(
+                scanStatus[index],
+                currentIndex === index
+              );
+            }
+          });
+        }
+
+        if (
+          annotationsUpdated &&
+          channel1Chart.current?.options?.plugins?.annotation
+        ) {
+          channel1Chart.current!.options!.plugins!.annotation!.annotations = getAnnotations();
+        }
+
+        if (currentIndexUpdated) {
+          chartDatasets[currentIndex].borderWidth = CURRENT_TRACE_WIDTH;
+          chartDatasets[currentIndex].borderColor = calcTraceColour(
+            scanStatus[currentIndex],
+            true
+          );
+
+          if (prevCurrentIndex !== undefined) {
+            chartDatasets[prevCurrentIndex].borderWidth = DEFAULT_TRACE_WIDTH;
+            chartDatasets[prevCurrentIndex].borderColor = calcTraceColour(
+              scanStatus[prevCurrentIndex],
+              false
             );
           }
-        });
-      }
 
-      if (
-        annotationsUpdated &&
-        channel1Chart.current?.options?.plugins?.annotation
-      ) {
-        channel1Chart.current!.options!.plugins!.annotation!.annotations = getAnnotations();
-      }
-
-      if (currentIndexUpdated) {
-        chartDatasets[currentIndex].borderWidth = CURRENT_TRACE_WIDTH;
-        chartDatasets[currentIndex].borderColor = calcTraceColour(
-          scanStatus[currentIndex],
-          true
-        );
-
-        if (prevCurrentIndex !== undefined) {
-          chartDatasets[prevCurrentIndex].borderWidth = DEFAULT_TRACE_WIDTH;
-          chartDatasets[prevCurrentIndex].borderColor = calcTraceColour(
-            scanStatus[prevCurrentIndex],
-            false
-          );
-        }
-
-        if (showSingleTrace) {
-          channel1Chart.current.setDatasetVisibility(currentIndex, true);
-          if (prevCurrentIndex !== undefined) {
-            channel1Chart.current.setDatasetVisibility(prevCurrentIndex, false);
+          if (showSingleTrace) {
+            channel1Chart.current.setDatasetVisibility(currentIndex, true);
+            if (prevCurrentIndex !== undefined) {
+              channel1Chart.current.setDatasetVisibility(
+                prevCurrentIndex,
+                false
+              );
+            }
           }
         }
-      }
 
-      channel1Chart.current.update();
+        channel1Chart.current.update();
+      }
     }
 
     prevChartDataRef.current = chartData;

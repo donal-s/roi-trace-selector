@@ -8,6 +8,7 @@ import {
   SelectedItemCounts,
   Annotation,
   EditAnnotation,
+  CHANNEL_1,
 } from "./Types";
 import { parseCsvData } from "./CsvHandling";
 import { configureStore, createReducer } from "@reduxjs/toolkit";
@@ -28,27 +29,29 @@ import {
   updateEditAnnotationAction,
 } from "./Actions";
 
+export type RoiDataset = {
+  filename: string;
+  chartData: number[][];
+  originalTraceData: number[][];
+};
+
 export type RoiDataModelState = {
-  channel1Filename: string | null;
+  channel1Dataset?: RoiDataset;
+  channel2Dataset?: RoiDataset;
   items: string[];
   scanStatus: ScanStatus[];
   currentIndex: number;
   chartFrameLabels: number[];
-  chartData: number[][];
-  originalTraceData: number[][];
   showSingleTrace: boolean;
   annotations: Annotation[];
   editAnnotation?: EditAnnotation;
 };
 
 const initialState: RoiDataModelState = {
-  channel1Filename: null,
   items: [],
   scanStatus: [],
   currentIndex: -1,
   chartFrameLabels: [],
-  chartData: [],
-  originalTraceData: [],
   showSingleTrace: false,
   annotations: [],
 };
@@ -178,6 +181,7 @@ function selectAllItems(state: RoiDataModelState) {
 function updateChartAlignment(
   state: RoiDataModelState,
   {
+    channel,
     enableYMaxAlignment,
     alignToYMax,
     yMaxValue,
@@ -204,15 +208,21 @@ function updateChartAlignment(
 
   let newChartData = [];
 
-  for (let roiIndex = 0; roiIndex < roiCount; roiIndex++) {
-    let inputRoi = state.originalTraceData[roiIndex];
+  const dataset =
+    channel === CHANNEL_1 ? state.channel1Dataset : state.channel2Dataset;
+  if (!dataset) {
+    return state;
+  }
 
-    let outputRoi = [...state.chartData[roiIndex]];
+  for (let roiIndex = 0; roiIndex < roiCount; roiIndex++) {
+    let inputRoi = dataset.originalTraceData[roiIndex];
+
+    let outputRoi = [...dataset.chartData[roiIndex]];
 
     if (enableYMaxAlignment) {
       let rawYMaxValue;
       if (alignToYMax) {
-        rawYMaxValue = state.originalTraceData[roiIndex][0];
+        rawYMaxValue = dataset.originalTraceData[roiIndex][0];
         for (let frameIndex = 1; frameIndex < frameCount; frameIndex++) {
           rawYMaxValue = Math.max(rawYMaxValue, inputRoi[frameIndex]);
         }
@@ -224,12 +234,12 @@ function updateChartAlignment(
         let yScale = 1;
         let rawYMinValue;
         if (alignToYMin) {
-          rawYMinValue = state.originalTraceData[roiIndex][0];
+          rawYMinValue = dataset.originalTraceData[roiIndex][0];
           for (let frameIndex = 1; frameIndex < frameCount; frameIndex++) {
             rawYMinValue = Math.min(rawYMinValue, inputRoi[frameIndex]);
           }
         } else {
-          rawYMinValue = state.originalTraceData[roiIndex][yMinFrame - 1];
+          rawYMinValue = dataset.originalTraceData[roiIndex][yMinFrame - 1];
         }
         if (rawYMaxValue === rawYMinValue) {
           yScale = 1;
@@ -253,12 +263,37 @@ function updateChartAlignment(
     newChartData.push(outputRoi);
   }
 
-  return { ...state, chartData: newChartData };
+  dataset.chartData = newChartData;
+  return state;
 }
 
 function loadData(state: RoiDataModelState, file: DataFile) {
-  const newCsvState = parseCsvData(file.csvData);
-  return { ...state, channel1Filename: file.channel1Filename, ...newCsvState };
+  const {
+    items,
+    currentIndex,
+    scanStatus,
+    chartFrameLabels,
+    chartData,
+    originalTraceData,
+  } = parseCsvData(file.csvData);
+  const dataset: RoiDataset = {
+    filename: file.filename,
+    chartData,
+    originalTraceData,
+  };
+  const result = {
+    ...state,
+    items,
+    currentIndex,
+    scanStatus,
+    chartFrameLabels,
+  };
+  if (file.channel === CHANNEL_1) {
+    result.channel1Dataset = dataset;
+  } else {
+    result.channel2Dataset = dataset;
+  }
+  return result;
 }
 
 function updateAnnotations(

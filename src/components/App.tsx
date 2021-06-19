@@ -24,7 +24,7 @@ export default function App() {
     (state) => state.editAnnotation !== undefined
   );
   const showSingleTrace = useAppSelector((state) => state.showSingleTrace);
-  const channel1Filename = useAppSelector((state) => state.channel1Filename);
+  const channel1Filename = useAppSelector((state) => state.channel1Dataset?.filename);
 
   useEffect(() => {
     function handleKeyEvent(event: KeyboardEvent) {

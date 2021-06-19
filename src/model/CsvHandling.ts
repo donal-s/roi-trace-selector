@@ -1,14 +1,21 @@
 //@ts-ignore
 import sampleRoiTraces from "./sampleRoiTraces.csv";
 import { saveAs } from "file-saver";
-import { ScanStatus, SCANSTATUS_SELECTED, SCANSTATUS_UNSCANNED } from "./Types";
+import {
+  Channel,
+  CHANNEL_1,
+  ScanStatus,
+  SCANSTATUS_SELECTED,
+  SCANSTATUS_UNSCANNED,
+} from "./Types";
 import { AppDispatch, RoiDataModelState } from "./RoiDataModel";
 import { loadDataAction } from "./Actions";
 
 export function loadTestData() {
   return loadDataAction({
     csvData: sampleRoiTraces,
-    channel1Filename: "Example data",
+    channel: CHANNEL_1,
+    filename: "Example data",
   });
 }
 
@@ -21,7 +28,8 @@ export function loadFile(files: FileList | File[]) {
           dispatch(
             loadDataAction({
               csvData: csv as string,
-              channel1Filename: file.name,
+              channel: CHANNEL_1,
+              filename: file.name,
             })
           );
         })
@@ -60,10 +68,12 @@ export function parseCsvData(csv: string) {
   });
 
   lines = transpose(lines);
-  
+
   const frameLabelsText = lines.shift()!;
   frameLabelsText && frameLabelsText.shift();
-  const chartFrameLabels = frameLabelsText ? frameLabelsText.map((s) => Number(s.trim())) : [];
+  const chartFrameLabels = frameLabelsText
+    ? frameLabelsText.map((s) => Number(s.trim()))
+    : [];
 
   let chartData: number[][] = [];
   let originalTraceData: number[][] = [];
@@ -93,9 +103,9 @@ export function parseCsvData(csv: string) {
   };
 }
 
-export function saveFile(model: RoiDataModelState) {
-  let data = getSelectedSubsetCsvData(model);
-  let filename = getSelectedSubsetFilename(model);
+export function saveFile(model: RoiDataModelState, channel:Channel) {
+  let data = getSelectedSubsetCsvData(model, channel);
+  let filename = getSelectedSubsetFilename(model, channel);
   let blob = new Blob([data], {
     type: "text/csv",
     endings: "native",
@@ -135,18 +145,25 @@ function transpose(a: string[][]) {
   return t;
 }
 
-function getSelectedSubsetFilename({ channel1Filename }: RoiDataModelState) {
-  if (!channel1Filename) {
+function getSelectedSubsetFilename(model: RoiDataModelState, channel: Channel) {
+  const filename = channel === CHANNEL_1 ? model.channel1Dataset?.filename : model.channel2Dataset?.filename;
+  if (!filename) {
     throw new Error("No data file loaded");
   }
 
-  return channel1Filename + "_output.csv";
+  return filename + "_output.csv";
 }
 
-function getSelectedSubsetCsvData(model: RoiDataModelState) {
+function getSelectedSubsetCsvData(model: RoiDataModelState, channel: Channel) {
   if (model.items.length === 0) {
     throw new Error("No data file loaded");
   }
+
+  const chartData = channel === CHANNEL_1 ? model.channel1Dataset?.chartData : model.channel2Dataset?.chartData;
+  if (!chartData) {
+    throw new Error("No channel data file loaded");
+  }
+
 
   let result = "";
   let totalTraces = model.items.length;
@@ -163,7 +180,7 @@ function getSelectedSubsetCsvData(model: RoiDataModelState) {
     result += model.chartFrameLabels[f];
     for (let i = 0; i < totalTraces; i++) {
       if (model.scanStatus[i] === SCANSTATUS_SELECTED) {
-        result += "," + model.chartData[i][f];
+        result += "," + chartData[i][f];
       }
     }
     if (f < totalFrames - 1) {

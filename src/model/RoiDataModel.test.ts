@@ -14,11 +14,13 @@ import { Action } from "redux";
 import {
   AXIS_H,
   AXIS_V,
+  CHANNEL_1,
   ChartAlignment,
   ScanStatus,
   SCANSTATUS_SELECTED,
   SCANSTATUS_UNSCANNED,
   SCANSTATUS_UNSELECTED,
+  Channel,
 } from "./Types";
 import {
   fullscreenModeAction,
@@ -40,13 +42,10 @@ import {
 } from "./Actions";
 
 const EMPTY_STATE: RoiDataModelState = {
-  channel1Filename: null,
   items: [],
   scanStatus: [],
   currentIndex: -1,
   chartFrameLabels: [],
-  chartData: [],
-  originalTraceData: [],
   showSingleTrace: false,
   annotations: [],
 };
@@ -54,7 +53,8 @@ const LOADED_STATE = roiDataReducer(
   EMPTY_STATE,
   loadDataAction({
     csvData: CSV_DATA,
-    channel1Filename: "new file",
+    channel: CHANNEL_1,
+    filename: "new file",
   })
 );
 
@@ -62,35 +62,35 @@ describe("roiDataReducer", () => {
   // Sanity check to verify test data
   it("prebuilt states", () => {
     expect(EMPTY_STATE).toStrictEqual({
-      channel1Filename: null,
       items: [],
       scanStatus: [],
       currentIndex: -1,
       chartFrameLabels: [],
-      chartData: [],
-      originalTraceData: [],
       showSingleTrace: false,
       annotations: [],
     });
 
     expect(LOADED_STATE).toStrictEqual({
-      channel1Filename: "new file",
+      channel1Dataset: {
+        chartData: [
+          [10, 9, 5, 4, 3],
+          [1.5, 1.5, 1.5, 1.5, 1.5],
+          [1.1, 2.2, 3.3, 2.2, 1.1],
+          [1, 2, 3, 4, 5],
+        ],
+        originalTraceData: [
+          [10, 9, 5, 4, 3],
+          [1.5, 1.5, 1.5, 1.5, 1.5],
+          [1.1, 2.2, 3.3, 2.2, 1.1],
+          [1, 2, 3, 4, 5],
+        ],
+        filename: "new file",
+      },
       items: ["ROI-1", "ROI-2", "ROI-3", "ROI-4"],
       scanStatus: ["?", "?", "?", "?"],
       currentIndex: 0,
       chartFrameLabels: [1, 2, 3, 4, 5],
-      chartData: [
-        [10, 9, 5, 4, 3],
-        [1.5, 1.5, 1.5, 1.5, 1.5],
-        [1.1, 2.2, 3.3, 2.2, 1.1],
-        [1, 2, 3, 4, 5],
-      ],
-      originalTraceData: [
-        [10, 9, 5, 4, 3],
-        [1.5, 1.5, 1.5, 1.5, 1.5],
-        [1.1, 2.2, 3.3, 2.2, 1.1],
-        [1, 2, 3, 4, 5],
-      ],
+
       showSingleTrace: false,
       annotations: [],
     });
@@ -381,7 +381,17 @@ describe("roiDataReducer", () => {
 
   it("updateChartAlignmentAction", () => {
     // Alignment disabled
-    let params = getAlignmentParams(false, false, 0, 0, false, false, 0, 0);
+    let params = getAlignmentParams(
+      CHANNEL_1,
+      false,
+      false,
+      0,
+      0,
+      false,
+      false,
+      0,
+      0
+    );
 
     // Empty state - no effect
     expect(
@@ -394,99 +404,194 @@ describe("roiDataReducer", () => {
     ).toStrictEqual(LOADED_STATE);
 
     // Align max frame 1, value 5
-    params = getAlignmentParams(true, false, 5, 1, false, false, 0, 0);
+    params = getAlignmentParams(
+      CHANNEL_1,
+      true,
+      false,
+      5,
+      1,
+      false,
+      false,
+      0,
+      0
+    );
     expect(
       roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
     ).toStrictEqual({
       ...LOADED_STATE,
-      chartData: [
-        [5, 4, 0, -1, -2],
-        [5, 5, 5, 5, 5],
-        [5, 6.1, 7.199999999999999, 6.1, 5],
-        [5, 6, 7, 8, 9],
-      ],
+      channel1Dataset: {
+        ...LOADED_STATE.channel1Dataset,
+        chartData: [
+          [5, 4, 0, -1, -2],
+          [5, 5, 5, 5, 5],
+          [5, 6.1, 7.199999999999999, 6.1, 5],
+          [5, 6, 7, 8, 9],
+        ],
+      },
     });
 
     // Align max frame 2, value 5
-    params = getAlignmentParams(true, false, 5, 2, false, false, 0, 0);
+    params = getAlignmentParams(
+      CHANNEL_1,
+      true,
+      false,
+      5,
+      2,
+      false,
+      false,
+      0,
+      0
+    );
     expect(
       roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
     ).toStrictEqual({
       ...LOADED_STATE,
-      chartData: [
-        [6, 5, 1, 0, -1],
-        [5, 5, 5, 5, 5],
-        [3.9, 5, 6.1, 5, 3.9],
-        [4, 5, 6, 7, 8],
-      ],
+      channel1Dataset: {
+        ...LOADED_STATE.channel1Dataset,
+        chartData: [
+          [6, 5, 1, 0, -1],
+          [5, 5, 5, 5, 5],
+          [3.9, 5, 6.1, 5, 3.9],
+          [4, 5, 6, 7, 8],
+        ],
+      },
     });
 
     // Align max, max frame, value 5
-    params = getAlignmentParams(true, true, 5, 0, false, false, 0, 0);
+    params = getAlignmentParams(
+      CHANNEL_1,
+      true,
+      true,
+      5,
+      0,
+      false,
+      false,
+      0,
+      0
+    );
     expect(
       roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
     ).toStrictEqual({
       ...LOADED_STATE,
-      chartData: [
-        [5, 4, 0, -1, -2],
-        [5, 5, 5, 5, 5],
-        [
-          2.8000000000000003,
-          3.9000000000000004,
-          5,
-          3.9000000000000004,
-          2.8000000000000003,
+      channel1Dataset: {
+        ...LOADED_STATE.channel1Dataset,
+        chartData: [
+          [5, 4, 0, -1, -2],
+          [5, 5, 5, 5, 5],
+          [
+            2.8000000000000003,
+            3.9000000000000004,
+            5,
+            3.9000000000000004,
+            2.8000000000000003,
+          ],
+          [1, 2, 3, 4, 5],
         ],
-        [1, 2, 3, 4, 5],
-      ],
+      },
     });
 
     // Align max frame 1, value 5, min frame 5 value 1
-    params = getAlignmentParams(true, false, 5, 1, true, false, 1, 5);
+    params = getAlignmentParams(
+      CHANNEL_1,
+      true,
+      false,
+      5,
+      1,
+      true,
+      false,
+      1,
+      5
+    );
     expect(
       roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
     ).toStrictEqual({
       ...LOADED_STATE,
-      chartData: [
-        [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
-        [5, 5, 5, 5, 5],
-        [5, 6.1, 7.199999999999999, 6.1, 5],
-        [5, 4, 3, 2, 1],
-      ],
+      channel1Dataset: {
+        ...LOADED_STATE.channel1Dataset,
+        chartData: [
+          [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
+          [5, 5, 5, 5, 5],
+          [5, 6.1, 7.199999999999999, 6.1, 5],
+          [5, 4, 3, 2, 1],
+        ],
+      },
     });
 
     // Align max frame max, value 5, min frame min value 1
-    params = getAlignmentParams(true, true, 5, 1, true, true, 1, 5);
+    params = getAlignmentParams(CHANNEL_1, true, true, 5, 1, true, true, 1, 5);
     expect(
       roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
     ).toStrictEqual({
       ...LOADED_STATE,
-      chartData: [
-        [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
-        [5, 5, 5, 5, 5],
-        [1, 3.0000000000000004, 5, 3.0000000000000004, 1],
-        [1, 2, 3, 4, 5],
-      ],
+      channel1Dataset: {
+        ...LOADED_STATE.channel1Dataset,
+        chartData: [
+          [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
+          [5, 5, 5, 5, 5],
+          [1, 3.0000000000000004, 5, 3.0000000000000004, 1],
+          [1, 2, 3, 4, 5],
+        ],
+      },
     });
 
     // Max frame out of bounds
-    params = getAlignmentParams(true, false, 0, 0, false, false, 0, 0);
+    params = getAlignmentParams(
+      CHANNEL_1,
+      true,
+      false,
+      0,
+      0,
+      false,
+      false,
+      0,
+      0
+    );
     expect(() =>
       roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
     ).toThrow("Invalid frame index: 0, 0");
 
-    params = getAlignmentParams(true, false, 0, 6, false, false, 0, 0);
+    params = getAlignmentParams(
+      CHANNEL_1,
+      true,
+      false,
+      0,
+      6,
+      false,
+      false,
+      0,
+      0
+    );
     expect(() =>
       roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
     ).toThrow("Invalid frame index: 0, 6");
 
     // Min frame out of bounds
-    params = getAlignmentParams(true, false, 0, 1, true, false, 0, 0);
+    params = getAlignmentParams(
+      CHANNEL_1,
+      true,
+      false,
+      0,
+      1,
+      true,
+      false,
+      0,
+      0
+    );
     expect(() =>
       roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
     ).toThrow("Invalid frame index: 0, 1");
 
-    params = getAlignmentParams(true, false, 0, 1, true, false, 0, 6);
+    params = getAlignmentParams(
+      CHANNEL_1,
+      true,
+      false,
+      0,
+      1,
+      true,
+      false,
+      0,
+      6
+    );
     expect(() =>
       roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
     ).toThrow("Invalid frame index: 6, 1");
@@ -496,16 +601,13 @@ describe("roiDataReducer", () => {
     expect(
       roiDataReducer(
         EMPTY_STATE,
-        loadDataAction({ csvData: CSV_DATA, channel1Filename: "new file" })
+        loadDataAction({
+          csvData: CSV_DATA,
+          channel: CHANNEL_1,
+          filename: "new file",
+        })
       )
     ).toStrictEqual(LOADED_STATE);
-
-    expect(
-      roiDataReducer(
-        LOADED_STATE,
-        loadDataAction({ csvData: "", channel1Filename: null })
-      )
-    ).toStrictEqual(EMPTY_STATE);
   });
 
   it("loadDataAction with trailing newlines", () => {
@@ -514,17 +616,11 @@ describe("roiDataReducer", () => {
         EMPTY_STATE,
         loadDataAction({
           csvData: CSV_DATA + "\n\n\r\n",
-          channel1Filename: "new file",
+          channel: CHANNEL_1,
+          filename: "new file",
         })
       )
     ).toStrictEqual(LOADED_STATE);
-
-    expect(
-      roiDataReducer(
-        LOADED_STATE,
-        loadDataAction({ csvData: "\n\n\r\n", channel1Filename: null })
-      )
-    ).toStrictEqual(EMPTY_STATE);
   });
 
   it("resetStateAction", () => {
@@ -540,6 +636,7 @@ describe("roiDataReducer", () => {
   });
 
   function getAlignmentParams(
+    channel: Channel,
     enableYMaxAlignment: boolean,
     alignToYMax: boolean,
     yMaxValue: number,
@@ -550,6 +647,7 @@ describe("roiDataReducer", () => {
     yMinFrame: number
   ): ChartAlignment {
     return {
+      channel,
       enableYMaxAlignment,
       alignToYMax,
       yMaxValue,

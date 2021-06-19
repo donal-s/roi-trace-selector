@@ -6,6 +6,7 @@ import {
   useAppSelector,
 } from "../model/RoiDataModel";
 import { loadFile, saveFile } from "../model/CsvHandling";
+import { CHANNEL_1 } from "../model/Types";
 
 export default function FileAccessView() {
   const dispatch = useAppDispatch();
@@ -30,7 +31,7 @@ export default function FileAccessView() {
         type="button"
         id="saveChannel1"
         onClick={(event) => {
-          saveFile(model as RoiDataModelState);
+          saveFile(model as RoiDataModelState, CHANNEL_1);
           event.currentTarget.blur();
         }}
         disabled={!channel1Loaded}

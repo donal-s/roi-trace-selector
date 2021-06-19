@@ -7,6 +7,7 @@ import TraceAlignmentView from "./TraceAlignmentView";
 import roiDataStore from "../model/RoiDataModel";
 import { Provider } from "react-redux";
 import { CSV_DATA, setCsvData } from "../TestUtils";
+import { Channel, CHANNEL_1 } from "../model/Types";
 
 describe("component TraceAlignmentView", () => {
   let container: HTMLElement;
@@ -26,7 +27,7 @@ describe("component TraceAlignmentView", () => {
     renderComponent();
     checkEnabled(false, false, false, false, false, false, false, false);
     checkValues(false, false, "200", "1", false, false, "0", "0");
-    checkAlignedChartData([]);
+    checkAlignedChartData(undefined, CHANNEL_1);
   });
 
   it("loaded state", () => {
@@ -34,12 +35,15 @@ describe("component TraceAlignmentView", () => {
     renderComponent();
     checkEnabled(true, false, false, false, false, false, false, false);
     checkValues(false, false, "200", "1", false, false, "0", "5");
-    checkAlignedChartData([
-      [10, 9, 5, 4, 3],
-      [1.5, 1.5, 1.5, 1.5, 1.5],
-      [1.1, 2.2, 3.3, 2.2, 1.1],
-      [1, 2, 3, 4, 5],
-    ]);
+    checkAlignedChartData(
+      [
+        [10, 9, 5, 4, 3],
+        [1.5, 1.5, 1.5, 1.5, 1.5],
+        [1.1, 2.2, 3.3, 2.2, 1.1],
+        [1, 2, 3, 4, 5],
+      ],
+      CHANNEL_1
+    );
   });
 
   it("modify settings", () => {
@@ -47,12 +51,15 @@ describe("component TraceAlignmentView", () => {
     renderComponent();
     checkEnabled(true, false, false, false, false, false, false, false);
     checkValues(false, false, "200", "1", false, false, "0", "5");
-    checkAlignedChartData([
-      [10, 9, 5, 4, 3],
-      [1.5, 1.5, 1.5, 1.5, 1.5],
-      [1.1, 2.2, 3.3, 2.2, 1.1],
-      [1, 2, 3, 4, 5],
-    ]);
+    checkAlignedChartData(
+      [
+        [10, 9, 5, 4, 3],
+        [1.5, 1.5, 1.5, 1.5, 1.5],
+        [1.1, 2.2, 3.3, 2.2, 1.1],
+        [1, 2, 3, 4, 5],
+      ],
+      CHANNEL_1
+    );
 
     // Align max frame 1, value 5
     setCheckbox(enableYMaxAlignmentField(), true);
@@ -64,42 +71,51 @@ describe("component TraceAlignmentView", () => {
     renderComponent();
     checkEnabled(true, true, true, true, true, false, false, false);
     checkValues(true, false, "5", "1", false, false, "0", "5");
-    checkAlignedChartData([
-      [5, 4, 0, -1, -2],
-      [5, 5, 5, 5, 5],
-      [5, 6.1, 7.199999999999999, 6.1, 5],
-      [5, 6, 7, 8, 9],
-    ]);
+    checkAlignedChartData(
+      [
+        [5, 4, 0, -1, -2],
+        [5, 5, 5, 5, 5],
+        [5, 6.1, 7.199999999999999, 6.1, 5],
+        [5, 6, 7, 8, 9],
+      ],
+      CHANNEL_1
+    );
 
     // Align max frame 2, value 5
     setTextField(fluorescenceMaxFrameField(), "2");
     renderComponent();
     checkEnabled(true, true, true, true, true, false, false, false);
     checkValues(true, false, "5", "2", false, false, "0", "5");
-    checkAlignedChartData([
-      [6, 5, 1, 0, -1],
-      [5, 5, 5, 5, 5],
-      [3.9, 5, 6.1, 5, 3.9],
-      [4, 5, 6, 7, 8],
-    ]);
+    checkAlignedChartData(
+      [
+        [6, 5, 1, 0, -1],
+        [5, 5, 5, 5, 5],
+        [3.9, 5, 6.1, 5, 3.9],
+        [4, 5, 6, 7, 8],
+      ],
+      CHANNEL_1
+    );
 
     // Align max, max frame, value 5
     setCheckbox(alignToYMaxField(), true);
     renderComponent();
     checkEnabled(true, true, true, false, true, false, false, false);
     checkValues(true, true, "5", "2", false, false, "0", "5");
-    checkAlignedChartData([
-      [5, 4, 0, -1, -2],
-      [5, 5, 5, 5, 5],
+    checkAlignedChartData(
       [
-        2.8000000000000003,
-        3.9000000000000004,
-        5,
-        3.9000000000000004,
-        2.8000000000000003,
+        [5, 4, 0, -1, -2],
+        [5, 5, 5, 5, 5],
+        [
+          2.8000000000000003,
+          3.9000000000000004,
+          5,
+          3.9000000000000004,
+          2.8000000000000003,
+        ],
+        [1, 2, 3, 4, 5],
       ],
-      [1, 2, 3, 4, 5],
-    ]);
+      CHANNEL_1
+    );
 
     // Align max frame 1, value 5, min frame 5 value 1
     setCheckbox(alignToYMaxField(), false);
@@ -109,12 +125,15 @@ describe("component TraceAlignmentView", () => {
     renderComponent();
     checkEnabled(true, true, true, true, true, true, true, true);
     checkValues(true, false, "5", "1", true, false, "1", "5");
-    checkAlignedChartData([
-      [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
-      [5, 5, 5, 5, 5],
-      [5, 6.1, 7.199999999999999, 6.1, 5],
-      [5, 4, 3, 2, 1],
-    ]);
+    checkAlignedChartData(
+      [
+        [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
+        [5, 5, 5, 5, 5],
+        [5, 6.1, 7.199999999999999, 6.1, 5],
+        [5, 4, 3, 2, 1],
+      ],
+      CHANNEL_1
+    );
 
     // Align max frame max, value 5, min frame min value 1
     setCheckbox(alignToYMaxField(), true);
@@ -122,12 +141,15 @@ describe("component TraceAlignmentView", () => {
     renderComponent();
     checkEnabled(true, true, true, false, true, true, true, false);
     checkValues(true, true, "5", "1", true, true, "1", "5");
-    checkAlignedChartData([
-      [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
-      [5, 5, 5, 5, 5],
-      [1, 3.0000000000000004, 5, 3.0000000000000004, 1],
-      [1, 2, 3, 4, 5],
-    ]);
+    checkAlignedChartData(
+      [
+        [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
+        [5, 5, 5, 5, 5],
+        [1, 3.0000000000000004, 5, 3.0000000000000004, 1],
+        [1, 2, 3, 4, 5],
+      ],
+      CHANNEL_1
+    );
   });
 
   it("input blur", () => {
@@ -248,8 +270,15 @@ describe("component TraceAlignmentView", () => {
     expect(fluorescenceMinFrameField().value).toBe(fluorescenceMinFrame);
   }
 
-  function checkAlignedChartData(expectedData: number[][]) {
-    expect(roiDataStore.getState().chartData).toStrictEqual(expectedData);
+  function checkAlignedChartData(
+    expectedData: number[][] | undefined,
+    channel: Channel
+  ) {
+    const dataset =
+      channel === CHANNEL_1
+        ? roiDataStore.getState().channel1Dataset
+        : roiDataStore.getState().channel2Dataset;
+    expect(dataset?.chartData).toStrictEqual(expectedData);
   }
 
   function renderComponent() {

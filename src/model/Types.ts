@@ -14,6 +14,7 @@ export type SelectedItemCounts = {
 };
 
 export type ChartAlignment = {
+  channel: Channel;
   enableYMaxAlignment: boolean;
   alignToYMax: boolean;
   yMaxValue: number;
@@ -24,9 +25,14 @@ export type ChartAlignment = {
   yMinFrame: number;
 };
 
+export const CHANNEL_1 = "1";
+export const CHANNEL_2 = "2";
+export type Channel = typeof CHANNEL_1 | typeof CHANNEL_2;
+
 export type DataFile = {
   csvData: string;
-  channel1Filename: string | null;
+  channel: Channel;
+  filename: string;
 };
 
 export const AXIS_H = "h";

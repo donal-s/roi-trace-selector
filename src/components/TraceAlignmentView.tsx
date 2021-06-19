@@ -6,6 +6,7 @@ import {
   useAppSelector,
 } from "../model/RoiDataModel";
 import { updateChartAlignmentAction } from "../model/Actions";
+import { CHANNEL_1 } from "../model/Types";
 
 export default function TraceAlignmentView() {
   const dispatch = useAppDispatch();
@@ -23,6 +24,7 @@ export default function TraceAlignmentView() {
   useEffect(() => {
     dispatch(
       updateChartAlignmentAction({
+        channel: CHANNEL_1,
         enableYMaxAlignment: enableYMaxAlignment,
         alignToYMax: alignToYMax,
         yMaxValue: fluorescenceMax,

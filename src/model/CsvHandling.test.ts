@@ -7,21 +7,23 @@ import FileSaver from "file-saver";
 import { CSV_DATA } from "../TestUtils";
 import { RoiDataModelState, roiDataReducer } from "./RoiDataModel";
 import { loadDataAction } from "./Actions";
+import { CHANNEL_1 } from "./Types";
 
 const EMPTY_STATE: RoiDataModelState = {
-  channel1Filename: null,
   items: [],
   scanStatus: [],
   currentIndex: -1,
   chartFrameLabels: [],
-  chartData: [],
-  originalTraceData: [],
   showSingleTrace: false,
   annotations: [],
 };
 const LOADED_STATE = roiDataReducer(
   EMPTY_STATE,
-  loadDataAction({ csvData: CSV_DATA, channel1Filename: "new file" })
+  loadDataAction({
+    csvData: CSV_DATA,
+    channel: CHANNEL_1,
+    filename: "new file",
+  })
 );
 
 describe("loadTestData", () => {
@@ -31,7 +33,8 @@ describe("loadTestData", () => {
   it("loadTestData", () => {
     const expectedActions = [
       loadDataAction({
-        channel1Filename: "Example data",
+        channel: CHANNEL_1,
+        filename: "Example data",
         csvData: sampleRoiTraces,
       }),
     ];
@@ -49,7 +52,11 @@ describe("loadFile", () => {
   it("success", async () => {
     expect.assertions(1);
     const expectedActions = [
-      loadDataAction({ channel1Filename: "testFile.csv", csvData: CSV_DATA }),
+      loadDataAction({
+        channel: CHANNEL_1,
+        filename: "testFile.csv",
+        csvData: CSV_DATA,
+      }),
     ];
     const store = mockStore(EMPTY_STATE);
     const file: File = new File([CSV_DATA], "testFile.csv", {
@@ -80,17 +87,13 @@ describe("saveFile", () => {
   });
 
   it("empty state", () => {
-    expect(() => saveFile(EMPTY_STATE)).toThrow("No data file loaded");
-  });
-
-  it("missing filename", () => {
-    expect(() => saveFile({ ...LOADED_STATE, channel1Filename: null })).toThrow(
+    expect(() => saveFile(EMPTY_STATE, CHANNEL_1)).toThrow(
       "No data file loaded"
     );
   });
 
   it("empty selection", () => {
-    saveFile(LOADED_STATE);
+    saveFile(LOADED_STATE, CHANNEL_1);
     expect(FileSaver.saveAs).toHaveBeenCalledWith(
       {
         content: ["\n1\n2\n3\n4\n5"],
@@ -101,7 +104,7 @@ describe("saveFile", () => {
   });
 
   it("full selection", () => {
-    saveFile({ ...LOADED_STATE, scanStatus: ["y", "y", "y", "y"] });
+    saveFile({ ...LOADED_STATE, scanStatus: ["y", "y", "y", "y"] }, CHANNEL_1);
     expect(FileSaver.saveAs).toHaveBeenCalledWith(
       {
         content: [
@@ -119,7 +122,7 @@ describe("saveFile", () => {
   });
 
   it("partial selection", () => {
-    saveFile({ ...LOADED_STATE, scanStatus: ["y", "n", "y", "?"] });
+    saveFile({ ...LOADED_STATE, scanStatus: ["y", "n", "y", "?"] }, CHANNEL_1);
     expect(FileSaver.saveAs).toHaveBeenCalledWith(
       {
         content: [
@@ -137,16 +140,22 @@ describe("saveFile", () => {
   });
 
   it("partial selection with alignment - should be using chartData as source", () => {
-    saveFile({
-      ...LOADED_STATE,
-      chartData: [
-        [110, 19, 15, 14, 13],
-        [21.5, 21.5, 21.5, 21.5, 21.5],
-        [31.1, 32.2, 33.3, 32.2, 31.1],
-        [41, 42, 43, 44, 45],
-      ],
-      scanStatus: ["y", "n", "y", "?"],
-    });
+    saveFile(
+      {
+        ...LOADED_STATE,
+        channel1Dataset: {
+          ...LOADED_STATE.channel1Dataset!,
+          chartData: [
+            [110, 19, 15, 14, 13],
+            [21.5, 21.5, 21.5, 21.5, 21.5],
+            [31.1, 32.2, 33.3, 32.2, 31.1],
+            [41, 42, 43, 44, 45],
+          ],
+        },
+        scanStatus: ["y", "n", "y", "?"],
+      },
+      CHANNEL_1
+    );
     expect(FileSaver.saveAs).toHaveBeenCalledWith(
       {
         content: [

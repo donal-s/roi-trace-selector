@@ -34,19 +34,16 @@ describe("component App", () => {
     setCsvData(CSV_DATA);
     renderComponent();
     expect(appTitle().textContent).toContain("Example data");
-    console.log(loadTestFileButton());
     expect(loadTestFileButton()).toBeNull();
   });
 
   it("loadTestData", () => {
     renderComponent();
-    expect(roiDataStore.getState().chartData).toStrictEqual([]);
-    expect(roiDataStore.getState().channel1Filename).toBeNull();
+    expect(roiDataStore.getState().channel1Dataset).not.toBeDefined();
 
     Simulate.click(loadTestFileButton());
     renderComponent();
-    expect(roiDataStore.getState().chartData).not.toStrictEqual([]);
-    expect(roiDataStore.getState().channel1Filename).not.toBeNull();
+    expect(roiDataStore.getState().channel1Dataset).toBeDefined();
     expect(saveFileButton().disabled).toBe(false);
     expect(loadTestFileButton()).toBeNull();
   });
