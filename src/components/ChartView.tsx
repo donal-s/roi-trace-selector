@@ -16,7 +16,11 @@ import {
   SCANSTATUS_SELECTED,
   SCANSTATUS_UNSELECTED,
 } from "../model/Types";
-import { useAppDispatch, useAppSelector } from "../model/RoiDataModel";
+import {
+  isChannel2Loaded,
+  useAppDispatch,
+  useAppSelector,
+} from "../model/RoiDataModel";
 import {
   toggleCurrentItemSelectedAction,
   setCurrentNextAction,
@@ -54,12 +58,22 @@ type LineAnnotationType = {
 
 export default function ChartView() {
   const channel1Chart: MutableRefObject<Chart | null> = React.useRef(null);
-  const chartDOMRef: MutableRefObject<HTMLCanvasElement | null> = React.useRef(
+  const channel1ChartDOMRef: MutableRefObject<HTMLCanvasElement | null> = React.useRef(
+    null
+  );
+  const channel2Chart: MutableRefObject<Chart | null> = React.useRef(null);
+  const channel2ChartDOMRef: MutableRefObject<HTMLCanvasElement | null> = React.useRef(
     null
   );
   const dispatch = useAppDispatch();
 
-  const chartData = useAppSelector((state) => state.channel1Dataset?.chartData);
+  const channel2Loaded = useAppSelector(isChannel2Loaded);
+  const channel1ChartData = useAppSelector(
+    (state) => state.channel1Dataset?.chartData
+  );
+  const channel2ChartData = useAppSelector(
+    (state) => state.channel2Dataset?.chartData
+  );
   const items = useAppSelector((state) => state.items);
   const currentIndex = useAppSelector((state) => state.currentIndex);
   const scanStatus = useAppSelector((state) => state.scanStatus);
@@ -68,7 +82,12 @@ export default function ChartView() {
   const annotations = useAppSelector((state) => state.annotations);
   const editAnnotation = useAppSelector((state) => state.editAnnotation);
 
-  const prevChartDataRef: MutableRefObject<number[][] | undefined> = useRef();
+  const prevChannel1ChartDataRef: MutableRefObject<
+    number[][] | undefined
+  > = useRef();
+  const prevChannel2ChartDataRef: MutableRefObject<
+    number[][] | undefined
+  > = useRef();
   const prevShowSingleTraceRef: MutableRefObject<
     boolean | undefined
   > = useRef();
@@ -84,7 +103,8 @@ export default function ChartView() {
   > = useRef();
 
   useEffect(() => {
-    const prevChartData = prevChartDataRef.current;
+    const prevChannel1ChartData = prevChannel1ChartDataRef.current;
+    const prevChannel2ChartData = prevChannel2ChartDataRef.current;
     const prevShowSingleTrace = prevShowSingleTraceRef.current;
     const prevCurrentIndex = prevCurrentIndexRef.current;
     const prevScanStatus = prevScanStatusRef.current;
@@ -140,12 +160,15 @@ export default function ChartView() {
       return result;
     }
 
-    function createChart(chartRef: CanvasRenderingContext2D) {
+    function createChart(
+      chartRef: CanvasRenderingContext2D,
+      chartData: number[][]
+    ) {
       const chart = new Chart(chartRef, {
         type: "line",
         data: {
           labels: chartFrameLabels,
-          datasets: getChartDatasets(),
+          datasets: getChartDatasets(chartData),
         },
         options: {
           animation: false,
@@ -161,22 +184,25 @@ export default function ChartView() {
       return chart;
     }
 
-    function updateChart() {
-      channel1Chart.current!.data = {
+    function updateChart(
+      chart: MutableRefObject<Chart>,
+      chartData: number[][]
+    ) {
+      chart.current!.data = {
         labels: chartFrameLabels,
-        datasets: getChartDatasets(),
+        datasets: getChartDatasets(chartData),
       };
       chartData!.forEach((data, index) => {
         let isCurrentTrace = currentIndex === index;
-        channel1Chart.current!.setDatasetVisibility(
+        chart.current!.setDatasetVisibility(
           index,
           !showSingleTrace || isCurrentTrace
         );
       });
-      channel1Chart.current!.update();
+      chart.current!.update();
     }
 
-    function getChartDatasets() {
+    function getChartDatasets(chartData: number[][]) {
       return chartData!.map((data, index) => {
         let isCurrentTrace = currentIndex === index;
         return {
@@ -190,32 +216,39 @@ export default function ChartView() {
       });
     }
 
-    const chartDataUpdated = chartData !== prevChartData;
+    const channel1ChartDataUpdated =
+      channel1ChartData !== prevChannel1ChartData;
+    const channel2ChartDataUpdated =
+      channel2ChartData !== prevChannel2ChartData;
     const showSingleTraceUpdated = showSingleTrace !== prevShowSingleTrace;
     const currentIndexUpdated = currentIndex !== prevCurrentIndex;
     const scanStatusUpdated = scanStatus !== prevScanStatus;
     const annotationsUpdated =
       annotations !== prevAnnotations || editAnnotation !== prevEditAnnotation;
 
-    if (chartData) {
-      if (channel1Chart.current === null) {
-        const myChartRef = chartDOMRef.current!.getContext("2d");
-        channel1Chart.current = createChart(myChartRef!);
+    function createOrUpdateChart(
+      chart: MutableRefObject<Chart | null>,
+      chartDOMRef: any,
+      chartDataUpdated: boolean,
+      chartData: number[][]
+    ) {
+      if (chart.current === null) {
+        chart.current = createChart(chartDOMRef.getContext("2d")!, chartData);
       } else if (chartDataUpdated) {
-        updateChart();
+        updateChart(chart as MutableRefObject<Chart>, chartData);
       } else if (showSingleTraceUpdated) {
         chartData!.forEach((data, index) => {
-          channel1Chart.current!.setDatasetVisibility(
+          chart.current!.setDatasetVisibility(
             index,
             !showSingleTrace || currentIndex === index
           );
         });
-        if (channel1Chart.current?.options?.plugins?.annotation) {
-          channel1Chart.current!.options!.plugins!.annotation!.annotations = getAnnotations();
+        if (chart.current?.options?.plugins?.annotation) {
+          chart.current!.options!.plugins!.annotation!.annotations = getAnnotations();
         }
-        channel1Chart.current.update();
+        chart.current.update();
       } else {
-        const chartDatasets = channel1Chart.current.data.datasets;
+        const chartDatasets = chart.current.data.datasets;
         if (scanStatusUpdated) {
           scanStatus.forEach((newValue, index) => {
             if (!prevScanStatus || newValue !== prevScanStatus[index]) {
@@ -227,11 +260,8 @@ export default function ChartView() {
           });
         }
 
-        if (
-          annotationsUpdated &&
-          channel1Chart.current?.options?.plugins?.annotation
-        ) {
-          channel1Chart.current!.options!.plugins!.annotation!.annotations = getAnnotations();
+        if (annotationsUpdated && chart.current?.options?.plugins?.annotation) {
+          chart.current!.options!.plugins!.annotation!.annotations = getAnnotations();
         }
 
         if (currentIndexUpdated) {
@@ -250,35 +280,57 @@ export default function ChartView() {
           }
 
           if (showSingleTrace) {
-            channel1Chart.current.setDatasetVisibility(currentIndex, true);
+            chart.current.setDatasetVisibility(currentIndex, true);
             if (prevCurrentIndex !== undefined) {
-              channel1Chart.current.setDatasetVisibility(
-                prevCurrentIndex,
-                false
-              );
+              chart.current.setDatasetVisibility(prevCurrentIndex, false);
             }
           }
         }
 
-        channel1Chart.current.update();
+        chart.current.update();
       }
     }
 
-    prevChartDataRef.current = chartData;
+    if (channel1ChartData) {
+      createOrUpdateChart(
+        channel1Chart,
+        channel1ChartDOMRef.current!,
+        channel1ChartDataUpdated,
+        channel1ChartData
+      );
+    }
+
+    if (channel2ChartData) {
+      createOrUpdateChart(
+        channel2Chart,
+        channel2ChartDOMRef.current!,
+        channel2ChartDataUpdated,
+        channel2ChartData
+      );
+    } else if (channel2Chart.current) {
+      channel2Chart.current.destroy();
+      channel2Chart.current = null;
+    }
+
+    prevChannel1ChartDataRef.current = channel1ChartData;
+    prevChannel2ChartDataRef.current = channel2ChartData;
     prevShowSingleTraceRef.current = showSingleTrace;
     prevCurrentIndexRef.current = currentIndex;
     prevScanStatusRef.current = scanStatus;
     prevAnnotationsRef.current = annotations;
     prevEditAnnotationRef.current = editAnnotation;
   }, [
-    chartData,
+    channel1Chart,
+    channel2Chart,
+    channel1ChartDOMRef,
+    channel2ChartDOMRef,
+    channel1ChartData,
+    channel2ChartData,
     items,
     currentIndex,
     scanStatus,
     showSingleTrace,
     chartFrameLabels,
-    channel1Chart,
-    chartDOMRef,
     annotations,
     editAnnotation,
     dispatch,
@@ -303,17 +355,35 @@ export default function ChartView() {
 
   return (
     <div id="chartsPanel">
-      <canvas
-        id="channel1Chart"
-        ref={chartDOMRef}
-        onWheel={(event) =>
-          dispatch(
-            event.deltaY > 0
-              ? setCurrentNextAction()
-              : setCurrentPreviousAction()
-          )
-        }
-      ></canvas>
+      <div className={`chartPanel ${channel2Loaded ? "halfheight" : "fullheight"}`}>
+        <canvas
+          id="channel1Chart"
+          ref={channel1ChartDOMRef}
+          onWheel={(event) =>
+            dispatch(
+              event.deltaY > 0
+                ? setCurrentNextAction()
+                : setCurrentPreviousAction()
+            )
+          }
+        ></canvas>
+      </div>
+
+      {channel2Loaded && (
+        <div className="chartPanel halfheight">
+          <canvas
+            id="channel2Chart"
+            ref={channel2ChartDOMRef}
+            onWheel={(event) =>
+              dispatch(
+                event.deltaY > 0
+                  ? setCurrentNextAction()
+                  : setCurrentPreviousAction()
+              )
+            }
+          ></canvas>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,7 +10,13 @@ import {
   RoiDataModelState,
   isChannel2Loaded,
 } from "./RoiDataModel";
-import { CSV_DATA, CSV_DATA_2 } from "../TestUtils";
+import {
+  CSV_DATA,
+  CSV_DATA_2,
+  DUAL_CHANNEL_LOADED_STATE,
+  EMPTY_STATE,
+  LOADED_STATE,
+} from "../TestUtils";
 import { Action } from "redux";
 import {
   AXIS_H,
@@ -25,8 +31,9 @@ import {
   CHANNEL_2,
 } from "./Types";
 import {
+  closeChannelAction,
   fullscreenModeAction,
-  loadDataAction,
+  loadChannelAction,
   resetStateAction,
   selectAllItemsAction,
   setCurrentIndexAction,
@@ -42,32 +49,6 @@ import {
   updateChartAlignmentAction,
   updateEditAnnotationAction,
 } from "./Actions";
-
-const EMPTY_STATE: RoiDataModelState = {
-  items: [],
-  scanStatus: [],
-  currentIndex: -1,
-  chartFrameLabels: [],
-  showSingleTrace: false,
-  annotations: [],
-};
-const LOADED_STATE = roiDataReducer(
-  EMPTY_STATE,
-  loadDataAction({
-    csvData: CSV_DATA,
-    channel: CHANNEL_1,
-    filename: "new file",
-  })
-);
-
-const DUAL_CHANNEL_LOADED_STATE = roiDataReducer(
-  LOADED_STATE,
-  loadDataAction({
-    csvData: CSV_DATA_2,
-    channel: CHANNEL_2,
-    filename: "new file2",
-  })
-);
 
 describe("roiDataReducer", () => {
   // Sanity check to verify test data
@@ -390,230 +371,289 @@ describe("roiDataReducer", () => {
     ).toStrictEqual({ ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] });
   });
 
-  it("updateChartAlignmentAction", () => {
-    // Alignment disabled
-    let params = getAlignmentParams(
-      CHANNEL_1,
-      false,
-      false,
-      0,
-      0,
-      false,
-      false,
-      0,
-      0
-    );
-
-    // Empty state - no effect
-    expect(
-      roiDataReducer(EMPTY_STATE, updateChartAlignmentAction(params))
-    ).toStrictEqual(EMPTY_STATE);
-
-    // With data - no alignment
-    expect(
-      roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-    ).toStrictEqual(LOADED_STATE);
-
-    // Align max frame 1, value 5
-    params = getAlignmentParams(
-      CHANNEL_1,
-      true,
-      false,
-      5,
-      1,
-      false,
-      false,
-      0,
-      0
-    );
-    expect(
-      roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      channel1Dataset: {
-        ...LOADED_STATE.channel1Dataset,
-        chartData: [
-          [5, 4, 0, -1, -2],
-          [5, 5, 5, 5, 5],
-          [5, 6.1, 7.199999999999999, 6.1, 5],
-          [5, 6, 7, 8, 9],
-        ],
-      },
+  describe("updateChartAlignmentAction", () => {
+    it("empty state - no effect", () => {
+      const params = getAlignmentParams(
+        CHANNEL_1,
+        false,
+        false,
+        0,
+        0,
+        false,
+        false,
+        0,
+        0
+      );
+      expect(
+        roiDataReducer(EMPTY_STATE, updateChartAlignmentAction(params))
+      ).toStrictEqual(EMPTY_STATE);
     });
 
-    // Align max frame 2, value 5
-    params = getAlignmentParams(
-      CHANNEL_1,
-      true,
-      false,
-      5,
-      2,
-      false,
-      false,
-      0,
-      0
-    );
-    expect(
-      roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      channel1Dataset: {
-        ...LOADED_STATE.channel1Dataset,
-        chartData: [
-          [6, 5, 1, 0, -1],
-          [5, 5, 5, 5, 5],
-          [3.9, 5, 6.1, 5, 3.9],
-          [4, 5, 6, 7, 8],
-        ],
-      },
+    it("with data - no alignment", () => {
+      const params = getAlignmentParams(
+        CHANNEL_1,
+        false,
+        false,
+        0,
+        0,
+        false,
+        false,
+        0,
+        0
+      );
+      expect(
+        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
+      ).toStrictEqual(LOADED_STATE);
     });
 
-    // Align max, max frame, value 5
-    params = getAlignmentParams(
-      CHANNEL_1,
-      true,
-      true,
-      5,
-      0,
-      false,
-      false,
-      0,
-      0
-    );
-    expect(
-      roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      channel1Dataset: {
-        ...LOADED_STATE.channel1Dataset,
-        chartData: [
-          [5, 4, 0, -1, -2],
-          [5, 5, 5, 5, 5],
-          [
-            2.8000000000000003,
-            3.9000000000000004,
-            5,
-            3.9000000000000004,
-            2.8000000000000003,
+    it("align max frame 1, value 5", () => {
+      const params = getAlignmentParams(
+        CHANNEL_1,
+        true,
+        false,
+        5,
+        1,
+        false,
+        false,
+        0,
+        0
+      );
+      expect(
+        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
+      ).toStrictEqual({
+        ...LOADED_STATE,
+        channel1Dataset: {
+          ...LOADED_STATE.channel1Dataset,
+          chartData: [
+            [5, 4, 0, -1, -2],
+            [5, 5, 5, 5, 5],
+            [5, 6.1, 7.199999999999999, 6.1, 5],
+            [5, 6, 7, 8, 9],
           ],
-          [1, 2, 3, 4, 5],
-        ],
-      },
+        },
+      });
     });
 
-    // Align max frame 1, value 5, min frame 5 value 1
-    params = getAlignmentParams(
-      CHANNEL_1,
-      true,
-      false,
-      5,
-      1,
-      true,
-      false,
-      1,
-      5
-    );
-    expect(
-      roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      channel1Dataset: {
-        ...LOADED_STATE.channel1Dataset,
-        chartData: [
-          [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
-          [5, 5, 5, 5, 5],
-          [5, 6.1, 7.199999999999999, 6.1, 5],
-          [5, 4, 3, 2, 1],
-        ],
-      },
+    it("align max frame 2, value 5", () => {
+      const params = getAlignmentParams(
+        CHANNEL_1,
+        true,
+        false,
+        5,
+        2,
+        false,
+        false,
+        0,
+        0
+      );
+      expect(
+        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
+      ).toStrictEqual({
+        ...LOADED_STATE,
+        channel1Dataset: {
+          ...LOADED_STATE.channel1Dataset,
+          chartData: [
+            [6, 5, 1, 0, -1],
+            [5, 5, 5, 5, 5],
+            [3.9, 5, 6.1, 5, 3.9],
+            [4, 5, 6, 7, 8],
+          ],
+        },
+      });
     });
 
-    // Align max frame max, value 5, min frame min value 1
-    params = getAlignmentParams(CHANNEL_1, true, true, 5, 1, true, true, 1, 5);
-    expect(
-      roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      channel1Dataset: {
-        ...LOADED_STATE.channel1Dataset,
-        chartData: [
-          [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
-          [5, 5, 5, 5, 5],
-          [1, 3.0000000000000004, 5, 3.0000000000000004, 1],
-          [1, 2, 3, 4, 5],
-        ],
-      },
+    it("align max, max frame, value 5", () => {
+      const params = getAlignmentParams(
+        CHANNEL_1,
+        true,
+        true,
+        5,
+        0,
+        false,
+        false,
+        0,
+        0
+      );
+      expect(
+        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
+      ).toStrictEqual({
+        ...LOADED_STATE,
+        channel1Dataset: {
+          ...LOADED_STATE.channel1Dataset,
+          chartData: [
+            [5, 4, 0, -1, -2],
+            [5, 5, 5, 5, 5],
+            [
+              2.8000000000000003,
+              3.9000000000000004,
+              5,
+              3.9000000000000004,
+              2.8000000000000003,
+            ],
+            [1, 2, 3, 4, 5],
+          ],
+        },
+      });
     });
 
-    // Max frame out of bounds
-    params = getAlignmentParams(
-      CHANNEL_1,
-      true,
-      false,
-      0,
-      0,
-      false,
-      false,
-      0,
-      0
-    );
-    expect(() =>
-      roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-    ).toThrow("Invalid frame index: 0, 0");
+    it("align max frame 1, value 5, min frame 5 value 1", () => {
+      const params = getAlignmentParams(
+        CHANNEL_1,
+        true,
+        false,
+        5,
+        1,
+        true,
+        false,
+        1,
+        5
+      );
+      expect(
+        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
+      ).toStrictEqual({
+        ...LOADED_STATE,
+        channel1Dataset: {
+          ...LOADED_STATE.channel1Dataset,
+          chartData: [
+            [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
+            [5, 5, 5, 5, 5],
+            [5, 6.1, 7.199999999999999, 6.1, 5],
+            [5, 4, 3, 2, 1],
+          ],
+        },
+      });
+    });
 
-    params = getAlignmentParams(
-      CHANNEL_1,
-      true,
-      false,
-      0,
-      6,
-      false,
-      false,
-      0,
-      0
-    );
-    expect(() =>
-      roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-    ).toThrow("Invalid frame index: 0, 6");
+    it("align max frame max, value 5, min frame min value 1", () => {
+      const params = getAlignmentParams(
+        CHANNEL_1,
+        true,
+        true,
+        5,
+        1,
+        true,
+        true,
+        1,
+        5
+      );
+      expect(
+        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
+      ).toStrictEqual({
+        ...LOADED_STATE,
+        channel1Dataset: {
+          ...LOADED_STATE.channel1Dataset,
+          chartData: [
+            [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
+            [5, 5, 5, 5, 5],
+            [1, 3.0000000000000004, 5, 3.0000000000000004, 1],
+            [1, 2, 3, 4, 5],
+          ],
+        },
+      });
+    });
 
-    // Min frame out of bounds
-    params = getAlignmentParams(
-      CHANNEL_1,
-      true,
-      false,
-      0,
-      1,
-      true,
-      false,
-      0,
-      0
-    );
-    expect(() =>
-      roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-    ).toThrow("Invalid frame index: 0, 1");
+    it("second channel alignment", () => {
+      const params = getAlignmentParams(
+        CHANNEL_2,
+        true,
+        true,
+        5,
+        1,
+        true,
+        true,
+        1,
+        5
+      );
+      expect(
+        roiDataReducer(
+          DUAL_CHANNEL_LOADED_STATE,
+          updateChartAlignmentAction(params)
+        )
+      ).toStrictEqual({
+        ...DUAL_CHANNEL_LOADED_STATE,
+        channel2Dataset: {
+          ...DUAL_CHANNEL_LOADED_STATE.channel2Dataset,
+          chartData: [
+            [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
+            [5, 5, 5, 5, 5],
+            [1, 2.999999999999997, 5, 2.999999999999997, 1],
+            [1, 2, 3, 4, 5],
+          ],
+        },
+      });
+    });
 
-    params = getAlignmentParams(
-      CHANNEL_1,
-      true,
-      false,
-      0,
-      1,
-      true,
-      false,
-      0,
-      6
-    );
-    expect(() =>
-      roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-    ).toThrow("Invalid frame index: 6, 1");
+    it("max frame out of bounds", () => {
+      let params = getAlignmentParams(
+        CHANNEL_1,
+        true,
+        false,
+        0,
+        0,
+        false,
+        false,
+        0,
+        0
+      );
+      expect(() =>
+        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
+      ).toThrow("Invalid frame index: 0, 0");
+
+      params = getAlignmentParams(
+        CHANNEL_1,
+        true,
+        false,
+        0,
+        6,
+        false,
+        false,
+        0,
+        0
+      );
+      expect(() =>
+        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
+      ).toThrow("Invalid frame index: 0, 6");
+    });
+
+    it("min frame out of bounds", () => {
+      let params = getAlignmentParams(
+        CHANNEL_1,
+        true,
+        false,
+        0,
+        1,
+        true,
+        false,
+        0,
+        0
+      );
+      expect(() =>
+        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
+      ).toThrow("Invalid frame index: 0, 1");
+
+      params = getAlignmentParams(
+        CHANNEL_1,
+        true,
+        false,
+        0,
+        1,
+        true,
+        false,
+        0,
+        6
+      );
+      expect(() =>
+        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
+      ).toThrow("Invalid frame index: 6, 1");
+    });
   });
 
-  describe("loadDataAction", () => {
+  describe("loadChannelAction", () => {
     it("should load first channel", () => {
       expect(
         roiDataReducer(
           EMPTY_STATE,
-          loadDataAction({
+          loadChannelAction({
             csvData: CSV_DATA,
             channel: CHANNEL_1,
             filename: "new file",
@@ -626,7 +666,7 @@ describe("roiDataReducer", () => {
       expect(
         roiDataReducer(
           EMPTY_STATE,
-          loadDataAction({
+          loadChannelAction({
             csvData: CSV_DATA + "\n\n\r\n",
             channel: CHANNEL_1,
             filename: "new file",
@@ -639,7 +679,7 @@ describe("roiDataReducer", () => {
       expect(
         roiDataReducer(
           DUAL_CHANNEL_LOADED_STATE,
-          loadDataAction({
+          loadChannelAction({
             csvData: CSV_DATA,
             channel: CHANNEL_1,
             filename: "new file3",
@@ -658,7 +698,7 @@ describe("roiDataReducer", () => {
       expect(
         roiDataReducer(
           DUAL_CHANNEL_LOADED_STATE,
-          loadDataAction({
+          loadChannelAction({
             csvData:
               " , ROI-1, ROI-2, ROI-3\n" +
               "1, 10.000,    1.5,   1.1\n" +
@@ -696,7 +736,7 @@ describe("roiDataReducer", () => {
       expect(() =>
         roiDataReducer(
           EMPTY_STATE,
-          loadDataAction({
+          loadChannelAction({
             csvData: CSV_DATA_2,
             channel: CHANNEL_2,
             filename: "new file2",
@@ -708,7 +748,7 @@ describe("roiDataReducer", () => {
     it("second channel should fail if item count mismatch", () => {
       const state = roiDataReducer(
         EMPTY_STATE,
-        loadDataAction({
+        loadChannelAction({
           csvData:
             " , ROI-1, ROI-2, ROI-3\n" +
             "1, 10.000,    1.5,   1.1\n" +
@@ -723,7 +763,7 @@ describe("roiDataReducer", () => {
       expect(() =>
         roiDataReducer(
           state,
-          loadDataAction({
+          loadChannelAction({
             csvData: CSV_DATA_2,
             channel: CHANNEL_2,
             filename: "new file2",
@@ -735,7 +775,7 @@ describe("roiDataReducer", () => {
     it("second channel should fail if frame count mismatch", () => {
       const state = roiDataReducer(
         EMPTY_STATE,
-        loadDataAction({
+        loadChannelAction({
           csvData:
             " , ROI-1, ROI-2, ROI-3, ROI-4\n" +
             "1, 10.000,    1.5,   1.1,   1\n" +
@@ -749,7 +789,7 @@ describe("roiDataReducer", () => {
       expect(() =>
         roiDataReducer(
           state,
-          loadDataAction({
+          loadChannelAction({
             csvData: CSV_DATA_2,
             channel: CHANNEL_2,
             filename: "new file2",
@@ -761,7 +801,7 @@ describe("roiDataReducer", () => {
     it("second channel should succeed if first channel match", () => {
       const state = roiDataReducer(
         EMPTY_STATE,
-        loadDataAction({
+        loadChannelAction({
           csvData: CSV_DATA,
           channel: CHANNEL_1,
           filename: "new file",
@@ -770,7 +810,7 @@ describe("roiDataReducer", () => {
       expect(
         roiDataReducer(
           state,
-          loadDataAction({
+          loadChannelAction({
             csvData: CSV_DATA_2,
             channel: CHANNEL_2,
             filename: "new file2",
@@ -795,14 +835,14 @@ describe("roiDataReducer", () => {
         },
         channel2Dataset: {
           chartData: [
-            [210, 29, 25, 24, 23],
+            [30, 29, 25, 24, 23],
             [21.5, 21.5, 21.5, 21.5, 21.5],
             [21.1, 22.2, 23.3, 22.2, 21.1],
             [21, 22, 23, 24, 25],
           ],
           filename: "new file2",
           originalTraceData: [
-            [210, 29, 25, 24, 23],
+            [30, 29, 25, 24, 23],
             [21.5, 21.5, 21.5, 21.5, 21.5],
             [21.1, 22.2, 23.3, 22.2, 21.1],
             [21, 22, 23, 24, 25],
@@ -814,6 +854,36 @@ describe("roiDataReducer", () => {
         scanStatus: ["?", "?", "?", "?"],
         showSingleTrace: false,
       });
+    });
+  });
+
+  it("close channel 1 with one channel loaded should clear all dataset data", () => {
+    expect(
+      roiDataReducer(LOADED_STATE, closeChannelAction(CHANNEL_1))
+    ).toStrictEqual(EMPTY_STATE);
+  });
+
+  it("close channel 1 with both channels loaded should clear all dataset data", () => {
+    expect(
+      roiDataReducer(DUAL_CHANNEL_LOADED_STATE, closeChannelAction(CHANNEL_1))
+    ).toStrictEqual(EMPTY_STATE);
+  });
+
+  it("close first channel 2 with both channels loaded should clear only channel 2 dataset", () => {
+    expect(
+      roiDataReducer(
+        {
+          ...DUAL_CHANNEL_LOADED_STATE,
+          currentIndex: 2,
+          scanStatus: ["?", "?", "?", "?"],
+        },
+        closeChannelAction(CHANNEL_2)
+      )
+    ).toStrictEqual({
+      ...LOADED_STATE,
+      channel2Dataset: undefined,
+      currentIndex: 2,
+      scanStatus: ["?", "?", "?", "?"],
     });
   });
 

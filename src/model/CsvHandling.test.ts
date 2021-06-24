@@ -1,38 +1,26 @@
-import { loadTestData, loadFile, saveFile } from "./CsvHandling";
-import configureMockStore from "redux-mock-store";
-import thunk from "redux-thunk";
+/* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect", "checkBadInput"] }] */
+
+import { loadTestData, loadFile, saveFile, parseCsvData } from "./CsvHandling";
 //@ts-ignore
 import sampleRoiTraces from "./sampleRoiTraces.csv";
 import FileSaver from "file-saver";
-import { CSV_DATA } from "../TestUtils";
-import { RoiDataModelState, roiDataReducer } from "./RoiDataModel";
-import { loadDataAction } from "./Actions";
-import { CHANNEL_1 } from "./Types";
-
-const EMPTY_STATE: RoiDataModelState = {
-  items: [],
-  scanStatus: [],
-  currentIndex: -1,
-  chartFrameLabels: [],
-  showSingleTrace: false,
-  annotations: [],
-};
-const LOADED_STATE = roiDataReducer(
+import {
+  configureAppMockStore,
+  CSV_DATA,
+  CSV_DATA_2,
   EMPTY_STATE,
-  loadDataAction({
-    csvData: CSV_DATA,
-    channel: CHANNEL_1,
-    filename: "new file",
-  })
-);
+  LOADED_STATE,
+} from "../TestUtils";
+import { loadChannelAction } from "./Actions";
+import { CHANNEL_1, CHANNEL_2 } from "./Types";
+import { unwrapResult } from "@reduxjs/toolkit";
 
 describe("loadTestData", () => {
-  const middlewares = [thunk];
-  const mockStore = configureMockStore(middlewares);
+  const mockStore = configureAppMockStore();
 
   it("loadTestData", () => {
     const expectedActions = [
-      loadDataAction({
+      loadChannelAction({
         channel: CHANNEL_1,
         filename: "Example data",
         csvData: sampleRoiTraces,
@@ -46,28 +34,290 @@ describe("loadTestData", () => {
 });
 
 describe("loadFile", () => {
-  const middlewares = [thunk];
-  const mockStore = configureMockStore(middlewares);
+  const mockStore = configureAppMockStore();
 
-  it("success", async () => {
+  it("load channel 1", async () => {
     expect.assertions(1);
-    const expectedActions = [
-      loadDataAction({
-        channel: CHANNEL_1,
-        filename: "testFile.csv",
-        csvData: CSV_DATA,
-      }),
-    ];
     const store = mockStore(EMPTY_STATE);
     const file: File = new File([CSV_DATA], "testFile.csv", {
       type: "mimeType",
     });
-    //@ts-ignore // TODO temporary
-    await store.dispatch(loadFile([file]));
-    expect(store.getActions()).toStrictEqual(expectedActions);
+    await store.dispatch(loadFile({ file, channel: CHANNEL_1 }));
+    expect(store.getActions()).toStrictEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          payload: {
+            channel: CHANNEL_1,
+            csvData: CSV_DATA,
+            filename: "testFile.csv",
+          },
+          type: "loadFile/fulfilled",
+        }),
+      ])
+    );
   });
 
-  // TODO test bad input file
+  it("load channel 2", async () => {
+    expect.assertions(1);
+    const store = mockStore(LOADED_STATE);
+    const file: File = new File([CSV_DATA_2], "testFile2.csv", {
+      type: "mimeType",
+    });
+    await store.dispatch(loadFile({ file, channel: CHANNEL_2 }));
+    expect(store.getActions()).toStrictEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          payload: {
+            channel: CHANNEL_2,
+            csvData: CSV_DATA_2,
+            filename: "testFile2.csv",
+          },
+          type: "loadFile/fulfilled",
+        }),
+      ])
+    );
+  });
+
+  it("platform without FileReader", async () => {
+    const savedFileReader = window.FileReader;
+    try {
+      // @ts-ignore
+      window.FileReader = undefined;
+      const store = mockStore(EMPTY_STATE);
+      const file: File = new File([CSV_DATA], "testFile.csv", {
+        type: "mimeType",
+      });
+      await expect(
+        async () =>
+          await store
+            .dispatch(loadFile({ file, channel: CHANNEL_1 }))
+            .then(unwrapResult)
+      ).rejects.toStrictEqual("FileReader is not supported in this browser.");
+    } finally {
+      window.FileReader = savedFileReader;
+    }
+  });
+
+  it("empty file", async () => {
+    expect.assertions(1);
+    const store = mockStore(EMPTY_STATE);
+    const file: File = new File([""], "testFile.csv", {
+      type: "mimeType",
+    });
+    await store.dispatch(loadFile({ file, channel: CHANNEL_1 }));
+    expect(store.getActions()).toStrictEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          payload: {
+            channel: CHANNEL_1,
+            csvData: "",
+            filename: "testFile.csv",
+          },
+          type: "loadFile/fulfilled",
+        }),
+      ])
+    );
+  });
+
+  it("unreadable file", async () => {
+    expect.assertions(1);
+    const readAsTextSpy = jest
+      .spyOn(FileReader.prototype, "readAsText")
+      .mockImplementation(() => {
+        throw new Error("file load failed");
+      });
+    try {
+      const store = mockStore(EMPTY_STATE);
+      const file: File = new File([CSV_DATA], "testFile.csv", {
+        type: "mimeType",
+      });
+      await expect(
+        async () =>
+          await store
+            .dispatch(loadFile({ file, channel: CHANNEL_1 }))
+            .then(unwrapResult)
+      ).rejects.toStrictEqual("Cannot read file !");
+    } finally {
+      readAsTextSpy.mockRestore();
+    }
+  });
+});
+
+describe("parseCsvData", () => {
+  it("success", () => {
+    const result = parseCsvData(CSV_DATA);
+    expect(result).toStrictEqual({
+      chartData: [
+        [10, 9, 5, 4, 3],
+        [1.5, 1.5, 1.5, 1.5, 1.5],
+        [1.1, 2.2, 3.3, 2.2, 1.1],
+        [1, 2, 3, 4, 5],
+      ],
+      chartFrameLabels: [1, 2, 3, 4, 5],
+      currentIndex: 0,
+      items: ["ROI-1", "ROI-2", "ROI-3", "ROI-4"],
+      originalTraceData: [
+        [10, 9, 5, 4, 3],
+        [1.5, 1.5, 1.5, 1.5, 1.5],
+        [1.1, 2.2, 3.3, 2.2, 1.1],
+        [1, 2, 3, 4, 5],
+      ],
+      scanStatus: ["?", "?", "?", "?"],
+    });
+  });
+
+  it("success single ROI", () => {
+    const result = parseCsvData(" , ROI-1\n1, 1\n2, 2\n3, 3\n4, 4\n5, 5");
+    expect(result).toStrictEqual({
+      chartData: [[1, 2, 3, 4, 5]],
+      chartFrameLabels: [1, 2, 3, 4, 5],
+      currentIndex: 0,
+      items: ["ROI-1"],
+      originalTraceData: [[1, 2, 3, 4, 5]],
+      scanStatus: ["?"],
+    });
+  });
+
+  it("success single frame", () => {
+    const result = parseCsvData(
+      " , ROI-1, ROI-2, ROI-3, ROI-4\n1, 10.000,    1.5,   1.1,   1"
+    );
+    expect(result).toStrictEqual({
+      chartData: [[10], [1.5], [1.1], [1]],
+      chartFrameLabels: [1],
+      currentIndex: 0,
+      items: ["ROI-1", "ROI-2", "ROI-3", "ROI-4"],
+      originalTraceData: [[10], [1.5], [1.1], [1]],
+      scanStatus: ["?", "?", "?", "?"],
+    });
+  });
+
+  it("empty file", () => {
+    checkBadInput("", "Data file is empty");
+  });
+
+  it("file with no data rows", () => {
+    checkBadInput(
+      " , ROI-1, ROI-2, ROI-3, ROI-4",
+      "Data file has no frame data"
+    );
+  });
+
+  it("file with no data columns", () => {
+    checkBadInput(" \n1\n2\n3\n4\n5", "Data file has no item data");
+  });
+
+  it("file with irregular row - too few columns", () => {
+    checkBadInput(
+      " , ROI-1, ROI-2, ROI-3, ROI-4\n" +
+        "1, 10.000,    1.5,   1.1,   1\n" +
+        "2, 9.000,     1.5,   2.2,   2\n" +
+        "3, 5.000,     1.5,   3.3\n" +
+        "4, 4.000,     1.5,   2.2,   4\n" +
+        "5, 3.000,     1.5,   1.1,   5",
+      "Data file rows have different cell counts"
+    );
+  });
+
+  it("file with irregular row - too many columns", () => {
+    checkBadInput(
+      " , ROI-1, ROI-2, ROI-3, ROI-4\n" +
+        "1, 10.000,    1.5,   1.1,   1\n" +
+        "2, 9.000,     1.5,   2.2,   2\n" +
+        "3, 5.000,     1.5,   3.3,   3, 111\n" +
+        "4, 4.000,     1.5,   2.2,   4\n" +
+        "5, 3.000,     1.5,   1.1,   5",
+      "Data file rows have different cell counts"
+    );
+  });
+
+  it("file with non numeric frame label", () => {
+    checkBadInput(
+      " , ROI-1, ROI-2, ROI-3, ROI-4\n" +
+        "1, 10.000,    1.5,   1.1,   1\n" +
+        "2, 9.000,     1.5,   2.2,   2\n" +
+        "ZZ, 5.000,     1.5,   3.3,   3\n" +
+        "4, 4.000,     1.5,   2.2,   4\n" +
+        "5, 3.000,     1.5,   1.1,   5",
+      "Data file has non-numeric frame label: 'ZZ'"
+    );
+  });
+
+  it("file with empty frame label", () => {
+    checkBadInput(
+      " , ROI-1, ROI-2, ROI-3, ROI-4\n" +
+        "1, 10.000,    1.5,   1.1,   1\n" +
+        "2, 9.000,     1.5,   2.2,   2\n" +
+        ", 5.000,     1.5,   3.3,   3\n" +
+        "4, 4.000,     1.5,   2.2,   4\n" +
+        "5, 3.000,     1.5,   1.1,   5",
+      "Data file has missing frame label"
+    );
+  });
+
+  it("file with empty ROI label", () => {
+    checkBadInput(
+      " , ROI-1, ROI-2, , ROI-4\n" +
+        "1, 10.000,    1.5,   1.1,   1\n" +
+        "2, 9.000,     1.5,   2.2,   2\n" +
+        "3, 5.000,     1.5,   3.3,   3\n" +
+        "4, 4.000,     1.5,   2.2,   4\n" +
+        "5, 3.000,     1.5,   1.1,   5",
+      "Data file has missing item label"
+    );
+  });
+
+  it("file with non numeric data cell", () => {
+    checkBadInput(
+      " , ROI-1, ROI-2, ROI-3, ROI-4\n" +
+        "1, 10.000,    1.5,   1.1,   1\n" +
+        "2, 9.000,     1.5,   2.2,   2\n" +
+        "3, 5.000,     XX,   3.3,   3\n" +
+        "4, 4.000,     1.5,   2.2,   4\n" +
+        "5, 3.000,     1.5,   1.1,   5",
+      "Data file has non-numeric value cell: 'XX'"
+    );
+  });
+
+  it("file with empty data cell", () => {
+    checkBadInput(
+      " , ROI-1, ROI-2, ROI-3, ROI-4\n" +
+        "1, 10.000,    1.5,   1.1,   1\n" +
+        "2, 9.000,     1.5,   2.2,   2\n" +
+        "3, 5.000,     ,   3.3,   3\n" +
+        "4, 4.000,     1.5,   2.2,   4\n" +
+        "5, 3.000,     1.5,   1.1,   5",
+      "Data file has non-numeric value cell: ''"
+    );
+  });
+
+  it("file with duplicate frame label", () => {
+    checkBadInput(
+      " , ROI-1, ROI-2, ROI-3, ROI-4\n" +
+        "1, 10.000,    1.5,   1.1,   1\n" +
+        "2, 9.000,     1.5,   2.2,   2\n" +
+        "3, 5.000,     1.5,   3.3,   3\n" +
+        "2, 4.000,     1.5,   2.2,   4\n" +
+        "5, 3.000,     1.5,   1.1,   5",
+      "Data file has duplicate frame label"
+    );
+  });
+
+  it("file with duplicate ROI label", () => {
+    checkBadInput(
+      " , ROI-1, ROI-2, ROI-1, ROI-4\n" +
+        "1, 10.000,    1.5,   1.1,   1\n" +
+        "2, 9.000,     1.5,   2.2,   2\n" +
+        "3, 5.000,     1.5,   3.3,   3\n" +
+        "4, 4.000,     1.5,   2.2,   4\n" +
+        "5, 3.000,     1.5,   1.1,   5",
+      "Data file has duplicate item label"
+    );
+  });
+
+  function checkBadInput(csvdata: string, expectedError: string) {
+    expect(() => parseCsvData(csvdata)).toThrow(expectedError);
+  }
 });
 
 describe("saveFile", () => {
@@ -88,7 +338,7 @@ describe("saveFile", () => {
 
   it("empty state", () => {
     expect(() => saveFile(EMPTY_STATE, CHANNEL_1)).toThrow(
-      "No data file loaded"
+      "No channel data file loaded"
     );
   });
 

@@ -2,12 +2,13 @@ import { createAction } from "@reduxjs/toolkit";
 import {
   ChartAlignment,
   ScanStatus,
-  DataFile,
+  ChannelData,
   SCANSTATUS_SELECTED,
   SCANSTATUS_UNSCANNED,
   SCANSTATUS_UNSELECTED,
   Annotation,
   EditAnnotation,
+  Channel,
 } from "./Types";
 
 function withPayloadType<T>() {
@@ -35,9 +36,13 @@ export const updateChartAlignmentAction = createAction(
   "updateChartAlignment",
   withPayloadType<ChartAlignment>()
 );
-export const loadDataAction = createAction(
-  "loadData",
-  withPayloadType<DataFile>()
+export const loadChannelAction = createAction(
+  "loadChannel",
+  withPayloadType<ChannelData>()
+);
+export const closeChannelAction = createAction(
+  "closeChannel",
+  withPayloadType<Channel>()
 );
 export const resetStateAction = createAction("resetState");
 

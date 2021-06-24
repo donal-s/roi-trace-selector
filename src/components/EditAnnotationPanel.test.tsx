@@ -13,7 +13,6 @@ import {
 } from "../model/Actions";
 
 describe("component EditAnnotationPanel", () => {
-
   const TEST_ANNOTATION: Annotation = {
     name: "test annotation",
     axis: AXIS_H,
@@ -61,7 +60,7 @@ describe("component EditAnnotationPanel", () => {
     expect(saveAnnotationButton().disabled).toBe(true);
   });
 
-  it("save annotation", () => {
+  it("save annotation vertical axis", () => {
     roiDataStore.dispatch(
       updateEditAnnotationAction({ index: 0, annotation: TEST_ANNOTATION })
     );
@@ -78,6 +77,33 @@ describe("component EditAnnotationPanel", () => {
     expect(roiDataStore.getState().editAnnotation).toBeUndefined();
     expect(roiDataStore.getState().annotations).toStrictEqual([
       { name: "new value", axis: AXIS_V, value: 43 },
+    ]);
+  });
+
+  it("save annotation horizontal axis - for test coverage", () => {
+    roiDataStore.dispatch(
+      updateEditAnnotationAction({
+        index: 0,
+        annotation: {
+          name: "test annotation",
+          axis: AXIS_V,
+          value: 17,
+        },
+      })
+    );
+    checkPanelRender({
+      name: "test annotation",
+      axis: AXIS_V,
+      value: 17,
+    });
+    Simulate.change(horizontalAxisField());
+    expect(saveAnnotationButton().disabled).toBe(false);
+
+    Simulate.click(saveAnnotationButton());
+
+    expect(roiDataStore.getState().editAnnotation).toBeUndefined();
+    expect(roiDataStore.getState().annotations).toStrictEqual([
+      { name: "test annotation", axis: AXIS_H, value: 17 },
     ]);
   });
 

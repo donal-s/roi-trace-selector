@@ -3,15 +3,16 @@ import {
   SCANSTATUS_UNSELECTED,
   SCANSTATUS_UNSCANNED,
   ScanStatus,
-  DataFile,
+  ChannelData,
   ChartAlignment,
   SelectedItemCounts,
   Annotation,
   EditAnnotation,
   CHANNEL_1,
+  Channel,
 } from "./Types";
-import { parseCsvData } from "./CsvHandling";
-import { configureStore, createReducer } from "@reduxjs/toolkit";
+import { loadFile, parseCsvData } from "./CsvHandling";
+import { configureStore, createReducer, Reducer } from "@reduxjs/toolkit";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import {
   fullscreenModeAction,
@@ -23,10 +24,11 @@ import {
   toggleCurrentItemSelectedAction,
   selectAllItemsAction,
   updateChartAlignmentAction,
-  loadDataAction,
   resetStateAction,
   updateAnnotationsAction,
   updateEditAnnotationAction,
+  loadChannelAction,
+  closeChannelAction,
 } from "./Actions";
 
 export type RoiDataset = {
@@ -56,37 +58,48 @@ const initialState: RoiDataModelState = {
   annotations: [],
 };
 
-export const roiDataReducer = createReducer(initialState, (builder) =>
-  builder
-    .addCase(fullscreenModeAction, (state, action) =>
-      setFullscreenMode(state, action.payload)
-    )
-    .addCase(setCurrentIndexAction, (state, action) =>
-      setCurrentIndex(state, action.payload)
-    )
-    .addCase(setCurrentNextAction, (state) => setCurrentNext(state))
-    .addCase(setCurrentPreviousAction, (state) => setCurrentPrevious(state))
-    .addCase(setCurrentNextUnscannedAction, (state) =>
-      setCurrentNextUnscanned(state)
-    )
-    .addCase(setCurrentScanStatusAction, (state, action) =>
-      setCurrentScanStatus(state, action.payload)
-    )
-    .addCase(toggleCurrentItemSelectedAction, (state) =>
-      toggleCurrentItemSelected(state)
-    )
-    .addCase(selectAllItemsAction, (state) => selectAllItems(state))
-    .addCase(updateChartAlignmentAction, (state, action) =>
-      updateChartAlignment(state, action.payload)
-    )
-    .addCase(loadDataAction, (state, action) => loadData(state, action.payload))
-    .addCase(resetStateAction, () => initialState)
-    .addCase(updateAnnotationsAction, (state, action) =>
-      updateAnnotations(state, action.payload)
-    )
-    .addCase(updateEditAnnotationAction, (state, action) =>
-      updateEditAnnotation(state, action.payload)
-    )
+export const roiDataReducer: Reducer<typeof initialState> = createReducer(
+  initialState,
+  (builder) => {
+    builder
+      .addCase(fullscreenModeAction, (state, action) =>
+        setFullscreenMode(state, action.payload)
+      )
+      .addCase(setCurrentIndexAction, (state, action) =>
+        setCurrentIndex(state, action.payload)
+      )
+      .addCase(setCurrentNextAction, (state) => setCurrentNext(state))
+      .addCase(setCurrentPreviousAction, (state) => setCurrentPrevious(state))
+      .addCase(setCurrentNextUnscannedAction, (state) =>
+        setCurrentNextUnscanned(state)
+      )
+      .addCase(setCurrentScanStatusAction, (state, action) =>
+        setCurrentScanStatus(state, action.payload)
+      )
+      .addCase(toggleCurrentItemSelectedAction, (state) =>
+        toggleCurrentItemSelected(state)
+      )
+      .addCase(selectAllItemsAction, (state) => selectAllItems(state))
+      .addCase(updateChartAlignmentAction, (state, action) =>
+        updateChartAlignment(state, action.payload)
+      )
+      .addCase(loadChannelAction, (state, action) =>
+        loadData(state, action.payload)
+      )
+      .addCase(loadFile.fulfilled, (state, action) =>
+        loadData(state, action.payload)
+      )
+      .addCase(closeChannelAction, (state, action) =>
+        closeChannel(state, action.payload)
+      )
+      .addCase(resetStateAction, () => initialState)
+      .addCase(updateAnnotationsAction, (state, action) =>
+        updateAnnotations(state, action.payload)
+      )
+      .addCase(updateEditAnnotationAction, (state, action) =>
+        updateEditAnnotation(state, action.payload)
+      );
+  }
 );
 
 function setFullscreenMode(state: RoiDataModelState, enable: boolean) {
@@ -269,14 +282,14 @@ function updateChartAlignment(
 
 function arraysEqual(array1: any[], array2: any[]) {
   return (
-    array1.length == array2.length &&
+    array1.length === array2.length &&
     array1.every((item, i: number) => {
       return item === array2[i];
     })
   );
 }
 
-function loadData(state: RoiDataModelState, file: DataFile) {
+function loadData(state: RoiDataModelState, file: ChannelData) {
   const {
     items,
     currentIndex,
@@ -308,17 +321,32 @@ function loadData(state: RoiDataModelState, file: DataFile) {
     }
   } else {
     if (!state.channel1Dataset) {
-      throw new Error("Channel 1 not loaded")
+      throw new Error("Channel 1 not loaded");
     }
     if (!arraysEqual(items, state.items)) {
-      throw new Error("Channel 2 item count mismatch")
+      throw new Error("Channel 2 item count mismatch");
     }
     if (!arraysEqual(chartFrameLabels, state.chartFrameLabels)) {
-      throw new Error("Channel 2 frame count mismatch")
+      throw new Error("Channel 2 frame count mismatch");
     }
     result.channel2Dataset = dataset;
   }
   return result;
+}
+
+function closeChannel(state: RoiDataModelState, channel: Channel) {
+  if (channel === CHANNEL_1) {
+    return {
+      items: [],
+      scanStatus: [],
+      currentIndex: -1,
+      chartFrameLabels: [],
+      showSingleTrace: state.showSingleTrace,
+      annotations: state.annotations,
+    };
+  }
+
+  return { ...state, channel2Dataset: undefined };
 }
 
 function updateAnnotations(
@@ -448,22 +476,4 @@ function getItemCount({ items }: RoiDataModelState) {
 
 export function getFrameCount({ chartFrameLabels }: RoiDataModelState) {
   return chartFrameLabels.length;
-}
-/*
-const getCircularReplacer = () => {
-  const seen = new WeakSet();
-  return (key, value) => {
-    if (typeof value === "object" && value !== null) {
-      if (seen.has(value)) {
-        return;
-      }
-      seen.add(value);
-    }
-    return value;
-  };
-};*/
-
-function safeJson(value: any) {
-  //return JSON.stringify(value, getCircularReplacer());
-  return JSON.stringify(value);
 }

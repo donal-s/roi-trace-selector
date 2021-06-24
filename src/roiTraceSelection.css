@@ -48,6 +48,13 @@ div#mainPanel {
   right: 200px;
 }
 
+div.chartPanel.fullheight {
+  height: 100%;
+}
+div.chartPanel.halfheight {
+  height: 50%;
+}
+
 div#mainPanel {
   display: flex;
   align-items: center;
@@ -112,12 +119,6 @@ div#roiChoicePanel {
 .scan div#chartsPanel {
   left: 0px;
   right: 0px;
-}
-
-.inputPanel {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-evenly;
 }
 
 label.fileInput,
@@ -207,7 +208,15 @@ div.optionsPanel {
 
 div.inputPanel {
   padding: 10px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+div.channelActions {
   text-align: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
 }
 
 div#annotationsList {

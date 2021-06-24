@@ -29,7 +29,12 @@ export const CHANNEL_1 = "1";
 export const CHANNEL_2 = "2";
 export type Channel = typeof CHANNEL_1 | typeof CHANNEL_2;
 
-export type DataFile = {
+export type FileData = {
+  file: File;
+  channel: Channel;
+};
+
+export type ChannelData = {
   csvData: string;
   channel: Channel;
   filename: string;

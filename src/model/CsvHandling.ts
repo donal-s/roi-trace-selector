@@ -3,48 +3,45 @@ import sampleRoiTraces from "./sampleRoiTraces.csv";
 import { saveAs } from "file-saver";
 import {
   Channel,
+  ChannelData,
   CHANNEL_1,
+  FileData,
   ScanStatus,
   SCANSTATUS_SELECTED,
   SCANSTATUS_UNSCANNED,
 } from "./Types";
-import { AppDispatch, RoiDataModelState } from "./RoiDataModel";
-import { loadDataAction } from "./Actions";
+import { AppDispatch, RoiDataModelState, RoiDataset } from "./RoiDataModel";
+import { loadChannelAction } from "./Actions";
+import { createAsyncThunk } from "@reduxjs/toolkit";
 
 export function loadTestData() {
-  return loadDataAction({
+  return loadChannelAction({
     csvData: sampleRoiTraces,
     channel: CHANNEL_1,
     filename: "Example data",
   });
 }
 
-export function loadFile(files: FileList | File[]) {
-  return function (dispatch: AppDispatch) {
-    if (window.FileReader) {
-      const file = files[0];
-      return readFileAsync(file)
-        .then((csv) => {
-          dispatch(
-            loadDataAction({
-              csvData: csv as string,
-              channel: CHANNEL_1,
-              filename: file.name,
-            })
-          );
-        })
-        .catch((err) => {
-          if (err.target.error.name === "NotReadableError") {
-            alert("Cannot read file !");
-          }
-        });
-    } else {
-      alert("FileReader is not supported in this browser.");
-    }
-  };
-}
+export const loadFile = createAsyncThunk<
+  ChannelData,
+  FileData,
+  { dispatch: AppDispatch; state: RoiDataModelState }
+>("loadFile", ({ file, channel }, { rejectWithValue }) => {
+  if (!window.FileReader) {
+    return rejectWithValue("FileReader is not supported in this browser.");
+  }
+  return readFileAsync(file)
+    .then((csv) => ({
+      csvData: csv as string,
+      channel,
+      filename: file.name,
+    }))
+    .catch((err) => {
+      return rejectWithValue("Cannot read file !");
+    });
+});
 
-function readFileAsync(file: File) {
+export function readFileAsync(file: File) {
   return new Promise((resolve, reject) => {
     let reader = new FileReader();
 
@@ -57,23 +54,35 @@ function readFileAsync(file: File) {
     reader.readAsText(file);
   });
 }
+
 export function parseCsvData(csv: string) {
   let allTextLines = csv.split(/\r\n|\n/);
   let lines: string[][] = [];
 
   allTextLines.forEach((line) => {
     if (line.length > 0) {
-      lines.push(line.split(","));
+      lines.push(line.split(",").map((s) => s.trim()));
+    }
+  });
+
+  if (!lines.length) {
+    throw new Error("Data file is empty");
+  }
+
+  let columnCount = lines[0].length;
+  lines.forEach((line) => {
+    if (line.length !== columnCount) {
+      throw new Error("Data file rows have different cell counts");
     }
   });
 
   lines = transpose(lines);
 
-  const frameLabelsText = lines.shift()!;
-  frameLabelsText && frameLabelsText.shift();
-  const chartFrameLabels = frameLabelsText
-    ? frameLabelsText.map((s) => Number(s.trim()))
-    : [];
+  const chartFrameLabels = getFrameLabels(lines.shift()!);
+
+  if (!lines.length) {
+    throw new Error("Data file has no item data");
+  }
 
   let chartData: number[][] = [];
   let originalTraceData: number[][] = [];
@@ -82,12 +91,26 @@ export function parseCsvData(csv: string) {
   lines.forEach((roiData, i) => {
     roiData = roiData.map((s) => s.trim());
     let roiLabel: string = roiData.shift()!;
-    let roiNumberData = roiData.map((s) => Number(s));
+    if (roiLabel === "") {
+      throw new Error("Data file has missing item label");
+    }
+    let roiNumberData = roiData.map((s) => {
+      const result = Number(s);
+      if (s === "" || Number.isNaN(result)) {
+        throw new Error(`Data file has non-numeric value cell: '${s}'`);
+      }
+      return result;
+    });
 
     chartData.push([...roiNumberData]);
     originalTraceData.push(roiNumberData);
     roiLabels.push(roiLabel);
   });
+
+  const uniqueValues = new Set(roiLabels);
+  if (roiLabels.length !== uniqueValues.size) {
+    throw new Error("Data file has duplicate item label");
+  }
 
   let scanStatus: ScanStatus[] = [];
   scanStatus.length = roiLabels.length;
@@ -95,7 +118,7 @@ export function parseCsvData(csv: string) {
 
   return {
     items: roiLabels,
-    currentIndex: roiLabels.length > 0 ? 0 : -1,
+    currentIndex: 0,
     scanStatus: scanStatus,
     chartFrameLabels: chartFrameLabels,
     chartData: chartData,
@@ -103,9 +126,42 @@ export function parseCsvData(csv: string) {
   };
 }
 
-export function saveFile(model: RoiDataModelState, channel:Channel) {
-  let data = getSelectedSubsetCsvData(model, channel);
-  let filename = getSelectedSubsetFilename(model, channel);
+function getFrameLabels(frameLabelsRow: string[]) {
+  // Discard first cell
+  frameLabelsRow.shift();
+
+  if (!frameLabelsRow.length) {
+    throw new Error("Data file has no frame data");
+  }
+
+  const chartFrameLabels = frameLabelsRow.map((s) => {
+    if (s === "") {
+      throw new Error(`Data file has missing frame label`);
+    }
+    const result = Number(s);
+    if (Number.isNaN(result)) {
+      throw new Error(`Data file has non-numeric frame label: '${s}'`);
+    }
+    return result;
+  });
+
+  const uniqueValues = new Set(chartFrameLabels);
+  if (chartFrameLabels.length !== uniqueValues.size) {
+    throw new Error("Data file has duplicate frame label");
+  }
+
+  return chartFrameLabels;
+}
+
+export function saveFile(model: RoiDataModelState, channel: Channel) {
+  const channelData =
+    channel === CHANNEL_1 ? model.channel1Dataset : model.channel2Dataset;
+  if (!channelData) {
+    throw new Error("No channel data file loaded");
+  }
+
+  let data = getSelectedSubsetCsvData(model, channelData);
+  let filename = channelData.filename + "_output.csv";
   let blob = new Blob([data], {
     type: "text/csv",
     endings: "native",
@@ -115,13 +171,8 @@ export function saveFile(model: RoiDataModelState, channel:Channel) {
 
 function transpose(a: string[][]) {
   // Calculate the width and height of the Array
-  let w = a.length ? a.length : 0,
-    h = a[0] instanceof Array ? a[0].length : 0;
-
-  // In case it is a zero matrix, no transpose routine needed.
-  if (h === 0 || w === 0) {
-    return [];
-  }
+  let w = a.length,
+    h = a[0].length;
 
   // @var {Number} i Counter
   // @var {Number} j Counter
@@ -145,41 +196,25 @@ function transpose(a: string[][]) {
   return t;
 }
 
-function getSelectedSubsetFilename(model: RoiDataModelState, channel: Channel) {
-  const filename = channel === CHANNEL_1 ? model.channel1Dataset?.filename : model.channel2Dataset?.filename;
-  if (!filename) {
-    throw new Error("No data file loaded");
-  }
-
-  return filename + "_output.csv";
-}
-
-function getSelectedSubsetCsvData(model: RoiDataModelState, channel: Channel) {
-  if (model.items.length === 0) {
-    throw new Error("No data file loaded");
-  }
-
-  const chartData = channel === CHANNEL_1 ? model.channel1Dataset?.chartData : model.channel2Dataset?.chartData;
-  if (!chartData) {
-    throw new Error("No channel data file loaded");
-  }
-
-
+function getSelectedSubsetCsvData(
+  { items, chartFrameLabels, scanStatus }: RoiDataModelState,
+  { chartData }: RoiDataset
+) {
   let result = "";
-  let totalTraces = model.items.length;
-  let totalFrames = model.chartFrameLabels.length;
+  let totalTraces = items.length;
+  let totalFrames = chartFrameLabels.length;
   // Add trace names
   for (let i = 0; i < totalTraces; i++) {
-    if (model.scanStatus[i] === SCANSTATUS_SELECTED) {
-      result += "," + model.items[i];
+    if (scanStatus[i] === SCANSTATUS_SELECTED) {
+      result += "," + items[i];
     }
   }
   result += "\n";
 
   for (let f = 0; f < totalFrames; f++) {
-    result += model.chartFrameLabels[f];
+    result += chartFrameLabels[f];
     for (let i = 0; i < totalTraces; i++) {
-      if (model.scanStatus[i] === SCANSTATUS_SELECTED) {
+      if (scanStatus[i] === SCANSTATUS_SELECTED) {
         result += "," + chartData[i][f];
       }
     }
