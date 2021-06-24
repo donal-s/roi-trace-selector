@@ -36,6 +36,7 @@ import {
   loadChannelAction,
   resetStateAction,
   selectAllItemsAction,
+  setCurrentChannelAction,
   setCurrentIndexAction,
   setCurrentNextAction,
   setCurrentNextUnscannedAction,
@@ -57,6 +58,7 @@ describe("roiDataReducer", () => {
       items: [],
       scanStatus: [],
       currentIndex: -1,
+      currentChannel: CHANNEL_1,
       chartFrameLabels: [],
       showSingleTrace: false,
       annotations: [],
@@ -77,14 +79,56 @@ describe("roiDataReducer", () => {
           [1, 2, 3, 4, 5],
         ],
         filename: "new file",
+        alignment: {
+          channel: CHANNEL_1,
+          enableYMaxAlignment: false,
+          alignToYMax: false,
+          yMaxValue: 200,
+          yMaxFrame: 1,
+          enableYMinAlignment: false,
+          alignToYMin: false,
+          yMinValue: 0,
+          yMinFrame: 5,
+        },
       },
       items: ["ROI-1", "ROI-2", "ROI-3", "ROI-4"],
       scanStatus: ["?", "?", "?", "?"],
       currentIndex: 0,
+      currentChannel: CHANNEL_1,
       chartFrameLabels: [1, 2, 3, 4, 5],
 
       showSingleTrace: false,
       annotations: [],
+    });
+
+    expect(DUAL_CHANNEL_LOADED_STATE).toStrictEqual({
+      ...LOADED_STATE,
+      channel2Dataset: {
+        chartData: [
+          [30, 29, 25, 24, 23],
+          [21.5, 21.5, 21.5, 21.5, 21.5],
+          [21.1, 22.2, 23.3, 22.2, 21.1],
+          [21, 22, 23, 24, 25],
+        ],
+        originalTraceData: [
+          [30, 29, 25, 24, 23],
+          [21.5, 21.5, 21.5, 21.5, 21.5],
+          [21.1, 22.2, 23.3, 22.2, 21.1],
+          [21, 22, 23, 24, 25],
+        ],
+        filename: "new file2",
+        alignment: {
+          channel: CHANNEL_2,
+          enableYMaxAlignment: false,
+          alignToYMax: false,
+          yMaxValue: 200,
+          yMaxFrame: 1,
+          enableYMinAlignment: false,
+          alignToYMin: false,
+          yMinValue: 0,
+          yMinFrame: 5,
+        },
+      },
     });
   });
 
@@ -403,7 +447,13 @@ describe("roiDataReducer", () => {
       );
       expect(
         roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-      ).toStrictEqual(LOADED_STATE);
+      ).toStrictEqual({
+        ...LOADED_STATE,
+        channel1Dataset: {
+          ...LOADED_STATE.channel1Dataset,
+          alignment: params,
+        },
+      });
     });
 
     it("align max frame 1, value 5", () => {
@@ -430,6 +480,7 @@ describe("roiDataReducer", () => {
             [5, 6.1, 7.199999999999999, 6.1, 5],
             [5, 6, 7, 8, 9],
           ],
+          alignment: params,
         },
       });
     });
@@ -458,6 +509,7 @@ describe("roiDataReducer", () => {
             [3.9, 5, 6.1, 5, 3.9],
             [4, 5, 6, 7, 8],
           ],
+          alignment: params,
         },
       });
     });
@@ -492,6 +544,7 @@ describe("roiDataReducer", () => {
             ],
             [1, 2, 3, 4, 5],
           ],
+          alignment: params,
         },
       });
     });
@@ -520,6 +573,7 @@ describe("roiDataReducer", () => {
             [5, 6.1, 7.199999999999999, 6.1, 5],
             [5, 4, 3, 2, 1],
           ],
+          alignment: params,
         },
       });
     });
@@ -548,6 +602,7 @@ describe("roiDataReducer", () => {
             [1, 3.0000000000000004, 5, 3.0000000000000004, 1],
             [1, 2, 3, 4, 5],
           ],
+          alignment: params,
         },
       });
     });
@@ -579,6 +634,7 @@ describe("roiDataReducer", () => {
             [1, 2.999999999999997, 5, 2.999999999999997, 1],
             [1, 2, 3, 4, 5],
           ],
+          alignment: params,
         },
       });
     });
@@ -724,6 +780,7 @@ describe("roiDataReducer", () => {
             [1.5, 1.5, 1.5, 1.5, 1.5],
             [1.1, 2.2, 3.3, 2.2, 1.1],
           ],
+          alignment: LOADED_STATE.channel1Dataset!.alignment,
         },
         channel2Dataset: undefined,
         chartFrameLabels: [1, 2, 3, 4, 5],
@@ -799,91 +856,99 @@ describe("roiDataReducer", () => {
     });
 
     it("second channel should succeed if first channel match", () => {
-      const state = roiDataReducer(
-        EMPTY_STATE,
-        loadChannelAction({
-          csvData: CSV_DATA,
-          channel: CHANNEL_1,
-          filename: "new file",
-        })
-      );
       expect(
         roiDataReducer(
-          state,
+          LOADED_STATE,
           loadChannelAction({
             csvData: CSV_DATA_2,
             channel: CHANNEL_2,
             filename: "new file2",
           })
         )
-      ).toStrictEqual({
-        annotations: [],
-        channel1Dataset: {
-          chartData: [
-            [10, 9, 5, 4, 3],
-            [1.5, 1.5, 1.5, 1.5, 1.5],
-            [1.1, 2.2, 3.3, 2.2, 1.1],
-            [1, 2, 3, 4, 5],
-          ],
-          filename: "new file",
-          originalTraceData: [
-            [10, 9, 5, 4, 3],
-            [1.5, 1.5, 1.5, 1.5, 1.5],
-            [1.1, 2.2, 3.3, 2.2, 1.1],
-            [1, 2, 3, 4, 5],
-          ],
-        },
-        channel2Dataset: {
-          chartData: [
-            [30, 29, 25, 24, 23],
-            [21.5, 21.5, 21.5, 21.5, 21.5],
-            [21.1, 22.2, 23.3, 22.2, 21.1],
-            [21, 22, 23, 24, 25],
-          ],
-          filename: "new file2",
-          originalTraceData: [
-            [30, 29, 25, 24, 23],
-            [21.5, 21.5, 21.5, 21.5, 21.5],
-            [21.1, 22.2, 23.3, 22.2, 21.1],
-            [21, 22, 23, 24, 25],
-          ],
-        },
-        chartFrameLabels: [1, 2, 3, 4, 5],
-        currentIndex: 0,
-        items: ["ROI-1", "ROI-2", "ROI-3", "ROI-4"],
-        scanStatus: ["?", "?", "?", "?"],
-        showSingleTrace: false,
-      });
+      ).toStrictEqual(DUAL_CHANNEL_LOADED_STATE);
     });
   });
 
-  it("close channel 1 with one channel loaded should clear all dataset data", () => {
-    expect(
-      roiDataReducer(LOADED_STATE, closeChannelAction(CHANNEL_1))
-    ).toStrictEqual(EMPTY_STATE);
+  describe("closeChannelAction", () => {
+    it("close channel 1 with one channel loaded should clear all dataset data", () => {
+      expect(
+        roiDataReducer(LOADED_STATE, closeChannelAction(CHANNEL_1))
+      ).toStrictEqual(EMPTY_STATE);
+    });
+
+    it("close channel 1 with both channels loaded should clear all dataset data", () => {
+      expect(
+        roiDataReducer(DUAL_CHANNEL_LOADED_STATE, closeChannelAction(CHANNEL_1))
+      ).toStrictEqual(EMPTY_STATE);
+    });
+
+    it("close channel 2 with both channels loaded should clear only channel 2 dataset", () => {
+      expect(
+        roiDataReducer(
+          {
+            ...DUAL_CHANNEL_LOADED_STATE,
+            currentIndex: 2,
+            scanStatus: ["?", "n", "y", "?"],
+          },
+          closeChannelAction(CHANNEL_2)
+        )
+      ).toStrictEqual({
+        ...LOADED_STATE,
+        channel2Dataset: undefined,
+        currentIndex: 2,
+        scanStatus: ["?", "n", "y", "?"],
+      });
+    });
+
+    it("close channel 1 with both channels loaded should set currentChannel to channel 1", () => {
+      expect(
+        roiDataReducer(
+          {
+            ...DUAL_CHANNEL_LOADED_STATE,
+            currentChannel: CHANNEL_2,
+          },
+          closeChannelAction(CHANNEL_1)
+        )
+      ).toStrictEqual(EMPTY_STATE);
+    });
+
+    it("close channel 2 with both channels loaded should set currentChannel to channel 1", () => {
+      expect(
+        roiDataReducer(
+          {
+            ...DUAL_CHANNEL_LOADED_STATE,
+            currentChannel: CHANNEL_2,
+          },
+          closeChannelAction(CHANNEL_2)
+        )
+      ).toStrictEqual({ ...LOADED_STATE, channel2Dataset: undefined });
+    });
   });
 
-  it("close channel 1 with both channels loaded should clear all dataset data", () => {
-    expect(
-      roiDataReducer(DUAL_CHANNEL_LOADED_STATE, closeChannelAction(CHANNEL_1))
-    ).toStrictEqual(EMPTY_STATE);
-  });
+  describe("setCurrentChannelAction", () => {
+    it("set channel 1 when channel 1 not loaded should succeed - no op", () => {
+      expect(
+        roiDataReducer(EMPTY_STATE, setCurrentChannelAction(CHANNEL_1))
+      ).toStrictEqual(EMPTY_STATE);
+    });
 
-  it("close first channel 2 with both channels loaded should clear only channel 2 dataset", () => {
-    expect(
-      roiDataReducer(
-        {
-          ...DUAL_CHANNEL_LOADED_STATE,
-          currentIndex: 2,
-          scanStatus: ["?", "?", "?", "?"],
-        },
-        closeChannelAction(CHANNEL_2)
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      channel2Dataset: undefined,
-      currentIndex: 2,
-      scanStatus: ["?", "?", "?", "?"],
+    it("set channel 2 when channel 1 not loaded should fail", () => {
+      expect(() =>
+        roiDataReducer(EMPTY_STATE, setCurrentChannelAction(CHANNEL_2))
+      ).toThrow("Channel 1 not loaded");
+    });
+
+    it("set either channel when channel 1 loaded should succeed", () => {
+      expect(
+        roiDataReducer(LOADED_STATE, setCurrentChannelAction(CHANNEL_2))
+      ).toStrictEqual({ ...LOADED_STATE, currentChannel: CHANNEL_2 });
+
+      expect(
+        roiDataReducer(
+          { ...LOADED_STATE, currentChannel: CHANNEL_2 },
+          setCurrentChannelAction(CHANNEL_1)
+        )
+      ).toStrictEqual(LOADED_STATE);
     });
   });
 

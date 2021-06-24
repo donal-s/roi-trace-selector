@@ -30,6 +30,7 @@ export const EMPTY_STATE: RoiDataModelState = {
   items: [],
   scanStatus: [],
   currentIndex: -1,
+  currentChannel: CHANNEL_1,
   chartFrameLabels: [],
   showSingleTrace: false,
   annotations: [],

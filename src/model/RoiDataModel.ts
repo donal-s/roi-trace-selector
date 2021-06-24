@@ -10,6 +10,7 @@ import {
   EditAnnotation,
   CHANNEL_1,
   Channel,
+  CHANNEL_2,
 } from "./Types";
 import { loadFile, parseCsvData } from "./CsvHandling";
 import { configureStore, createReducer, Reducer } from "@reduxjs/toolkit";
@@ -29,12 +30,14 @@ import {
   updateEditAnnotationAction,
   loadChannelAction,
   closeChannelAction,
+  setCurrentChannelAction,
 } from "./Actions";
 
 export type RoiDataset = {
   filename: string;
   chartData: number[][];
   originalTraceData: number[][];
+  alignment: ChartAlignment;
 };
 
 export type RoiDataModelState = {
@@ -43,6 +46,7 @@ export type RoiDataModelState = {
   items: string[];
   scanStatus: ScanStatus[];
   currentIndex: number;
+  currentChannel: Channel;
   chartFrameLabels: number[];
   showSingleTrace: boolean;
   annotations: Annotation[];
@@ -53,12 +57,13 @@ const initialState: RoiDataModelState = {
   items: [],
   scanStatus: [],
   currentIndex: -1,
+  currentChannel: CHANNEL_1,
   chartFrameLabels: [],
   showSingleTrace: false,
   annotations: [],
 };
 
-export const roiDataReducer: Reducer<typeof initialState> = createReducer(
+export const roiDataReducer: Reducer<RoiDataModelState> = createReducer(
   initialState,
   (builder) => {
     builder
@@ -91,6 +96,9 @@ export const roiDataReducer: Reducer<typeof initialState> = createReducer(
       )
       .addCase(closeChannelAction, (state, action) =>
         closeChannel(state, action.payload)
+      )
+      .addCase(setCurrentChannelAction, (state, action) =>
+        setCurrentChannel(state, action.payload)
       )
       .addCase(resetStateAction, () => initialState)
       .addCase(updateAnnotationsAction, (state, action) =>
@@ -193,7 +201,9 @@ function selectAllItems(state: RoiDataModelState) {
 
 function updateChartAlignment(
   state: RoiDataModelState,
-  {
+  alignment: ChartAlignment
+) {
+  const {
     channel,
     enableYMaxAlignment,
     alignToYMax,
@@ -203,8 +213,8 @@ function updateChartAlignment(
     alignToYMin,
     yMinValue,
     yMinFrame,
-  }: ChartAlignment
-) {
+  } = alignment;
+  
   if (
     (enableYMaxAlignment &&
       !alignToYMax &&
@@ -277,6 +287,7 @@ function updateChartAlignment(
   }
 
   dataset.chartData = newChartData;
+  dataset.alignment = { ...alignment };
   return state;
 }
 
@@ -298,10 +309,22 @@ function loadData(state: RoiDataModelState, file: ChannelData) {
     chartData,
     originalTraceData,
   } = parseCsvData(file.csvData);
+  const alignment: ChartAlignment = {
+    channel: file.channel,
+    enableYMaxAlignment: false,
+    alignToYMax: false,
+    yMaxValue: 200,
+    yMaxFrame: 1,
+    enableYMinAlignment: false,
+    alignToYMin: false,
+    yMinValue: 0,
+    yMinFrame: chartFrameLabels.length,
+  };
   const dataset: RoiDataset = {
     filename: file.filename,
     chartData,
     originalTraceData,
+    alignment,
   };
   const result = {
     ...state,
@@ -334,19 +357,31 @@ function loadData(state: RoiDataModelState, file: ChannelData) {
   return result;
 }
 
-function closeChannel(state: RoiDataModelState, channel: Channel) {
+function closeChannel(
+  state: RoiDataModelState,
+  channel: Channel
+): RoiDataModelState {
   if (channel === CHANNEL_1) {
     return {
       items: [],
       scanStatus: [],
       currentIndex: -1,
+      currentChannel: CHANNEL_1,
       chartFrameLabels: [],
       showSingleTrace: state.showSingleTrace,
       annotations: state.annotations,
     };
   }
 
-  return { ...state, channel2Dataset: undefined };
+  return { ...state, currentChannel: CHANNEL_1, channel2Dataset: undefined };
+}
+
+function setCurrentChannel(state: RoiDataModelState, channel: Channel) {
+  if (!state.channel1Dataset && channel === CHANNEL_2) {
+    throw new Error("Channel 1 not loaded");
+  }
+
+  return { ...state, currentChannel: channel };
 }
 
 function updateAnnotations(

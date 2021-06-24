@@ -89,7 +89,7 @@ describe("component App", () => {
   const loadTestFileButton = (): HTMLButtonElement =>
     container.querySelector("#openChannel1Test")!;
   const saveFileButton = (): HTMLButtonElement =>
-    container.querySelector("#saveChannel1")!;
+    container.querySelector("#saveChannel")!;
 
   function renderComponent() {
     act(() => {

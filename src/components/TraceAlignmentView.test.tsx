@@ -6,8 +6,9 @@ import { act, Simulate } from "react-dom/test-utils";
 import TraceAlignmentView from "./TraceAlignmentView";
 import roiDataStore from "../model/RoiDataModel";
 import { Provider } from "react-redux";
-import { CSV_DATA, setCsvData } from "../TestUtils";
-import { Channel, CHANNEL_1 } from "../model/Types";
+import { CSV_DATA, CSV_DATA_2, setCsvData } from "../TestUtils";
+import { Channel, CHANNEL_1, CHANNEL_2 } from "../model/Types";
+import { resetStateAction, setCurrentChannelAction } from "../model/Actions";
 
 describe("component TraceAlignmentView", () => {
   let container: HTMLElement;
@@ -15,6 +16,7 @@ describe("component TraceAlignmentView", () => {
     // setup a DOM element as a render target
     container = document.createElement("div");
     document.body.appendChild(container);
+    roiDataStore.dispatch(resetStateAction());
   });
 
   afterEach(() => {
@@ -23,16 +25,18 @@ describe("component TraceAlignmentView", () => {
     container.remove();
   });
 
-  it("initial empty state disabled", () => {
+  it("initial empty state channel 1 disabled", () => {
     renderComponent();
+
     checkEnabled(false, false, false, false, false, false, false, false);
-    checkValues(false, false, "200", "1", false, false, "0", "0");
+    checkValues(false, false, "200", "1", false, false, "0", "1");
     checkAlignedChartData(undefined, CHANNEL_1);
   });
 
-  it("loaded state", () => {
+  it("loaded state channel 1", () => {
     setCsvData(CSV_DATA);
     renderComponent();
+
     checkEnabled(true, false, false, false, false, false, false, false);
     checkValues(false, false, "200", "1", false, false, "0", "5");
     checkAlignedChartData(
@@ -46,9 +50,20 @@ describe("component TraceAlignmentView", () => {
     );
   });
 
-  it("modify settings", () => {
+  it("channel 1 loaded state channel 2 disabled", () => {
+    setCsvData(CSV_DATA);
+    roiDataStore.dispatch(setCurrentChannelAction(CHANNEL_2));
+    renderComponent();
+
+    checkEnabled(false, false, false, false, false, false, false, false);
+    checkValues(false, false, "200", "1", false, false, "0", "1");
+    checkAlignedChartData(undefined, CHANNEL_2);
+  });
+
+  it("modify settings channel 1", () => {
     setCsvData(CSV_DATA);
     renderComponent();
+
     checkEnabled(true, false, false, false, false, false, false, false);
     checkValues(false, false, "200", "1", false, false, "0", "5");
     checkAlignedChartData(
@@ -67,7 +82,7 @@ describe("component TraceAlignmentView", () => {
     checkEnabled(true, true, true, true, true, false, false, false);
     checkValues(true, false, "200", "1", false, false, "0", "5");
 
-    setTextField(fluorescenceMaxField(), "5");
+    setTextField(yMaxValueField(), "5");
     renderComponent();
     checkEnabled(true, true, true, true, true, false, false, false);
     checkValues(true, false, "5", "1", false, false, "0", "5");
@@ -82,7 +97,7 @@ describe("component TraceAlignmentView", () => {
     );
 
     // Align max frame 2, value 5
-    setTextField(fluorescenceMaxFrameField(), "2");
+    setTextField(yMaxFrameField(), "2");
     renderComponent();
     checkEnabled(true, true, true, true, true, false, false, false);
     checkValues(true, false, "5", "2", false, false, "0", "5");
@@ -119,9 +134,9 @@ describe("component TraceAlignmentView", () => {
 
     // Align max frame 1, value 5, min frame 5 value 1
     setCheckbox(alignToYMaxField(), false);
-    setTextField(fluorescenceMaxFrameField(), "1");
+    setTextField(yMaxFrameField(), "1");
     setCheckbox(enableYMinAlignmentField(), true);
-    setTextField(fluorescenceMinField(), "1");
+    setTextField(yMinValueField(), "1");
     renderComponent();
     checkEnabled(true, true, true, true, true, true, true, true);
     checkValues(true, false, "5", "1", true, false, "1", "5");
@@ -152,6 +167,45 @@ describe("component TraceAlignmentView", () => {
     );
   });
 
+  it("modify settings channel 2", () => {
+    setCsvData(CSV_DATA);
+    setCsvData(CSV_DATA_2, CHANNEL_2);
+    roiDataStore.dispatch(setCurrentChannelAction(CHANNEL_2));
+    renderComponent();
+
+    checkEnabled(true, false, false, false, false, false, false, false);
+    checkValues(false, false, "200", "1", false, false, "0", "5");
+    checkAlignedChartData(
+      [
+        [30, 29, 25, 24, 23],
+        [21.5, 21.5, 21.5, 21.5, 21.5],
+        [21.1, 22.2, 23.3, 22.2, 21.1],
+        [21, 22, 23, 24, 25],
+      ],
+      CHANNEL_2
+    );
+
+    // Align max frame 1, value 5
+    setCheckbox(enableYMaxAlignmentField(), true);
+    renderComponent();
+    checkEnabled(true, true, true, true, true, false, false, false);
+    checkValues(true, false, "200", "1", false, false, "0", "5");
+
+    setTextField(yMaxValueField(), "5");
+    renderComponent();
+    checkEnabled(true, true, true, true, true, false, false, false);
+    checkValues(true, false, "5", "1", false, false, "0", "5");
+    checkAlignedChartData(
+      [
+        [5, 4, 0, -1, -2],
+        [5, 5, 5, 5, 5],
+        [5, 6.099999999999998, 7.199999999999999, 6.099999999999998, 5],
+        [5, 6, 7, 8, 9],
+      ],
+      CHANNEL_2
+    );
+  });
+
   it("input blur", () => {
     setCsvData(CSV_DATA);
     renderComponent();
@@ -162,36 +216,36 @@ describe("component TraceAlignmentView", () => {
     checkValues(true, false, "200", "1", true, false, "0", "5");
 
     // Max <= min
-    setTextField(fluorescenceMaxField(), "0");
-    Simulate.blur(fluorescenceMaxField());
+    setTextField(yMaxValueField(), "0");
+    Simulate.blur(yMaxValueField());
     renderComponent();
     checkValues(true, false, "1", "1", true, false, "0", "5");
 
-    setTextField(fluorescenceMaxField(), "-10");
-    Simulate.blur(fluorescenceMaxField());
+    setTextField(yMaxValueField(), "-10");
+    Simulate.blur(yMaxValueField());
     renderComponent();
     checkValues(true, false, "1", "1", true, false, "0", "5");
 
     // Min >= max
-    setTextField(fluorescenceMaxField(), "100");
+    setTextField(yMaxValueField(), "100");
     renderComponent();
     checkValues(true, false, "100", "1", true, false, "0", "5");
 
-    setTextField(fluorescenceMinField(), "110");
-    Simulate.blur(fluorescenceMinField()!);
+    setTextField(yMinValueField(), "110");
+    Simulate.blur(yMinValueField()!);
     renderComponent();
     checkValues(true, false, "100", "1", true, false, "99", "5");
 
-    setTextField(fluorescenceMinField(), "100");
-    Simulate.blur(fluorescenceMinField()!);
+    setTextField(yMinValueField(), "100");
+    Simulate.blur(yMinValueField()!);
     renderComponent();
     checkValues(true, false, "100", "1", true, false, "99", "5");
 
     // Max > min
-    setTextField(fluorescenceMaxField(), "15");
-    setTextField(fluorescenceMinField(), "4");
-    Simulate.blur(fluorescenceMaxField()!);
-    Simulate.blur(fluorescenceMinField()!);
+    setTextField(yMaxValueField(), "15");
+    setTextField(yMinValueField(), "4");
+    Simulate.blur(yMaxValueField()!);
+    Simulate.blur(yMinValueField()!);
     renderComponent();
     checkValues(true, false, "15", "1", true, false, "4", "5");
   });
@@ -206,10 +260,10 @@ describe("component TraceAlignmentView", () => {
     checkValues(true, false, "200", "1", true, false, "0", "5");
 
     // Max <= min
-    setTextField(fluorescenceMaxField(), "");
-    setTextField(fluorescenceMaxFrameField(), "");
-    setTextField(fluorescenceMinField(), "");
-    setTextField(fluorescenceMinFrameField(), "");
+    setTextField(yMaxValueField(), "");
+    setTextField(yMaxFrameField(), "");
+    setTextField(yMinValueField(), "");
+    setTextField(yMinFrameField(), "");
     checkValues(true, false, "200", "1", true, false, "0", "5");
   });
 
@@ -217,57 +271,57 @@ describe("component TraceAlignmentView", () => {
     container.querySelector("#enableYMaxAlignment")!;
   const alignToYMaxField = (): HTMLInputElement =>
     container.querySelector("#alignToYMax")!;
-  const fluorescenceMaxField = (): HTMLInputElement =>
-    container.querySelector("#fluorescenceMax")!;
-  const fluorescenceMaxFrameField = (): HTMLInputElement =>
-    container.querySelector("#fluorescenceMaxFrame")!;
+  const yMaxValueField = (): HTMLInputElement =>
+    container.querySelector("#yMaxValue")!;
+  const yMaxFrameField = (): HTMLInputElement =>
+    container.querySelector("#yMaxFrame")!;
   const enableYMinAlignmentField = (): HTMLInputElement =>
     container.querySelector("#enableYMinAlignment")!;
   const alignToYMinField = (): HTMLInputElement =>
     container.querySelector("#alignToYMin")!;
-  const fluorescenceMinField = (): HTMLInputElement =>
-    container.querySelector("#fluorescenceMin")!;
-  const fluorescenceMinFrameField = (): HTMLInputElement =>
-    container.querySelector("#fluorescenceMinFrame")!;
+  const yMinValueField = (): HTMLInputElement =>
+    container.querySelector("#yMinValue")!;
+  const yMinFrameField = (): HTMLInputElement =>
+    container.querySelector("#yMinFrame")!;
 
   function checkEnabled(
     enableYMaxAlignment: boolean,
     alignToYMax: boolean,
-    fluorescenceMax: boolean,
-    fluorescenceMaxFrame: boolean,
+    yMaxValue: boolean,
+    yMaxFrame: boolean,
     enableYMinAlignment: boolean,
     alignToYMin: boolean,
-    fluorescenceMin: boolean,
-    fluorescenceMinFrame: boolean
+    yMinValue: boolean,
+    yMinFrame: boolean
   ) {
     expect(enableYMaxAlignmentField().disabled).toBe(!enableYMaxAlignment);
     expect(alignToYMaxField().disabled).toBe(!alignToYMax);
-    expect(fluorescenceMaxField().disabled).toBe(!fluorescenceMax);
-    expect(fluorescenceMaxFrameField().disabled).toBe(!fluorescenceMaxFrame);
+    expect(yMaxValueField().disabled).toBe(!yMaxValue);
+    expect(yMaxFrameField().disabled).toBe(!yMaxFrame);
     expect(enableYMinAlignmentField().disabled).toBe(!enableYMinAlignment);
     expect(alignToYMinField().disabled).toBe(!alignToYMin);
-    expect(fluorescenceMinField().disabled).toBe(!fluorescenceMin);
-    expect(fluorescenceMinFrameField().disabled).toBe(!fluorescenceMinFrame);
+    expect(yMinValueField().disabled).toBe(!yMinValue);
+    expect(yMinFrameField().disabled).toBe(!yMinFrame);
   }
 
   function checkValues(
     enableYMaxAlignment: boolean,
     alignToYMax: boolean,
-    fluorescenceMax: string,
-    fluorescenceMaxFrame: string,
+    yMaxValue: string,
+    yMaxFrame: string,
     enableYMinAlignment: boolean,
     alignToYMin: boolean,
-    fluorescenceMin: string,
-    fluorescenceMinFrame: string
+    yMinValue: string,
+    yMinFrame: string
   ) {
     expect(enableYMaxAlignmentField().checked).toBe(enableYMaxAlignment);
     expect(alignToYMaxField().checked).toBe(alignToYMax);
-    expect(fluorescenceMaxField().value).toBe(fluorescenceMax);
-    expect(fluorescenceMaxFrameField().value).toBe(fluorescenceMaxFrame);
+    expect(yMaxValueField().value).toBe(yMaxValue);
+    expect(yMaxFrameField().value).toBe(yMaxFrame);
     expect(enableYMinAlignmentField().checked).toBe(enableYMinAlignment);
     expect(alignToYMinField().checked).toBe(alignToYMin);
-    expect(fluorescenceMinField().value).toBe(fluorescenceMin);
-    expect(fluorescenceMinFrameField().value).toBe(fluorescenceMinFrame);
+    expect(yMinValueField().value).toBe(yMinValue);
+    expect(yMinFrameField().value).toBe(yMinFrame);
   }
 
   function checkAlignedChartData(

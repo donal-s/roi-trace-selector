@@ -5,6 +5,7 @@ import FileAccessView from "./FileAccessView";
 import { Provider } from "react-redux";
 import FileSaver from "file-saver";
 import {
+  classesContain,
   configureAppMockStore,
   DUAL_CHANNEL_LOADED_STATE,
   EMPTY_STATE,
@@ -45,38 +46,73 @@ describe("component FileAccessView", () => {
     jest.restoreAllMocks();
   });
 
-  it("initial empty state", () => {
+  it("initial empty state channel 1", () => {
     renderComponent();
-    expect(saveChannel1Button().disabled).toBe(true);
-    expect(closeChannel1Button().disabled).toBe(true);
-    expect(loadChannel2Button().disabled).toBe(true);
-    expect(saveChannel2Button().disabled).toBe(true);
-    expect(closeChannel2Button().disabled).toBe(true);
+    expect(
+      classesContain(loadButtonLabel().getAttribute("class"), "disabled")
+    ).toBe(false);
+    expect(loadButton().disabled).toBe(false);
+    expect(saveButton().disabled).toBe(true);
+    expect(closeButton().disabled).toBe(true);
   });
 
-  it("one channel loaded", () => {
+  it("initial empty state channel 2 - shouldn't be possible - for test coverage", () => {
+    renderComponent(mockStore({ ...EMPTY_STATE, currentChannel: CHANNEL_2 }));
+    expect(
+      classesContain(loadButtonLabel().getAttribute("class"), "disabled")
+    ).toBe(true);
+    expect(loadButton().disabled).toBe(true);
+    expect(saveButton().disabled).toBe(true);
+    expect(closeButton().disabled).toBe(true);
+  });
+
+  it("one channel loaded channel 1", () => {
     renderComponent(mockStore(LOADED_STATE));
-    expect(saveChannel1Button().disabled).toBe(false);
-    expect(closeChannel1Button().disabled).toBe(false);
-    expect(loadChannel2Button().disabled).toBe(false);
-    expect(saveChannel2Button().disabled).toBe(true);
-    expect(closeChannel2Button().disabled).toBe(true);
+    expect(
+      classesContain(loadButtonLabel().getAttribute("class"), "disabled")
+    ).toBe(false);
+    expect(loadButton().disabled).toBe(false);
+    expect(saveButton().disabled).toBe(false);
+    expect(closeButton().disabled).toBe(false);
   });
 
-  it("two channels loaded", () => {
+  it("one channel loaded channel 2", () => {
+    renderComponent(mockStore({ ...LOADED_STATE, currentChannel: CHANNEL_2 }));
+    expect(
+      classesContain(loadButtonLabel().getAttribute("class"), "disabled")
+    ).toBe(false);
+    expect(loadButton().disabled).toBe(false);
+    expect(saveButton().disabled).toBe(true);
+    expect(closeButton().disabled).toBe(true);
+  });
+
+  it("two channels loaded channel 1", () => {
     renderComponent(mockStore(DUAL_CHANNEL_LOADED_STATE));
-    expect(saveChannel1Button().disabled).toBe(false);
-    expect(closeChannel1Button().disabled).toBe(false);
-    expect(loadChannel2Button().disabled).toBe(false);
-    expect(saveChannel2Button().disabled).toBe(false);
-    expect(closeChannel2Button().disabled).toBe(false);
+    expect(
+      classesContain(loadButtonLabel().getAttribute("class"), "disabled")
+    ).toBe(false);
+    expect(loadButton().disabled).toBe(false);
+    expect(saveButton().disabled).toBe(false);
+    expect(closeButton().disabled).toBe(false);
+  });
+
+  it("two channels loaded channel 2", () => {
+    renderComponent(
+      mockStore({ ...DUAL_CHANNEL_LOADED_STATE, currentChannel: CHANNEL_2 })
+    );
+    expect(
+      classesContain(loadButtonLabel().getAttribute("class"), "disabled")
+    ).toBe(false);
+    expect(loadButton().disabled).toBe(false);
+    expect(saveButton().disabled).toBe(false);
+    expect(closeButton().disabled).toBe(false);
   });
 
   it("load channel 1 from empty state", async () => {
     const store = mockStore(EMPTY_STATE);
     renderComponent(store);
 
-    Simulate.change(loadChannel1Button(), {
+    Simulate.change(loadButton(), {
       target: createLoadFileTarget(SMALL_CSV_DATA, "newTestFile.csv"),
     });
 
@@ -100,7 +136,7 @@ describe("component FileAccessView", () => {
     const store = mockStore(LOADED_STATE);
     renderComponent(store);
 
-    Simulate.change(loadChannel1Button(), {
+    Simulate.change(loadButton(), {
       target: createLoadFileTarget(SMALL_CSV_DATA, "newTestFile.csv"),
     });
 
@@ -125,7 +161,7 @@ describe("component FileAccessView", () => {
     const store = mockStore(LOADED_STATE);
     renderComponent(store);
 
-    Simulate.change(loadChannel1Button(), {
+    Simulate.change(loadButton(), {
       target: createLoadFileTarget(SMALL_CSV_DATA, "newTestFile.csv"),
     });
 
@@ -138,7 +174,7 @@ describe("component FileAccessView", () => {
     const store = mockStore(DUAL_CHANNEL_LOADED_STATE);
     renderComponent(store);
 
-    Simulate.change(loadChannel1Button(), {
+    Simulate.change(loadButton(), {
       target: createLoadFileTarget(SMALL_CSV_DATA, "newTestFile.csv"),
     });
 
@@ -163,7 +199,7 @@ describe("component FileAccessView", () => {
     const store = mockStore(DUAL_CHANNEL_LOADED_STATE);
     renderComponent(store);
 
-    Simulate.change(loadChannel1Button(), {
+    Simulate.change(loadButton(), {
       target: createLoadFileTarget(SMALL_CSV_DATA, "newTestFile.csv"),
     });
 
@@ -173,10 +209,10 @@ describe("component FileAccessView", () => {
   });
 
   it("load channel 2 with channel 1 already loaded", async () => {
-    const store = mockStore(LOADED_STATE);
+    const store = mockStore({ ...LOADED_STATE, currentChannel: CHANNEL_2 });
     renderComponent(store);
 
-    Simulate.change(loadChannel2Button(), {
+    Simulate.change(loadButton(), {
       target: createLoadFileTarget(SMALL_CSV_DATA, "newTestFile.csv"),
     });
 
@@ -197,10 +233,13 @@ describe("component FileAccessView", () => {
   });
 
   it("load channel 2 with both channels already loaded", async () => {
-    const store = mockStore(DUAL_CHANNEL_LOADED_STATE);
+    const store = mockStore({
+      ...DUAL_CHANNEL_LOADED_STATE,
+      currentChannel: CHANNEL_2,
+    });
     renderComponent(store);
 
-    Simulate.change(loadChannel2Button(), {
+    Simulate.change(loadButton(), {
       target: createLoadFileTarget(SMALL_CSV_DATA, "newTestFile.csv"),
     });
 
@@ -245,7 +284,7 @@ describe("component FileAccessView", () => {
       });
       renderComponent(store);
 
-      Simulate.click(saveChannel1Button());
+      Simulate.click(saveButton());
 
       expect(FileSaver.saveAs).toHaveBeenCalledWith(
         {
@@ -266,11 +305,12 @@ describe("component FileAccessView", () => {
     it("save channel 2", async () => {
       const store = mockStore({
         ...DUAL_CHANNEL_LOADED_STATE,
+        currentChannel: CHANNEL_2,
         scanStatus: ["y", "y", "y", "y"],
       });
       renderComponent(store);
 
-      Simulate.click(saveChannel2Button());
+      Simulate.click(saveButton());
 
       expect(FileSaver.saveAs).toHaveBeenCalledWith(
         {
@@ -293,7 +333,7 @@ describe("component FileAccessView", () => {
     const store = mockStore(LOADED_STATE);
     renderComponent(store);
 
-    Simulate.click(closeChannel1Button());
+    Simulate.click(closeButton());
 
     expect(store.getActions()).toStrictEqual([
       { payload: CHANNEL_1, type: "closeChannel" },
@@ -306,7 +346,7 @@ describe("component FileAccessView", () => {
     const store = mockStore(LOADED_STATE);
     renderComponent(store);
 
-    Simulate.click(closeChannel1Button());
+    Simulate.click(closeButton());
 
     expect(store.getActions()).toHaveLength(0);
     expect(mockConfirm).toHaveBeenCalledTimes(1);
@@ -316,7 +356,7 @@ describe("component FileAccessView", () => {
     const store = mockStore(DUAL_CHANNEL_LOADED_STATE);
     renderComponent(store);
 
-    Simulate.click(closeChannel1Button());
+    Simulate.click(closeButton());
 
     expect(store.getActions()).toStrictEqual([
       { payload: CHANNEL_1, type: "closeChannel" },
@@ -329,17 +369,20 @@ describe("component FileAccessView", () => {
     const store = mockStore(LOADED_STATE);
     renderComponent(store);
 
-    Simulate.click(closeChannel1Button());
+    Simulate.click(closeButton());
 
     expect(store.getActions()).toHaveLength(0);
     expect(mockConfirm).toHaveBeenCalledTimes(1);
   });
 
   it("close channel 2 with both channels loaded", async () => {
-    const store = mockStore(DUAL_CHANNEL_LOADED_STATE);
+    const store = mockStore({
+      ...DUAL_CHANNEL_LOADED_STATE,
+      currentChannel: CHANNEL_2,
+    });
     renderComponent(store);
 
-    Simulate.click(closeChannel2Button());
+    Simulate.click(closeButton());
 
     expect(store.getActions()).toStrictEqual([
       { payload: CHANNEL_2, type: "closeChannel" },
@@ -347,29 +390,14 @@ describe("component FileAccessView", () => {
     expect(mockConfirm).not.toHaveBeenCalled();
   });
 
-  it("close channel 2 with both channels loaded then cancel on confirm", async () => {
-    mockConfirm.mockReturnValue(false);
-    const store = mockStore(LOADED_STATE);
-    renderComponent(store);
-
-    Simulate.click(closeChannel2Button());
-
-    expect(store.getActions()).toHaveLength(0);
-    expect(mockConfirm).not.toHaveBeenCalled();
-  });
-
-  const loadChannel1Button = (): HTMLInputElement =>
-    container.querySelector("#csvFileInput1")!;
-  const saveChannel1Button = (): HTMLButtonElement =>
-    container.querySelector("#saveChannel1")!;
-  const closeChannel1Button = (): HTMLButtonElement =>
-    container.querySelector("#closeChannel1")!;
-  const loadChannel2Button = (): HTMLInputElement =>
-    container.querySelector("#csvFileInput2")!;
-  const saveChannel2Button = (): HTMLButtonElement =>
-    container.querySelector("#saveChannel2")!;
-  const closeChannel2Button = (): HTMLButtonElement =>
-    container.querySelector("#closeChannel2")!;
+  const loadButton = (): HTMLInputElement =>
+    container.querySelector("#csvFileInput")!;
+  const loadButtonLabel = (): HTMLInputElement =>
+    container.querySelector("#loadChannel")!;
+  const saveButton = (): HTMLButtonElement =>
+    container.querySelector("#saveChannel")!;
+  const closeButton = (): HTMLButtonElement =>
+    container.querySelector("#closeChannel")!;
 
   function renderComponent(store: Store = mockStore(EMPTY_STATE)) {
     act(() => {

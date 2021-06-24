@@ -1,82 +1,75 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   getFrameCount,
   isChannel1Loaded,
+  isChannel2Loaded,
   useAppDispatch,
   useAppSelector,
 } from "../model/RoiDataModel";
 import { updateChartAlignmentAction } from "../model/Actions";
-import { CHANNEL_1 } from "../model/Types";
+import { CHANNEL_1, ChartAlignment } from "../model/Types";
+
+const DEFAULT_ALIGNMENT: ChartAlignment = {
+  channel: CHANNEL_1,
+  enableYMaxAlignment: false,
+  alignToYMax: false,
+  yMaxValue: 200,
+  yMaxFrame: 1,
+  enableYMinAlignment: false,
+  alignToYMin: false,
+  yMinValue: 0,
+  yMinFrame: 1,
+};
 
 export default function TraceAlignmentView() {
   const dispatch = useAppDispatch();
+  const currentChannel = useAppSelector((state) => state.currentChannel);
+  const channel1Loaded = useAppSelector(isChannel1Loaded);
+  const channel2Loaded = useAppSelector(isChannel2Loaded);
+  const channelAlignment = useAppSelector((state) =>
+    currentChannel === CHANNEL_1
+      ? state.channel1Dataset?.alignment
+      : state.channel2Dataset?.alignment
+  );
 
-  const [fluorescenceMin, setFluorescenceMin] = useState(0);
-  const [fluorescenceMax, setFluorescenceMax] = useState(200);
-  const [fluorescenceMinFrame, setFluorescenceMinFrame] = useState(1);
-  const [fluorescenceMaxFrame, setFluorescenceMaxFrame] = useState(1);
-  const [enableYMaxAlignment, setEnableYMaxAlignment] = useState(false);
-  const [alignToYMax, setAlignToYMax] = useState(false);
-  const [enableYMinAlignment, setEnableYMinAlignment] = useState(false);
-  const [alignToYMin, setAlignToYMin] = useState(false);
+  const alignment: ChartAlignment = channelAlignment || DEFAULT_ALIGNMENT;
+  const currentChannelLoaded =
+    currentChannel === CHANNEL_1 ? channel1Loaded : channel2Loaded;
+
   const [datasetFrameCount, setDatasetFrameCount] = useState(1);
 
-  useEffect(() => {
-    dispatch(
-      updateChartAlignmentAction({
-        channel: CHANNEL_1,
-        enableYMaxAlignment: enableYMaxAlignment,
-        alignToYMax: alignToYMax,
-        yMaxValue: fluorescenceMax,
-        yMaxFrame: fluorescenceMaxFrame,
-        enableYMinAlignment: enableYMinAlignment,
-        alignToYMin: alignToYMin,
-        yMinValue: fluorescenceMin,
-        yMinFrame: fluorescenceMinFrame,
-      })
-    );
-  }, [
-    enableYMaxAlignment,
-    alignToYMax,
-    fluorescenceMax,
-    fluorescenceMaxFrame,
-    enableYMinAlignment,
-    alignToYMin,
-    fluorescenceMin,
-    fluorescenceMinFrame,
-    dispatch,
-  ]);
-
   function handleFluorescenceMaxBlur() {
-    if (fluorescenceMax <= fluorescenceMin) {
-      setFluorescenceMax(fluorescenceMin + 1);
+    if (alignment.yMaxValue <= alignment.yMinValue) {
+      dispatch(
+        updateChartAlignmentAction({
+          ...alignment,
+          yMaxValue: alignment.yMinValue + 1,
+        })
+      );
     }
   }
 
   function handleFluorescenceMinBlur() {
-    if (fluorescenceMax <= fluorescenceMin) {
-      setFluorescenceMin(fluorescenceMax - 1);
+    if (alignment.yMaxValue <= alignment.yMinValue) {
+      dispatch(
+        updateChartAlignmentAction({
+          ...alignment,
+          yMinValue: alignment.yMaxValue - 1,
+        })
+      );
     }
   }
 
   type CreateInputParams = {
     key: string;
-    value: any;
     title: string;
     disabled: boolean;
-    changeFunction: any;
     onBlur?: any;
     min?: number;
     max?: number;
   };
 
-  function createCheckbox({
-    key,
-    value,
-    title,
-    disabled,
-    changeFunction,
-  }: CreateInputParams) {
+  function createCheckbox({ key, title, disabled }: CreateInputParams) {
     return (
       <>
         <label
@@ -88,8 +81,15 @@ export default function TraceAlignmentView() {
         <input
           type="checkbox"
           id={key}
-          checked={value}
-          onChange={(event) => changeFunction(event.target.checked)}
+          checked={(alignment as any)[key]}
+          onChange={(event) => {
+            dispatch(
+              updateChartAlignmentAction({
+                ...alignment,
+                [key]: event.target.checked,
+              })
+            );
+          }}
           disabled={disabled}
         />
       </>
@@ -98,10 +98,8 @@ export default function TraceAlignmentView() {
 
   function createNumberInput({
     key,
-    value,
     title,
     disabled,
-    changeFunction,
     ...otherInputAttributes
   }: CreateInputParams) {
     return (
@@ -115,10 +113,15 @@ export default function TraceAlignmentView() {
         <input
           type="number"
           id={key}
-          value={value}
+          value={(alignment as any)[key]}
           onChange={(event) => {
             if (event.target.value !== "") {
-              changeFunction(Number(event.target.value));
+              dispatch(
+                updateChartAlignmentAction({
+                  ...alignment,
+                  [key]: Number(event.target.value),
+                })
+              );
             }
           }}
           disabled={disabled}
@@ -129,80 +132,69 @@ export default function TraceAlignmentView() {
     );
   }
 
-  let disabledMax = !enableYMaxAlignment;
-  let disabledMin = disabledMax || !enableYMinAlignment;
+  let disabledMax = !alignment.enableYMaxAlignment;
+  let disabledMin = disabledMax || !alignment.enableYMinAlignment;
 
   const newFrameCount = useAppSelector(getFrameCount);
   if (newFrameCount !== datasetFrameCount) {
-    setFluorescenceMinFrame(newFrameCount);
-    setEnableYMaxAlignment(false);
-    setEnableYMinAlignment(false);
+    dispatch(
+      updateChartAlignmentAction({
+        ...alignment,
+        channel: currentChannel,
+        yMinFrame: newFrameCount,
+        enableYMaxAlignment: false,
+        enableYMinAlignment: false,
+      })
+    );
+
     setDatasetFrameCount(newFrameCount);
   }
-
-  const channel1Loaded = useAppSelector(isChannel1Loaded);
 
   return (
     <div id="traceAlignmentPanel" className="optionsPanel">
       {createCheckbox({
         key: "enableYMaxAlignment",
-        value: enableYMaxAlignment,
         title: "Align trace maxima",
-        disabled: !channel1Loaded,
-        changeFunction: setEnableYMaxAlignment,
+        disabled: !currentChannelLoaded,
       })}
       {createCheckbox({
         key: "alignToYMax",
-        value: alignToYMax,
         title: "Align to maximum",
         disabled: disabledMax,
-        changeFunction: setAlignToYMax,
       })}
       {createNumberInput({
-        key: "fluorescenceMax",
-        value: fluorescenceMax,
+        key: "yMaxValue",
         title: "Maximum value",
         disabled: disabledMax,
-        changeFunction: setFluorescenceMax,
         onBlur: handleFluorescenceMaxBlur,
       })}
       {createNumberInput({
-        key: "fluorescenceMaxFrame",
-        value: fluorescenceMaxFrame,
+        key: "yMaxFrame",
         title: "Maximum frame",
-        disabled: disabledMax || alignToYMax,
-        changeFunction: setFluorescenceMaxFrame,
+        disabled: disabledMax || alignment.alignToYMax,
         min: 1,
         max: datasetFrameCount,
       })}
       {createCheckbox({
         key: "enableYMinAlignment",
-        value: enableYMinAlignment,
         title: "Align trace minima",
         disabled: disabledMax,
-        changeFunction: setEnableYMinAlignment,
       })}
       {createCheckbox({
         key: "alignToYMin",
-        value: alignToYMin,
         title: "Align to minimum",
         disabled: disabledMin,
-        changeFunction: setAlignToYMin,
       })}
       {createNumberInput({
-        key: "fluorescenceMin",
-        value: fluorescenceMin,
+        key: "yMinValue",
         title: "Minimum value",
         disabled: disabledMin,
-        changeFunction: setFluorescenceMin,
         onBlur: handleFluorescenceMinBlur,
       })}
       {createNumberInput({
-        key: "fluorescenceMinFrame",
-        value: fluorescenceMinFrame,
+        key: "yMinFrame",
         title: "Minimum frame",
-        disabled: disabledMin || alignToYMin,
-        changeFunction: setFluorescenceMinFrame,
+        disabled: disabledMin || alignment.alignToYMin,
         min: 1,
         max: datasetFrameCount,
       })}

@@ -17,95 +17,68 @@ const CONFIRM_CLOSE =
 
 export default function FileAccessView() {
   const dispatch = useAppDispatch();
+  const currentChannel = useAppSelector((state) => state.currentChannel);
   const channel1Loaded = useAppSelector(isChannel1Loaded);
   const channel2Loaded = useAppSelector(isChannel2Loaded);
   const model = useAppSelector((state) => state);
 
+  const currentChannelLoaded =
+    currentChannel === CHANNEL_1 ? channel1Loaded : channel2Loaded;
+
   return (
     <div className="inputPanel">
-      <div className="channelHeading">Channel 1</div>
-      <div className="channelActions">
-        <label id="openChannel1" className="fileInput unselectable">
-          Open...
-          <input
-            type="file"
-            id="csvFileInput1"
-            onChange={(event) => {
-              if (!channel1Loaded || window.confirm(CONFIRM_OPEN)) {
-                dispatch(loadFile({file: event.target.files![0], channel: CHANNEL_1}));
-              }
-              event.target.blur();
-            }}
-            accept=".csv"
-          />
-        </label>
-        <button
-          type="button"
-          id="saveChannel1"
-          onClick={(event) => {
-            saveFile(model as RoiDataModelState, CHANNEL_1);
-            event.currentTarget.blur();
-          }}
-          disabled={!channel1Loaded}
-          className="fileInput"
-        >
-          Save As...
-        </button>
-        <button
-          type="button"
-          id="closeChannel1"
-          onClick={(event) => {
-            if (window.confirm(CONFIRM_CLOSE)) {
-              dispatch(closeChannelAction(CHANNEL_1));
-            }
-            event.currentTarget.blur();
-          }}
-          disabled={!channel1Loaded}
-          className="fileInput"
-        >
-          Close
-        </button>
-      </div>
-      <div className="channelHeading">Channel 2</div>
       <div className="channelActions">
         <label
-          id="openChannel2"
+          id="loadChannel"
           className={`fileInput unselectable${
-            channel1Loaded ? "" : " disabled"
+            currentChannel === CHANNEL_2 && !channel1Loaded ? " disabled" : ""
           }`}
         >
           Open...
           <input
             type="file"
-            id="csvFileInput2"
+            id="csvFileInput"
             onChange={(event) => {
-              dispatch(loadFile({file: event.target.files![0], channel: CHANNEL_2}));
+              if (
+                currentChannel === CHANNEL_2 ||
+                !channel1Loaded ||
+                window.confirm(CONFIRM_OPEN)
+              ) {
+                dispatch(
+                  loadFile({
+                    file: event.target.files![0],
+                    channel: currentChannel,
+                  })
+                );
+              }
               event.target.blur();
             }}
-            disabled={!channel1Loaded}
+            disabled={currentChannel === CHANNEL_2 && !channel1Loaded}
             accept=".csv"
           />
         </label>
         <button
           type="button"
-          id="saveChannel2"
+          id="saveChannel"
           onClick={(event) => {
-            saveFile(model as RoiDataModelState, CHANNEL_2);
+            saveFile(model as RoiDataModelState, currentChannel);
             event.currentTarget.blur();
           }}
-          disabled={!channel2Loaded}
+          disabled={!currentChannelLoaded}
           className="fileInput"
         >
           Save As...
         </button>
         <button
           type="button"
-          id="closeChannel2"
+          id="closeChannel"
           onClick={(event) => {
-            dispatch(closeChannelAction(CHANNEL_2));
+            if (currentChannel === CHANNEL_2 || window.confirm(CONFIRM_CLOSE)) {
+              dispatch(closeChannelAction(currentChannel));
+            }
             event.currentTarget.blur();
           }}
-          disabled={!channel2Loaded}
+          disabled={!currentChannelLoaded}
           className="fileInput"
         >
           Close

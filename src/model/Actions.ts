@@ -36,6 +36,10 @@ export const updateChartAlignmentAction = createAction(
   "updateChartAlignment",
   withPayloadType<ChartAlignment>()
 );
+export const setCurrentChannelAction = createAction(
+  "setCurrentChannel",
+  withPayloadType<Channel>()
+);
 export const loadChannelAction = createAction(
   "loadChannel",
   withPayloadType<ChannelData>()

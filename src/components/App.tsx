@@ -17,6 +17,7 @@ import {
   toggleCurrentItemSelectedAction,
 } from "../model/Actions";
 import AnnotationsView from "./AnnotationsView";
+import ChannelSelectionPanel from "./ChannelSelectionPanel";
 
 export default function App() {
   const dispatch = useAppDispatch();
@@ -24,7 +25,9 @@ export default function App() {
     (state) => state.editAnnotation !== undefined
   );
   const showSingleTrace = useAppSelector((state) => state.showSingleTrace);
-  const channel1Filename = useAppSelector((state) => state.channel1Dataset?.filename);
+  const channel1Filename = useAppSelector(
+    (state) => state.channel1Dataset?.filename
+  );
 
   useEffect(() => {
     function handleKeyEvent(event: KeyboardEvent) {
@@ -83,6 +86,7 @@ export default function App() {
         <FullscreenButton />
       </div>
       <div id="controlPanel">
+        <ChannelSelectionPanel />
         <FileAccessView />
         <TraceAlignmentView />
         <AnnotationsView />

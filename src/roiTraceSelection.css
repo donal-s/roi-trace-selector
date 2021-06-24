@@ -124,7 +124,8 @@ div#roiChoicePanel {
 label.fileInput,
 button.fileInput,
 button.exampleFileInput,
-button#remainingCount {
+button#remainingCount,
+.channelSelectionPanel button {
   overflow: hidden;
   cursor: pointer;
   background-color: #4caf50; /* Green */
@@ -143,7 +144,8 @@ button#remainingCount {
 }
 
 label.fileInput,
-button.fileInput {
+button.fileInput,
+.channelSelectionPanel button {
   width: 90px;
   height: 22px;
 }
@@ -160,7 +162,10 @@ label.fileInput.disabled,
 button.fileInput:disabled,
 button.exampleFileInput:disabled,
 button#remainingCount:active,
-button#remainingCount:disabled {
+button#remainingCount:disabled,
+.channelSelectionPanel button:active,
+.channelSelectionPanel button:disabled,
+.channelSelectionPanel button.selected {
   box-shadow: none;
 }
 
@@ -312,7 +317,8 @@ div#annotationsList label {
 label#fullscreenButton.disabled,
 label.fileInput.disabled,
 button.fileInput:disabled,
-button#remainingCount:disabled {
+button#remainingCount:disabled,
+.channelSelectionPanel button:disabled {
   cursor: default;
   background-color: #babdb6;
   color: black;
