@@ -1,11 +1,5 @@
-import React, { useState } from "react";
-import {
-  getFrameCount,
-  isChannel1Loaded,
-  isChannel2Loaded,
-  useAppDispatch,
-  useAppSelector,
-} from "../model/RoiDataModel";
+import React from "react";
+import { useAppDispatch, useAppSelector } from "../model/RoiDataModel";
 import { updateChartAlignmentAction } from "../model/Actions";
 import { CHANNEL_1, ChartAlignment } from "../model/Types";
 
@@ -24,8 +18,6 @@ const DEFAULT_ALIGNMENT: ChartAlignment = {
 export default function TraceAlignmentView() {
   const dispatch = useAppDispatch();
   const currentChannel = useAppSelector((state) => state.currentChannel);
-  const channel1Loaded = useAppSelector(isChannel1Loaded);
-  const channel2Loaded = useAppSelector(isChannel2Loaded);
   const channelAlignment = useAppSelector((state) =>
     currentChannel === CHANNEL_1
       ? state.channel1Dataset?.alignment
@@ -33,10 +25,13 @@ export default function TraceAlignmentView() {
   );
 
   const alignment: ChartAlignment = channelAlignment || DEFAULT_ALIGNMENT;
-  const currentChannelLoaded =
-    currentChannel === CHANNEL_1 ? channel1Loaded : channel2Loaded;
+  const currentChannelLoaded = !!channelAlignment;
 
-  const [datasetFrameCount, setDatasetFrameCount] = useState(1);
+  const disabledMax = !alignment.enableYMaxAlignment;
+  const disabledMin = disabledMax || !alignment.enableYMinAlignment;
+  const datasetFrameCount = useAppSelector(
+    (state) => state.chartFrameLabels.length || 1
+  );
 
   function handleFluorescenceMaxBlur() {
     if (alignment.yMaxValue <= alignment.yMinValue) {
@@ -130,24 +125,6 @@ export default function TraceAlignmentView() {
         />
       </>
     );
-  }
-
-  let disabledMax = !alignment.enableYMaxAlignment;
-  let disabledMin = disabledMax || !alignment.enableYMinAlignment;
-
-  const newFrameCount = useAppSelector(getFrameCount);
-  if (newFrameCount !== datasetFrameCount) {
-    dispatch(
-      updateChartAlignmentAction({
-        ...alignment,
-        channel: currentChannel,
-        yMinFrame: newFrameCount,
-        enableYMaxAlignment: false,
-        enableYMinAlignment: false,
-      })
-    );
-
-    setDatasetFrameCount(newFrameCount);
   }
 
   return (
