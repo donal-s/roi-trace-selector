@@ -10,6 +10,7 @@ import {
   DUAL_CHANNEL_LOADED_STATE,
   EMPTY_STATE,
   LOADED_STATE,
+  sleep,
 } from "../TestUtils";
 import { Store } from "redux";
 import { CHANNEL_1, CHANNEL_2 } from "../model/Types";
@@ -408,10 +409,6 @@ describe("component FileAccessView", () => {
         container
       );
     });
-  }
-
-  function sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   function createLoadFileTarget(data: string, filename: string) {

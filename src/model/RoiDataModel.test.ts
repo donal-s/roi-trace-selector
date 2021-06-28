@@ -1,3 +1,5 @@
+/* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect", "checkReducerAndStore", "checkReducerAndEmptyStore"] }] */
+
 import {
   roiDataReducer,
   getSelectAllActionName,
@@ -9,15 +11,19 @@ import {
   isCurrentUnscanned,
   RoiDataModelState,
   isChannel2Loaded,
+  PersistedRoiDataModelState,
+  persistor,
+  persistedReducer,
 } from "./RoiDataModel";
 import {
   CSV_DATA,
   CSV_DATA_2,
   DUAL_CHANNEL_LOADED_STATE,
   EMPTY_STATE,
+  flushPromises,
   LOADED_STATE,
 } from "../TestUtils";
-import { Action } from "redux";
+import { Action, AnyAction } from "redux";
 import {
   AXIS_H,
   AXIS_V,
@@ -50,8 +56,15 @@ import {
   updateChartAlignmentAction,
   updateEditAnnotationAction,
 } from "./Actions";
+import getStoredState from "redux-persist/lib/getStoredState";
+import storage from "redux-persist/lib/storage"; // defaults to localStorage for web
+import { PersistPartial } from "redux-persist/es/persistReducer";
 
 describe("roiDataReducer", () => {
+  beforeEach(() => {
+    persistor.purge();
+  });
+
   // Sanity check to verify test data
   it("prebuilt states", () => {
     expect(EMPTY_STATE).toStrictEqual({
@@ -62,6 +75,7 @@ describe("roiDataReducer", () => {
       chartFrameLabels: [],
       showSingleTrace: false,
       annotations: [],
+      initialisingState: false,
     });
 
     expect(LOADED_STATE).toStrictEqual({
@@ -99,6 +113,7 @@ describe("roiDataReducer", () => {
 
       showSingleTrace: false,
       annotations: [],
+      initialisingState: false,
     });
 
     expect(DUAL_CHANNEL_LOADED_STATE).toStrictEqual({
@@ -132,291 +147,247 @@ describe("roiDataReducer", () => {
     });
   });
 
-  it("initial state", () => {
-    expect(roiDataReducer(undefined, {} as Action)).toStrictEqual(EMPTY_STATE);
+  it("initial state", async () => {
+    await checkReducerAndStore(EMPTY_STATE, {} as Action, EMPTY_STATE);
   });
 
-  it("fullscreenModeAction", () => {
+  it("fullscreenModeAction", async () => {
     let inputState = { ...EMPTY_STATE, showSingleTrace: false };
-    expect(
-      roiDataReducer(inputState, fullscreenModeAction(true))
-    ).toStrictEqual({ ...EMPTY_STATE, showSingleTrace: true });
+    await checkReducerAndStore(inputState, fullscreenModeAction(true), {
+      ...EMPTY_STATE,
+      showSingleTrace: true,
+    });
 
     inputState = { ...EMPTY_STATE, showSingleTrace: true };
-    expect(
-      roiDataReducer(inputState, fullscreenModeAction(false))
-    ).toStrictEqual({ ...EMPTY_STATE, showSingleTrace: false });
+    await checkReducerAndStore(inputState, fullscreenModeAction(false), {
+      ...EMPTY_STATE,
+      showSingleTrace: false,
+    });
   });
 
-  it("setCurrentIndexAction", () => {
+  it("setCurrentIndexAction", async () => {
     // Out of bounds testing done elsewhere
 
     // Valid cases
-    expect(
-      roiDataReducer(LOADED_STATE, setCurrentIndexAction(2))
-    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 2 });
+    await checkReducerAndStore(LOADED_STATE, setCurrentIndexAction(2), {
+      ...LOADED_STATE,
+      currentIndex: 2,
+    });
 
-    expect(
-      roiDataReducer(LOADED_STATE, setCurrentIndexAction(1))
-    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 1 });
+    await checkReducerAndStore(LOADED_STATE, setCurrentIndexAction(1), {
+      ...LOADED_STATE,
+      currentIndex: 1,
+    });
   });
 
-  it("setCurrentNextAction and setCurrentPreviousAction", () => {
+  it("setCurrentNextAction and setCurrentPreviousAction", async () => {
     // Empty state - no effect
-    expect(roiDataReducer(EMPTY_STATE, setCurrentNextAction())).toStrictEqual(
+    await checkReducerAndEmptyStore(
+      EMPTY_STATE,
+      setCurrentNextAction(),
       EMPTY_STATE
     );
 
-    expect(
-      roiDataReducer(EMPTY_STATE, setCurrentPreviousAction())
-    ).toStrictEqual(EMPTY_STATE);
+    await checkReducerAndEmptyStore(
+      EMPTY_STATE,
+      setCurrentPreviousAction(),
+      EMPTY_STATE
+    );
 
     // With data: 0 -- -> no change
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 0 },
-        setCurrentPreviousAction()
-      )
-    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 0 });
+    await checkReducerAndEmptyStore(
+      { ...LOADED_STATE, currentIndex: 0 },
+      setCurrentPreviousAction(),
+      { ...LOADED_STATE, currentIndex: 0 }
+    );
 
     // With data: 0 ++ -> 1
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 0 },
-        setCurrentNextAction()
-      )
-    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 1 });
+    await checkReducerAndEmptyStore(
+      { ...LOADED_STATE, currentIndex: 0 },
+      setCurrentNextAction(),
+      { ...LOADED_STATE, currentIndex: 1 }
+    );
 
     // With data: 1 -- -> 0
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 1 },
-        setCurrentPreviousAction()
-      )
-    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 0 });
+    await checkReducerAndEmptyStore(
+      { ...LOADED_STATE, currentIndex: 1 },
+      setCurrentPreviousAction(),
+      { ...LOADED_STATE, currentIndex: 0 }
+    );
 
     // With data: 3 ++ -> no change
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 3 },
-        setCurrentNextAction()
-      )
-    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 3 });
+    await checkReducerAndEmptyStore(
+      { ...LOADED_STATE, currentIndex: 3 },
+      setCurrentNextAction(),
+      { ...LOADED_STATE, currentIndex: 3 }
+    );
 
     // With data: 3 -- -> 2
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 3 },
-        setCurrentPreviousAction()
-      )
-    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 2 });
+    await checkReducerAndEmptyStore(
+      { ...LOADED_STATE, currentIndex: 3 },
+      setCurrentPreviousAction(),
+      { ...LOADED_STATE, currentIndex: 2 }
+    );
 
     // With data: 2 ++ -> 3
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 2 },
-        setCurrentNextAction()
-      )
-    ).toStrictEqual({ ...LOADED_STATE, currentIndex: 3 });
+    await checkReducerAndEmptyStore(
+      { ...LOADED_STATE, currentIndex: 2 },
+      setCurrentNextAction(),
+      { ...LOADED_STATE, currentIndex: 3 }
+    );
   });
 
-  it("setCurrentNextUnscannedAction", () => {
-    // Empty state - no effect
-    expect(
-      roiDataReducer(EMPTY_STATE, setCurrentNextUnscannedAction())
-    ).toStrictEqual(EMPTY_STATE);
-
-    // With data and no unscanned: 2 -> no change
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
-        setCurrentNextUnscannedAction()
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      currentIndex: 2,
-      scanStatus: ["y", "y", "n", "n"],
-    });
-
-    // With data: 0 -> 1
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 0, scanStatus: ["?", "?", "?", "?"] },
-        setCurrentNextUnscannedAction()
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      currentIndex: 1,
-      scanStatus: ["?", "?", "?", "?"],
-    });
-
-    // With data: 0 -> 3 (skipping 1, 2)
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 0, scanStatus: ["?", "y", "n", "?"] },
-        setCurrentNextUnscannedAction()
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      currentIndex: 3,
-      scanStatus: ["?", "y", "n", "?"],
-    });
-
-    // With data: 2 -> 1 (skipping 3, 1) wraparound
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 2, scanStatus: ["n", "?", "?", "y"] },
-        setCurrentNextUnscannedAction()
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      currentIndex: 1,
-      scanStatus: ["n", "?", "?", "y"],
-    });
-  });
-
-  it("setCurrentScanStatusAction", () => {
-    // Empty state - no effect
-    expect(
-      roiDataReducer(
+  describe("setCurrentNextUnscannedAction", () => {
+    it("empty state - no effect", async () => {
+      await checkReducerAndEmptyStore(
         EMPTY_STATE,
-        setCurrentScanStatusAction(SCANSTATUS_UNSELECTED)
-      )
-    ).toStrictEqual(EMPTY_STATE);
-
-    // With data
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
-        setCurrentScanStatusAction(SCANSTATUS_UNSCANNED)
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      currentIndex: 2,
-      scanStatus: ["y", "y", "?", "n"],
+        setCurrentNextUnscannedAction(),
+        EMPTY_STATE
+      );
     });
 
-    expect(
-      roiDataReducer(
+    it("with data and no unscanned: 2 -> no change", async () => {
+      await checkReducerAndEmptyStore(
         { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
-        setCurrentScanStatusAction(SCANSTATUS_SELECTED)
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      currentIndex: 2,
-      scanStatus: ["y", "y", "y", "n"],
+        setCurrentNextUnscannedAction(),
+        { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] }
+      );
     });
 
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 1, scanStatus: ["y", "y", "n", "n"] },
-        setCurrentScanStatusAction(SCANSTATUS_UNSELECTED)
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      currentIndex: 1,
-      scanStatus: ["y", "n", "n", "n"],
+    it("with data: 0 -> 1", async () => {
+      await checkReducerAndStore(
+        { ...LOADED_STATE, currentIndex: 0, scanStatus: ["?", "?", "?", "?"] },
+        setCurrentNextUnscannedAction(),
+        { ...LOADED_STATE, currentIndex: 1, scanStatus: ["?", "?", "?", "?"] }
+      );
+    });
+
+    it("with data: 0 -> 3 (skipping 1, 2)", async () => {
+      await checkReducerAndStore(
+        { ...LOADED_STATE, currentIndex: 0, scanStatus: ["?", "y", "n", "?"] },
+        setCurrentNextUnscannedAction(),
+        { ...LOADED_STATE, currentIndex: 3, scanStatus: ["?", "y", "n", "?"] }
+      );
+    });
+
+    it("with data: 2 -> 1 (skipping 3, 1) wraparound", async () => {
+      await checkReducerAndStore(
+        { ...LOADED_STATE, currentIndex: 2, scanStatus: ["n", "?", "?", "y"] },
+        setCurrentNextUnscannedAction(),
+        { ...LOADED_STATE, currentIndex: 1, scanStatus: ["n", "?", "?", "y"] }
+      );
     });
   });
 
-  it("toggleCurrentItemSelectedAction", () => {
+  it("setCurrentScanStatusAction", async () => {
     // Empty state - no effect
-    expect(
-      roiDataReducer(EMPTY_STATE, toggleCurrentItemSelectedAction())
-    ).toStrictEqual(EMPTY_STATE);
+    await checkReducerAndEmptyStore(
+      EMPTY_STATE,
+      setCurrentScanStatusAction(SCANSTATUS_UNSELECTED),
+      EMPTY_STATE
+    );
 
     // With data
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
-        toggleCurrentItemSelectedAction()
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      currentIndex: 2,
-      scanStatus: ["y", "y", "?", "n"],
-    });
+    await checkReducerAndStore(
+      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
+      setCurrentScanStatusAction(SCANSTATUS_UNSCANNED),
+      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "?", "n"] }
+    );
 
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "?", "n"] },
-        toggleCurrentItemSelectedAction()
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      currentIndex: 2,
-      scanStatus: ["y", "y", "y", "n"],
-    });
+    await checkReducerAndStore(
+      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
+      setCurrentScanStatusAction(SCANSTATUS_SELECTED),
+      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "y", "n"] }
+    );
 
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "y", "n"] },
-        toggleCurrentItemSelectedAction()
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      currentIndex: 2,
-      scanStatus: ["y", "y", "n", "n"],
-    });
+    await checkReducerAndStore(
+      { ...LOADED_STATE, currentIndex: 1, scanStatus: ["y", "y", "n", "n"] },
+      setCurrentScanStatusAction(SCANSTATUS_UNSELECTED),
+      { ...LOADED_STATE, currentIndex: 1, scanStatus: ["y", "n", "n", "n"] }
+    );
   });
 
-  it("selectAllItemsAction", () => {
+  it("toggleCurrentItemSelectedAction", async () => {
     // Empty state - no effect
-    expect(roiDataReducer(EMPTY_STATE, selectAllItemsAction())).toStrictEqual(
+    await checkReducerAndEmptyStore(
+      EMPTY_STATE,
+      toggleCurrentItemSelectedAction(),
+      EMPTY_STATE
+    );
+
+    // With data
+    await checkReducerAndStore(
+      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
+      toggleCurrentItemSelectedAction(),
+      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "?", "n"] }
+    );
+
+    await checkReducerAndStore(
+      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "?", "n"] },
+      toggleCurrentItemSelectedAction(),
+      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "y", "n"] }
+    );
+
+    await checkReducerAndStore(
+      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "y", "n"] },
+      toggleCurrentItemSelectedAction(),
+      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] }
+    );
+  });
+
+  it("selectAllItemsAction", async () => {
+    // Empty state - no effect
+    await checkReducerAndEmptyStore(
+      EMPTY_STATE,
+      selectAllItemsAction(),
       EMPTY_STATE
     );
 
     // With data all clear -> selected
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] },
-        selectAllItemsAction()
-      )
-    ).toStrictEqual({ ...LOADED_STATE, scanStatus: ["y", "y", "y", "y"] });
+    await checkReducerAndStore(
+      { ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] },
+      selectAllItemsAction(),
+      { ...LOADED_STATE, scanStatus: ["y", "y", "y", "y"] }
+    );
 
     // With data all selected -> unselected
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, scanStatus: ["y", "y", "y", "y"] },
-        selectAllItemsAction()
-      )
-    ).toStrictEqual({ ...LOADED_STATE, scanStatus: ["n", "n", "n", "n"] });
+    await checkReducerAndStore(
+      { ...LOADED_STATE, scanStatus: ["y", "y", "y", "y"] },
+      selectAllItemsAction(),
+      { ...LOADED_STATE, scanStatus: ["n", "n", "n", "n"] }
+    );
 
     // With data all unselected -> clear
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, scanStatus: ["n", "n", "n", "n"] },
-        selectAllItemsAction()
-      )
-    ).toStrictEqual({ ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] });
+    await checkReducerAndStore(
+      { ...LOADED_STATE, scanStatus: ["n", "n", "n", "n"] },
+      selectAllItemsAction(),
+      { ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
+    );
 
     // With data 1 selected -> clear
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, scanStatus: ["?", "y", "?", "?"] },
-        selectAllItemsAction()
-      )
-    ).toStrictEqual({ ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] });
+    await checkReducerAndStore(
+      { ...LOADED_STATE, scanStatus: ["?", "y", "?", "?"] },
+      selectAllItemsAction(),
+      { ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
+    );
 
     // With data 1 unselected -> clear
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, scanStatus: ["?", "n", "?", "?"] },
-        selectAllItemsAction()
-      )
-    ).toStrictEqual({ ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] });
+    await checkReducerAndStore(
+      { ...LOADED_STATE, scanStatus: ["?", "n", "?", "?"] },
+      selectAllItemsAction(),
+      { ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
+    );
 
     // With data mix -> clear
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, scanStatus: ["?", "n", "y", "?"] },
-        selectAllItemsAction()
-      )
-    ).toStrictEqual({ ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] });
+    await checkReducerAndStore(
+      { ...LOADED_STATE, scanStatus: ["?", "n", "y", "?"] },
+      selectAllItemsAction(),
+      { ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
+    );
   });
 
   describe("updateChartAlignmentAction", () => {
-    it("empty state - no effect", () => {
+    it("empty state - no effect", async () => {
       const params = getAlignmentParams(
         CHANNEL_1,
         false,
@@ -428,12 +399,14 @@ describe("roiDataReducer", () => {
         0,
         0
       );
-      expect(
-        roiDataReducer(EMPTY_STATE, updateChartAlignmentAction(params))
-      ).toStrictEqual(EMPTY_STATE);
+      await checkReducerAndEmptyStore(
+        EMPTY_STATE,
+        updateChartAlignmentAction(params),
+        EMPTY_STATE
+      );
     });
 
-    it("with data - no alignment", () => {
+    it("with data - no alignment", async () => {
       const params = getAlignmentParams(
         CHANNEL_1,
         false,
@@ -445,18 +418,20 @@ describe("roiDataReducer", () => {
         0,
         0
       );
-      expect(
-        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-      ).toStrictEqual({
-        ...LOADED_STATE,
-        channel1Dataset: {
-          ...LOADED_STATE.channel1Dataset,
-          alignment: params,
-        },
-      });
+      await checkReducerAndStore(
+        LOADED_STATE,
+        updateChartAlignmentAction(params),
+        {
+          ...LOADED_STATE,
+          channel1Dataset: {
+            ...LOADED_STATE.channel1Dataset!,
+            alignment: params,
+          },
+        }
+      );
     });
 
-    it("align max frame 1, value 5", () => {
+    it("align max frame 1, value 5", async () => {
       const params = getAlignmentParams(
         CHANNEL_1,
         true,
@@ -468,24 +443,26 @@ describe("roiDataReducer", () => {
         0,
         0
       );
-      expect(
-        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-      ).toStrictEqual({
-        ...LOADED_STATE,
-        channel1Dataset: {
-          ...LOADED_STATE.channel1Dataset,
-          chartData: [
-            [5, 4, 0, -1, -2],
-            [5, 5, 5, 5, 5],
-            [5, 6.1, 7.199999999999999, 6.1, 5],
-            [5, 6, 7, 8, 9],
-          ],
-          alignment: params,
-        },
-      });
+      await checkReducerAndStore(
+        LOADED_STATE,
+        updateChartAlignmentAction(params),
+        {
+          ...LOADED_STATE,
+          channel1Dataset: {
+            ...LOADED_STATE.channel1Dataset!,
+            chartData: [
+              [5, 4, 0, -1, -2],
+              [5, 5, 5, 5, 5],
+              [5, 6.1, 7.199999999999999, 6.1, 5],
+              [5, 6, 7, 8, 9],
+            ],
+            alignment: params,
+          },
+        }
+      );
     });
 
-    it("align max frame 2, value 5", () => {
+    it("align max frame 2, value 5", async () => {
       const params = getAlignmentParams(
         CHANNEL_1,
         true,
@@ -497,24 +474,26 @@ describe("roiDataReducer", () => {
         0,
         0
       );
-      expect(
-        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-      ).toStrictEqual({
-        ...LOADED_STATE,
-        channel1Dataset: {
-          ...LOADED_STATE.channel1Dataset,
-          chartData: [
-            [6, 5, 1, 0, -1],
-            [5, 5, 5, 5, 5],
-            [3.9, 5, 6.1, 5, 3.9],
-            [4, 5, 6, 7, 8],
-          ],
-          alignment: params,
-        },
-      });
+      await checkReducerAndStore(
+        LOADED_STATE,
+        updateChartAlignmentAction(params),
+        {
+          ...LOADED_STATE,
+          channel1Dataset: {
+            ...LOADED_STATE.channel1Dataset!,
+            chartData: [
+              [6, 5, 1, 0, -1],
+              [5, 5, 5, 5, 5],
+              [3.9, 5, 6.1, 5, 3.9],
+              [4, 5, 6, 7, 8],
+            ],
+            alignment: params,
+          },
+        }
+      );
     });
 
-    it("align max, max frame, value 5", () => {
+    it("align max, max frame, value 5", async () => {
       const params = getAlignmentParams(
         CHANNEL_1,
         true,
@@ -526,30 +505,32 @@ describe("roiDataReducer", () => {
         0,
         0
       );
-      expect(
-        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-      ).toStrictEqual({
-        ...LOADED_STATE,
-        channel1Dataset: {
-          ...LOADED_STATE.channel1Dataset,
-          chartData: [
-            [5, 4, 0, -1, -2],
-            [5, 5, 5, 5, 5],
-            [
-              2.8000000000000003,
-              3.9000000000000004,
-              5,
-              3.9000000000000004,
-              2.8000000000000003,
+      await checkReducerAndStore(
+        LOADED_STATE,
+        updateChartAlignmentAction(params),
+        {
+          ...LOADED_STATE,
+          channel1Dataset: {
+            ...LOADED_STATE.channel1Dataset!,
+            chartData: [
+              [5, 4, 0, -1, -2],
+              [5, 5, 5, 5, 5],
+              [
+                2.8000000000000003,
+                3.9000000000000004,
+                5,
+                3.9000000000000004,
+                2.8000000000000003,
+              ],
+              [1, 2, 3, 4, 5],
             ],
-            [1, 2, 3, 4, 5],
-          ],
-          alignment: params,
-        },
-      });
+            alignment: params,
+          },
+        }
+      );
     });
 
-    it("align max frame 1, value 5, min frame 5 value 1", () => {
+    it("align max frame 1, value 5, min frame 5 value 1", async () => {
       const params = getAlignmentParams(
         CHANNEL_1,
         true,
@@ -561,24 +542,26 @@ describe("roiDataReducer", () => {
         1,
         5
       );
-      expect(
-        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-      ).toStrictEqual({
-        ...LOADED_STATE,
-        channel1Dataset: {
-          ...LOADED_STATE.channel1Dataset,
-          chartData: [
-            [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
-            [5, 5, 5, 5, 5],
-            [5, 6.1, 7.199999999999999, 6.1, 5],
-            [5, 4, 3, 2, 1],
-          ],
-          alignment: params,
-        },
-      });
+      await checkReducerAndStore(
+        LOADED_STATE,
+        updateChartAlignmentAction(params),
+        {
+          ...LOADED_STATE,
+          channel1Dataset: {
+            ...LOADED_STATE.channel1Dataset!,
+            chartData: [
+              [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
+              [5, 5, 5, 5, 5],
+              [5, 6.1, 7.199999999999999, 6.1, 5],
+              [5, 4, 3, 2, 1],
+            ],
+            alignment: params,
+          },
+        }
+      );
     });
 
-    it("align max frame max, value 5, min frame min value 1", () => {
+    it("align max frame max, value 5, min frame min value 1", async () => {
       const params = getAlignmentParams(
         CHANNEL_1,
         true,
@@ -590,24 +573,26 @@ describe("roiDataReducer", () => {
         1,
         5
       );
-      expect(
-        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
-      ).toStrictEqual({
-        ...LOADED_STATE,
-        channel1Dataset: {
-          ...LOADED_STATE.channel1Dataset,
-          chartData: [
-            [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
-            [5, 5, 5, 5, 5],
-            [1, 3.0000000000000004, 5, 3.0000000000000004, 1],
-            [1, 2, 3, 4, 5],
-          ],
-          alignment: params,
-        },
-      });
+      await checkReducerAndStore(
+        LOADED_STATE,
+        updateChartAlignmentAction(params),
+        {
+          ...LOADED_STATE,
+          channel1Dataset: {
+            ...LOADED_STATE.channel1Dataset!,
+            chartData: [
+              [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
+              [5, 5, 5, 5, 5],
+              [1, 3.0000000000000004, 5, 3.0000000000000004, 1],
+              [1, 2, 3, 4, 5],
+            ],
+            alignment: params,
+          },
+        }
+      );
     });
 
-    it("second channel alignment", () => {
+    it("second channel alignment", async () => {
       const params = getAlignmentParams(
         CHANNEL_2,
         true,
@@ -619,24 +604,23 @@ describe("roiDataReducer", () => {
         1,
         5
       );
-      expect(
-        roiDataReducer(
-          DUAL_CHANNEL_LOADED_STATE,
-          updateChartAlignmentAction(params)
-        )
-      ).toStrictEqual({
-        ...DUAL_CHANNEL_LOADED_STATE,
-        channel2Dataset: {
-          ...DUAL_CHANNEL_LOADED_STATE.channel2Dataset,
-          chartData: [
-            [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
-            [5, 5, 5, 5, 5],
-            [1, 2.999999999999997, 5, 2.999999999999997, 1],
-            [1, 2, 3, 4, 5],
-          ],
-          alignment: params,
-        },
-      });
+      await checkReducerAndStore(
+        DUAL_CHANNEL_LOADED_STATE,
+        updateChartAlignmentAction(params),
+        {
+          ...DUAL_CHANNEL_LOADED_STATE,
+          channel2Dataset: {
+            ...DUAL_CHANNEL_LOADED_STATE.channel2Dataset!,
+            chartData: [
+              [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
+              [5, 5, 5, 5, 5],
+              [1, 2.999999999999997, 5, 2.999999999999997, 1],
+              [1, 2, 3, 4, 5],
+            ],
+            alignment: params,
+          },
+        }
+      );
     });
 
     it("max frame out of bounds", () => {
@@ -705,91 +689,87 @@ describe("roiDataReducer", () => {
   });
 
   describe("loadChannelAction", () => {
-    it("should load first channel", () => {
-      expect(
-        roiDataReducer(
-          EMPTY_STATE,
-          loadChannelAction({
-            csvData: CSV_DATA,
-            channel: CHANNEL_1,
-            filename: "new file",
-          })
-        )
-      ).toStrictEqual(LOADED_STATE);
+    it("should load first channel", async () => {
+      await checkReducerAndStore(
+        EMPTY_STATE,
+        loadChannelAction({
+          csvData: CSV_DATA,
+          channel: CHANNEL_1,
+          filename: "new file",
+        }),
+        LOADED_STATE
+      );
     });
 
-    it("should load first channel with trailing newlines", () => {
-      expect(
-        roiDataReducer(
-          EMPTY_STATE,
-          loadChannelAction({
-            csvData: CSV_DATA + "\n\n\r\n",
-            channel: CHANNEL_1,
-            filename: "new file",
-          })
-        )
-      ).toStrictEqual(LOADED_STATE);
+    it("should load first channel with trailing newlines", async () => {
+      await checkReducerAndStore(
+        EMPTY_STATE,
+        loadChannelAction({
+          csvData: CSV_DATA + "\n\n\r\n",
+          channel: CHANNEL_1,
+          filename: "new file",
+        }),
+        LOADED_STATE
+      );
     });
 
-    it("should load first channel and retain second channel if match", () => {
-      expect(
-        roiDataReducer(
-          DUAL_CHANNEL_LOADED_STATE,
-          loadChannelAction({
-            csvData: CSV_DATA,
-            channel: CHANNEL_1,
-            filename: "new file3",
-          })
-        )
-      ).toStrictEqual({
-        ...DUAL_CHANNEL_LOADED_STATE,
-        channel1Dataset: {
-          ...DUAL_CHANNEL_LOADED_STATE.channel1Dataset,
+    it("should load first channel and retain second channel if match", async () => {
+      await checkReducerAndStore(
+        DUAL_CHANNEL_LOADED_STATE,
+        loadChannelAction({
+          csvData: CSV_DATA,
+          channel: CHANNEL_1,
           filename: "new file3",
-        },
-      });
-    });
-
-    it("should load first channel and remove second channel if mismatch", () => {
-      expect(
-        roiDataReducer(
-          DUAL_CHANNEL_LOADED_STATE,
-          loadChannelAction({
-            csvData:
-              " , ROI-1, ROI-2, ROI-3\n" +
-              "1, 10.000,    1.5,   1.1\n" +
-              "2, 9.000,     1.5,   2.2\n" +
-              "3, 5.000,     1.5,   3.3\n" +
-              "4, 4.000,     1.5,   2.2\n" +
-              "5, 3.000,     1.5,   1.1",
-            channel: CHANNEL_1,
+        }),
+        {
+          ...DUAL_CHANNEL_LOADED_STATE,
+          channel1Dataset: {
+            ...DUAL_CHANNEL_LOADED_STATE.channel1Dataset!,
             filename: "new file3",
-          })
-        )
-      ).toStrictEqual({
-        ...LOADED_STATE,
-        channel1Dataset: {
-          chartData: [
-            [10, 9, 5, 4, 3],
-            [1.5, 1.5, 1.5, 1.5, 1.5],
-            [1.1, 2.2, 3.3, 2.2, 1.1],
-          ],
-          filename: "new file3",
-          originalTraceData: [
-            [10, 9, 5, 4, 3],
-            [1.5, 1.5, 1.5, 1.5, 1.5],
-            [1.1, 2.2, 3.3, 2.2, 1.1],
-          ],
-          alignment: LOADED_STATE.channel1Dataset!.alignment,
-        },
-        channel2Dataset: undefined,
-        chartFrameLabels: [1, 2, 3, 4, 5],
-        items: ["ROI-1", "ROI-2", "ROI-3"],
-        scanStatus: ["?", "?", "?"],
-      });
+          },
+        }
+      );
     });
 
-    it("second channel should fail if first channel not loaded", () => {
+    it("should load first channel and remove second channel if mismatch", async () => {
+      await checkReducerAndStore(
+        DUAL_CHANNEL_LOADED_STATE,
+        loadChannelAction({
+          csvData:
+            " , ROI-1, ROI-2, ROI-3\n" +
+            "1, 10.000,    1.5,   1.1\n" +
+            "2, 9.000,     1.5,   2.2\n" +
+            "3, 5.000,     1.5,   3.3\n" +
+            "4, 4.000,     1.5,   2.2\n" +
+            "5, 3.000,     1.5,   1.1",
+          channel: CHANNEL_1,
+          filename: "new file3",
+        }),
+        {
+          ...LOADED_STATE,
+          channel1Dataset: {
+            chartData: [
+              [10, 9, 5, 4, 3],
+              [1.5, 1.5, 1.5, 1.5, 1.5],
+              [1.1, 2.2, 3.3, 2.2, 1.1],
+            ],
+            filename: "new file3",
+            originalTraceData: [
+              [10, 9, 5, 4, 3],
+              [1.5, 1.5, 1.5, 1.5, 1.5],
+              [1.1, 2.2, 3.3, 2.2, 1.1],
+            ],
+            alignment: LOADED_STATE.channel1Dataset!.alignment,
+          },
+          channel2Dataset: undefined,
+          chartFrameLabels: [1, 2, 3, 4, 5],
+          items: ["ROI-1", "ROI-2", "ROI-3"],
+          scanStatus: ["?", "?", "?"],
+        }
+      );
+    });
+
+    it("second channel should fail if first channel not loaded", async () => {
       expect(() =>
         roiDataReducer(
           EMPTY_STATE,
@@ -802,7 +782,7 @@ describe("roiDataReducer", () => {
       ).toThrow("Channel 1 not loaded");
     });
 
-    it("second channel should fail if item count mismatch", () => {
+    it("second channel should fail if item count mismatch", async () => {
       const state = roiDataReducer(
         EMPTY_STATE,
         loadChannelAction({
@@ -855,113 +835,112 @@ describe("roiDataReducer", () => {
       ).toThrow("Channel 2 frame count mismatch");
     });
 
-    it("second channel should succeed if first channel match", () => {
-      expect(
-        roiDataReducer(
-          LOADED_STATE,
-          loadChannelAction({
-            csvData: CSV_DATA_2,
-            channel: CHANNEL_2,
-            filename: "new file2",
-          })
-        )
-      ).toStrictEqual(DUAL_CHANNEL_LOADED_STATE);
+    it("second channel should succeed if first channel match", async () => {
+      await checkReducerAndStore(
+        LOADED_STATE,
+        loadChannelAction({
+          csvData: CSV_DATA_2,
+          channel: CHANNEL_2,
+          filename: "new file2",
+        }),
+        DUAL_CHANNEL_LOADED_STATE
+      );
     });
   });
 
   describe("closeChannelAction", () => {
-    it("close channel 1 with one channel loaded should clear all dataset data", () => {
-      expect(
-        roiDataReducer(LOADED_STATE, closeChannelAction(CHANNEL_1))
-      ).toStrictEqual(EMPTY_STATE);
+    it("close channel 1 with one channel loaded should clear all dataset data", async () => {
+      await checkReducerAndStore(
+        LOADED_STATE,
+        closeChannelAction(CHANNEL_1),
+        EMPTY_STATE
+      );
     });
 
-    it("close channel 1 with both channels loaded should clear all dataset data", () => {
-      expect(
-        roiDataReducer(DUAL_CHANNEL_LOADED_STATE, closeChannelAction(CHANNEL_1))
-      ).toStrictEqual(EMPTY_STATE);
+    it("close channel 1 with both channels loaded should clear all dataset data", async () => {
+      await checkReducerAndStore(
+        DUAL_CHANNEL_LOADED_STATE,
+        closeChannelAction(CHANNEL_1),
+        EMPTY_STATE
+      );
     });
 
-    it("close channel 2 with both channels loaded should clear only channel 2 dataset", () => {
-      expect(
-        roiDataReducer(
-          {
-            ...DUAL_CHANNEL_LOADED_STATE,
-            currentIndex: 2,
-            scanStatus: ["?", "n", "y", "?"],
-          },
-          closeChannelAction(CHANNEL_2)
-        )
-      ).toStrictEqual({
-        ...LOADED_STATE,
-        channel2Dataset: undefined,
-        currentIndex: 2,
-        scanStatus: ["?", "n", "y", "?"],
-      });
+    it("close channel 2 with both channels loaded should clear only channel 2 dataset", async () => {
+      await checkReducerAndStore(
+        {
+          ...DUAL_CHANNEL_LOADED_STATE,
+          currentIndex: 2,
+          scanStatus: ["?", "n", "y", "?"],
+        },
+        closeChannelAction(CHANNEL_2),
+        {
+          ...LOADED_STATE,
+          channel2Dataset: undefined,
+          currentIndex: 2,
+          scanStatus: ["?", "n", "y", "?"],
+        }
+      );
     });
 
-    it("close channel 1 with both channels loaded should set currentChannel to channel 1", () => {
-      expect(
-        roiDataReducer(
-          {
-            ...DUAL_CHANNEL_LOADED_STATE,
-            currentChannel: CHANNEL_2,
-          },
-          closeChannelAction(CHANNEL_1)
-        )
-      ).toStrictEqual(EMPTY_STATE);
+    it("close channel 1 with both channels loaded should set currentChannel to channel 1", async () => {
+      await checkReducerAndStore(
+        {
+          ...DUAL_CHANNEL_LOADED_STATE,
+          currentChannel: CHANNEL_2,
+        },
+        closeChannelAction(CHANNEL_1),
+        EMPTY_STATE
+      );
     });
 
-    it("close channel 2 with both channels loaded should set currentChannel to channel 1", () => {
-      expect(
-        roiDataReducer(
-          {
-            ...DUAL_CHANNEL_LOADED_STATE,
-            currentChannel: CHANNEL_2,
-          },
-          closeChannelAction(CHANNEL_2)
-        )
-      ).toStrictEqual({ ...LOADED_STATE, channel2Dataset: undefined });
+    it("close channel 2 with both channels loaded should set currentChannel to channel 1", async () => {
+      await checkReducerAndStore(
+        {
+          ...DUAL_CHANNEL_LOADED_STATE,
+          currentChannel: CHANNEL_2,
+        },
+        closeChannelAction(CHANNEL_2),
+        { ...LOADED_STATE, channel2Dataset: undefined }
+      );
     });
   });
 
   describe("setCurrentChannelAction", () => {
-    it("set channel 1 when channel 1 not loaded should succeed - no op", () => {
-      expect(
-        roiDataReducer(EMPTY_STATE, setCurrentChannelAction(CHANNEL_1))
-      ).toStrictEqual(EMPTY_STATE);
+    it("set channel 1 when channel 1 not loaded should succeed - no op", async () => {
+      await checkReducerAndStore(
+        EMPTY_STATE,
+        setCurrentChannelAction(CHANNEL_1),
+        EMPTY_STATE
+      );
     });
 
-    it("set channel 2 when channel 1 not loaded should fail", () => {
+    it("set channel 2 when channel 1 not loaded should fail", async () => {
       expect(() =>
         roiDataReducer(EMPTY_STATE, setCurrentChannelAction(CHANNEL_2))
       ).toThrow("Channel 1 not loaded");
     });
 
-    it("set either channel when channel 1 loaded should succeed", () => {
-      expect(
-        roiDataReducer(LOADED_STATE, setCurrentChannelAction(CHANNEL_2))
-      ).toStrictEqual({ ...LOADED_STATE, currentChannel: CHANNEL_2 });
+    it("set either channel when channel 1 loaded should succeed", async () => {
+      await checkReducerAndStore(
+        LOADED_STATE,
+        setCurrentChannelAction(CHANNEL_2),
+        { ...LOADED_STATE, currentChannel: CHANNEL_2 }
+      );
 
-      expect(
-        roiDataReducer(
-          { ...LOADED_STATE, currentChannel: CHANNEL_2 },
-          setCurrentChannelAction(CHANNEL_1)
-        )
-      ).toStrictEqual(LOADED_STATE);
+      await checkReducerAndStore(
+        { ...LOADED_STATE, currentChannel: CHANNEL_2 },
+        setCurrentChannelAction(CHANNEL_1),
+        LOADED_STATE
+      );
     });
   });
 
-  it("resetStateAction", () => {
+  it("resetStateAction", async () => {
     // Empty state - no effect
-    expect(roiDataReducer(EMPTY_STATE, resetStateAction())).toStrictEqual(
-      EMPTY_STATE
-    );
+    await checkReducerAndStore(EMPTY_STATE, resetStateAction(), EMPTY_STATE);
 
     // Loaded state - reset
-    expect(roiDataReducer(LOADED_STATE, resetStateAction())).toStrictEqual(
-      EMPTY_STATE
-    );
+    await checkReducerAndStore(LOADED_STATE, resetStateAction(), EMPTY_STATE);
   });
 
   function getAlignmentParams(
@@ -988,127 +967,167 @@ describe("roiDataReducer", () => {
     };
   }
 
-  it("setCurrentUnscannedAction", () => {
+  it("setCurrentUnscannedAction", async () => {
     // Empty state - no effect
-    expect(
-      roiDataReducer(EMPTY_STATE, setCurrentUnselectedAction())
-    ).toStrictEqual(EMPTY_STATE);
+    await checkReducerAndEmptyStore(
+      EMPTY_STATE,
+      setCurrentUnselectedAction(),
+      EMPTY_STATE
+    );
 
     // With data
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
-        setCurrentUnscannedAction()
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      currentIndex: 2,
-      scanStatus: ["y", "y", "?", "n"],
-    });
+    await checkReducerAndStore(
+      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
+      setCurrentUnscannedAction(),
+      {
+        ...LOADED_STATE,
+        currentIndex: 2,
+        scanStatus: ["y", "y", "?", "n"],
+      }
+    );
   });
 
-  it("setCurrentSelectedAction", () => {
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
-        setCurrentSelectedAction()
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      currentIndex: 2,
-      scanStatus: ["y", "y", "y", "n"],
-    });
+  it("setCurrentSelectedAction", async () => {
+    await checkReducerAndStore(
+      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
+      setCurrentSelectedAction(),
+      {
+        ...LOADED_STATE,
+        currentIndex: 2,
+        scanStatus: ["y", "y", "y", "n"],
+      }
+    );
   });
 
-  it("setCurrentUnselectedAction", () => {
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, currentIndex: 1, scanStatus: ["y", "y", "n", "n"] },
-        setCurrentUnselectedAction()
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      currentIndex: 1,
-      scanStatus: ["y", "n", "n", "n"],
-    });
+  it("setCurrentUnselectedAction", async () => {
+    await checkReducerAndStore(
+      { ...LOADED_STATE, currentIndex: 1, scanStatus: ["y", "y", "n", "n"] },
+      setCurrentUnselectedAction(),
+      {
+        ...LOADED_STATE,
+        currentIndex: 1,
+        scanStatus: ["y", "n", "n", "n"],
+      }
+    );
   });
 
-  it("updateAnnotationsAction", () => {
+  it("updateAnnotationsAction", async () => {
     // Valid cases
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, annotations: [] },
-        updateAnnotationsAction([{ name: "test1", axis: AXIS_H, value: 5 }])
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      annotations: [{ name: "test1", axis: AXIS_H, value: 5 }],
-    });
+    await checkReducerAndStore(
+      { ...LOADED_STATE, annotations: [] },
+      updateAnnotationsAction([{ name: "test1", axis: AXIS_H, value: 5 }]),
+      {
+        ...LOADED_STATE,
+        annotations: [{ name: "test1", axis: AXIS_H, value: 5 }],
+      }
+    );
 
-    expect(
-      roiDataReducer(
-        {
-          ...LOADED_STATE,
-          annotations: [{ name: "test1", axis: AXIS_H, value: 5 }],
-        },
-        updateAnnotationsAction([
-          { name: "test1", axis: AXIS_H, value: 5 },
-          { name: "test2", axis: AXIS_V, value: 15 },
-        ])
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      annotations: [
+    await checkReducerAndStore(
+      {
+        ...LOADED_STATE,
+        annotations: [{ name: "test1", axis: AXIS_H, value: 5 }],
+      },
+      updateAnnotationsAction([
         { name: "test1", axis: AXIS_H, value: 5 },
         { name: "test2", axis: AXIS_V, value: 15 },
-      ],
-    });
+      ]),
+      {
+        ...LOADED_STATE,
+        annotations: [
+          { name: "test1", axis: AXIS_H, value: 5 },
+          { name: "test2", axis: AXIS_V, value: 15 },
+        ],
+      }
+    );
 
-    expect(
-      roiDataReducer(
-        {
-          ...LOADED_STATE,
-          annotations: [{ name: "test1", axis: AXIS_H, value: 5 }],
-        },
-        updateAnnotationsAction([])
-      )
-    ).toStrictEqual({ ...LOADED_STATE, annotations: [] });
+    await checkReducerAndStore(
+      {
+        ...LOADED_STATE,
+        annotations: [{ name: "test1", axis: AXIS_H, value: 5 }],
+      },
+      updateAnnotationsAction([]),
+      { ...LOADED_STATE, annotations: [] }
+    );
   });
 
-  it("updateEditAnnotationAction", () => {
+  it("updateEditAnnotationAction", async () => {
     // Valid cases
-    expect(
-      roiDataReducer(
-        { ...LOADED_STATE, editAnnotation: undefined },
-        updateEditAnnotationAction({
-          index: 3,
-          annotation: { name: "test1", axis: AXIS_H, value: 5 },
-        })
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      editAnnotation: {
+    await checkReducerAndStore(
+      { ...LOADED_STATE, editAnnotation: undefined },
+      updateEditAnnotationAction({
         index: 3,
         annotation: { name: "test1", axis: AXIS_H, value: 5 },
-      },
-    });
-
-    expect(
-      roiDataReducer(
-        {
-          ...LOADED_STATE,
-          editAnnotation: {
-            index: 3,
-            annotation: { name: "test1", axis: AXIS_H, value: 5 },
-          },
+      }),
+      {
+        ...LOADED_STATE,
+        editAnnotation: {
+          index: 3,
+          annotation: { name: "test1", axis: AXIS_H, value: 5 },
         },
-        updateEditAnnotationAction(undefined)
-      )
-    ).toStrictEqual({
-      ...LOADED_STATE,
-      editAnnotation: undefined,
-    });
+      }
+    );
+
+    await checkReducerAndStore(
+      {
+        ...LOADED_STATE,
+        editAnnotation: {
+          index: 3,
+          annotation: { name: "test1", axis: AXIS_H, value: 5 },
+        },
+      },
+      updateEditAnnotationAction(undefined),
+      {
+        ...LOADED_STATE,
+        editAnnotation: undefined,
+      }
+    );
   });
+
+  const PERSIST_PARTIAL = { _persist: { version: -1, rehydrated: true } };
+
+  async function checkReducerAndStore(
+    initialState: RoiDataModelState,
+    action: AnyAction,
+    expectedState: RoiDataModelState
+  ) {
+    expect(
+      persistedReducer({ ...initialState, ...PERSIST_PARTIAL }, action)
+    ).toStrictEqual({ ...expectedState, ...PERSIST_PARTIAL });
+    await flushPromises();
+    await persistor.flush();
+
+    const expectedPeristence: PersistedRoiDataModelState & PersistPartial = {
+      items: expectedState.items,
+      scanStatus: expectedState.scanStatus,
+      chartFrameLabels: expectedState.chartFrameLabels,
+      annotations: expectedState.annotations,
+      ...PERSIST_PARTIAL,
+    };
+    if (expectedState.channel1Dataset) {
+      expectedPeristence.channel1Dataset = expectedState.channel1Dataset;
+    }
+    if (expectedState.channel2Dataset) {
+      expectedPeristence.channel2Dataset = expectedState.channel2Dataset;
+    }
+
+    expect(await getStoredState({ key: "rts-assay", storage })).toStrictEqual(
+      expectedPeristence
+    );
+  }
+
+  async function checkReducerAndEmptyStore(
+    initialState: RoiDataModelState,
+    action: AnyAction,
+    expectedState: RoiDataModelState
+  ) {
+    expect(
+      persistedReducer({ ...initialState, ...PERSIST_PARTIAL }, action)
+    ).toStrictEqual({ ...expectedState, ...PERSIST_PARTIAL });
+    await flushPromises();
+    await persistor.flush();
+
+    expect(await getStoredState({ key: "rts-assay", storage })).toBeUndefined();
+  }
 });
 
 describe("miscellaneous functions", () => {

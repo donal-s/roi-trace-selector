@@ -13,7 +13,13 @@ import {
   CHANNEL_2,
 } from "./Types";
 import { loadFile, parseCsvData } from "./CsvHandling";
-import { configureStore, createReducer, Reducer } from "@reduxjs/toolkit";
+import {
+  AnyAction,
+  configureStore,
+  createReducer,
+  getDefaultMiddleware,
+  Reducer,
+} from "@reduxjs/toolkit";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import {
   fullscreenModeAction,
@@ -32,6 +38,17 @@ import {
   closeChannelAction,
   setCurrentChannelAction,
 } from "./Actions";
+import { persistStore, persistReducer } from "redux-persist";
+import storage from "redux-persist/lib/storage";
+import {
+  FLUSH,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+  REHYDRATE,
+} from "redux-persist/lib/constants";
+import autoMergeLevel1 from "redux-persist/lib/stateReconciler/autoMergeLevel1";
 
 export type RoiDataset = {
   filename: string;
@@ -40,17 +57,22 @@ export type RoiDataset = {
   alignment: ChartAlignment;
 };
 
-export type RoiDataModelState = {
+export type PersistedRoiDataModelState = {
   channel1Dataset?: RoiDataset;
   channel2Dataset?: RoiDataset;
   items: string[];
   scanStatus: ScanStatus[];
+  chartFrameLabels: number[];
+  annotations: Annotation[];
+};
+
+export type RoiDataModelState = PersistedRoiDataModelState & {
+  //Non persisted
+  editAnnotation?: EditAnnotation;
+  showSingleTrace: boolean;
   currentIndex: number;
   currentChannel: Channel;
-  chartFrameLabels: number[];
-  showSingleTrace: boolean;
-  annotations: Annotation[];
-  editAnnotation?: EditAnnotation;
+  initialisingState: boolean;
 };
 
 const initialState: RoiDataModelState = {
@@ -61,6 +83,7 @@ const initialState: RoiDataModelState = {
   chartFrameLabels: [],
   showSingleTrace: false,
   annotations: [],
+  initialisingState: false,
 };
 
 export const roiDataReducer: Reducer<RoiDataModelState> = createReducer(
@@ -108,6 +131,26 @@ export const roiDataReducer: Reducer<RoiDataModelState> = createReducer(
         updateEditAnnotation(state, action.payload)
       );
   }
+);
+
+const persistConfig = {
+  key: "rts-assay",
+  storage,
+  debug: true,
+  stateReconciler: autoMergeLevel1,
+  whitelist: [
+    "channel1Dataset",
+    "channel2Dataset",
+    "items",
+    "scanStatus",
+    "chartFrameLabels",
+    "annotations",
+  ],
+};
+
+export const persistedReducer = persistReducer<RoiDataModelState, AnyAction>(
+  persistConfig,
+  roiDataReducer
 );
 
 function setFullscreenMode(state: RoiDataModelState, enable: boolean) {
@@ -164,7 +207,6 @@ function setCurrentScanStatus(
     scanStatus[state.currentIndex] = newScanStatus;
     return { ...state, scanStatus: scanStatus };
   }
-
   return state;
 }
 
@@ -214,7 +256,7 @@ function updateChartAlignment(
     yMinValue,
     yMinFrame,
   } = alignment;
-  
+
   if (
     (enableYMaxAlignment &&
       !alignToYMax &&
@@ -370,6 +412,7 @@ function closeChannel(
       chartFrameLabels: [],
       showSingleTrace: state.showSingleTrace,
       annotations: state.annotations,
+      initialisingState: false,
     };
   }
 
@@ -398,7 +441,15 @@ function updateEditAnnotation(
   return { ...state, editAnnotation };
 }
 
-const store = configureStore({ reducer: roiDataReducer });
+export const store = configureStore({
+  reducer: persistedReducer,
+  middleware: getDefaultMiddleware({
+    serializableCheck: {
+      ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+    },
+  }),
+});
+export const persistor = persistStore(store);
 
 export type AppDispatch = typeof store.dispatch;
 export const useAppDispatch = () => useDispatch<AppDispatch>();

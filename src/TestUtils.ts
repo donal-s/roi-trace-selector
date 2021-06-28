@@ -7,7 +7,7 @@ import { CHANNEL_1, Channel, CHANNEL_2 } from "./model/Types";
 import configureMockStore from "redux-mock-store";
 import thunk, { ThunkDispatch } from "redux-thunk";
 import { AnyAction } from "redux";
-
+import "core-js/features/set-immediate";
 // test constants
 
 export const CSV_DATA =
@@ -34,6 +34,7 @@ export const EMPTY_STATE: RoiDataModelState = {
   chartFrameLabels: [],
   showSingleTrace: false,
   annotations: [],
+  initialisingState: false,
 };
 
 export const LOADED_STATE = roiDataReducer(
@@ -75,3 +76,9 @@ export const configureAppMockStore = () =>
     RoiDataModelState,
     ThunkDispatch<RoiDataModelState, void, AnyAction>
   >([thunk]);
+
+export function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export const flushPromises = () => new Promise(setImmediate);

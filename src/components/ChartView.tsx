@@ -264,14 +264,14 @@ export default function ChartView() {
           chart.current!.options!.plugins!.annotation!.annotations = getAnnotations();
         }
 
-        if (currentIndexUpdated) {
+        if (currentIndexUpdated && currentIndex >= 0) {
           chartDatasets[currentIndex].borderWidth = CURRENT_TRACE_WIDTH;
           chartDatasets[currentIndex].borderColor = calcTraceColour(
             scanStatus[currentIndex],
             true
           );
 
-          if (prevCurrentIndex !== undefined) {
+          if (prevCurrentIndex !== undefined && prevCurrentIndex >= 0) {
             chartDatasets[prevCurrentIndex].borderWidth = DEFAULT_TRACE_WIDTH;
             chartDatasets[prevCurrentIndex].borderColor = calcTraceColour(
               scanStatus[prevCurrentIndex],
