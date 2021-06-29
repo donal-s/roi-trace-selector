@@ -29,7 +29,7 @@ export const CSV_DATA_2 =
 export const EMPTY_STATE: RoiDataModelState = {
   items: [],
   scanStatus: [],
-  currentIndex: -1,
+  currentIndex: 0,
   currentChannel: CHANNEL_1,
   chartFrameLabels: [],
   showSingleTrace: false,

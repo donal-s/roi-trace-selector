@@ -31,7 +31,7 @@ describe("component RoiSelectionListView", () => {
         container
       );
     });
-    checkChartListSelections([], -1);
+    checkChartListSelections([], 0);
 
     setCsvData(CSV_DATA);
     act(() => {

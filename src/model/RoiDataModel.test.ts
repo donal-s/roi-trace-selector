@@ -70,7 +70,7 @@ describe("roiDataReducer", () => {
     expect(EMPTY_STATE).toStrictEqual({
       items: [],
       scanStatus: [],
-      currentIndex: -1,
+      currentIndex: 0,
       currentChannel: CHANNEL_1,
       chartFrameLabels: [],
       showSingleTrace: false,

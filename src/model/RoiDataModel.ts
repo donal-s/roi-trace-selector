@@ -78,7 +78,7 @@ export type RoiDataModelState = PersistedRoiDataModelState & {
 const initialState: RoiDataModelState = {
   items: [],
   scanStatus: [],
-  currentIndex: -1,
+  currentIndex: 0,
   currentChannel: CHANNEL_1,
   chartFrameLabels: [],
   showSingleTrace: false,
@@ -202,7 +202,7 @@ function setCurrentScanStatus(
   state: RoiDataModelState,
   newScanStatus: ScanStatus
 ) {
-  if (state.currentIndex !== -1) {
+  if (isValidIndex(state.scanStatus, state.currentIndex)) {
     let scanStatus = [...state.scanStatus];
     scanStatus[state.currentIndex] = newScanStatus;
     return { ...state, scanStatus: scanStatus };
@@ -212,8 +212,7 @@ function setCurrentScanStatus(
 
 function toggleCurrentItemSelected(state: RoiDataModelState) {
   const index = state.currentIndex;
-  if (index !== -1) {
-    checkIndex(state.scanStatus, index);
+  if (isValidIndex(state.scanStatus, index)) {
     let scanStatus = [...state.scanStatus];
     if (scanStatus[index] === SCANSTATUS_SELECTED) {
       scanStatus[index] = SCANSTATUS_UNSELECTED;
@@ -407,7 +406,7 @@ function closeChannel(
     return {
       items: [],
       scanStatus: [],
-      currentIndex: -1,
+      currentIndex: 0,
       currentChannel: CHANNEL_1,
       chartFrameLabels: [],
       showSingleTrace: state.showSingleTrace,
@@ -518,15 +517,19 @@ export function isItemSelected(scanStatus: ScanStatus[], index: number) {
   return scanStatus[index] === SCANSTATUS_SELECTED;
 }
 
+export function isItemUnselected(scanStatus: ScanStatus[], index: number) {
+  checkIndex(scanStatus, index);
+  return scanStatus[index] === SCANSTATUS_UNSELECTED;
+}
+
 function checkIndex(scanStatus: ScanStatus[], index: number) {
-  if (index < 0 || index >= scanStatus.length) {
+  if (!isValidIndex(scanStatus, index)) {
     throw new Error("ROI index not valid: " + index);
   }
 }
 
-export function isItemUnselected(scanStatus: ScanStatus[], index: number) {
-  checkIndex(scanStatus, index);
-  return scanStatus[index] === SCANSTATUS_UNSELECTED;
+function isValidIndex(scanStatus: ScanStatus[], index: number) {
+  return index >= 0 && index < scanStatus.length;
 }
 
 export function isCurrentSelected({
@@ -534,7 +537,8 @@ export function isCurrentSelected({
   scanStatus,
 }: RoiDataModelState) {
   return (
-    currentIndex !== -1 && scanStatus[currentIndex] === SCANSTATUS_SELECTED
+    isValidIndex(scanStatus, currentIndex) &&
+    scanStatus[currentIndex] === SCANSTATUS_SELECTED
   );
 }
 
@@ -543,7 +547,8 @@ export function isCurrentUnselected({
   scanStatus,
 }: RoiDataModelState) {
   return (
-    currentIndex !== -1 && scanStatus[currentIndex] === SCANSTATUS_UNSELECTED
+    isValidIndex(scanStatus, currentIndex) &&
+    scanStatus[currentIndex] === SCANSTATUS_UNSELECTED
   );
 }
 
@@ -552,7 +557,8 @@ export function isCurrentUnscanned({
   scanStatus,
 }: RoiDataModelState) {
   return (
-    currentIndex !== -1 && scanStatus[currentIndex] === SCANSTATUS_UNSCANNED
+    isValidIndex(scanStatus, currentIndex) &&
+    scanStatus[currentIndex] === SCANSTATUS_UNSCANNED
   );
 }
 
