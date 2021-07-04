@@ -130,7 +130,7 @@ function getFrameLabels(frameLabelsRow: string[]) {
   // Discard first cell
   frameLabelsRow.shift();
 
-  if (!frameLabelsRow.length) {
+  if (frameLabelsRow.length < 2) {
     throw new Error("Data file has no frame data");
   }
 

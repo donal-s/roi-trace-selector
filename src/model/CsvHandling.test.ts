@@ -180,14 +180,24 @@ describe("parseCsvData", () => {
 
   it("success single frame", () => {
     const result = parseCsvData(
-      " , ROI-1, ROI-2, ROI-3, ROI-4\n1, 10.000,    1.5,   1.1,   1"
+      " , ROI-1, ROI-2, ROI-3, ROI-4\n1, 10.000,    1.5,   1.1,   1\n2, 9.000,     1.5,   2.2,   2\n"
     );
     expect(result).toStrictEqual({
-      chartData: [[10], [1.5], [1.1], [1]],
-      chartFrameLabels: [1],
+      chartData: [
+        [10, 9],
+        [1.5, 1.5],
+        [1.1, 2.2],
+        [1, 2],
+      ],
+      chartFrameLabels: [1, 2],
       currentIndex: 0,
       items: ["ROI-1", "ROI-2", "ROI-3", "ROI-4"],
-      originalTraceData: [[10], [1.5], [1.1], [1]],
+      originalTraceData: [
+        [10, 9],
+        [1.5, 1.5],
+        [1.1, 2.2],
+        [1, 2],
+      ],
       scanStatus: ["?", "?", "?", "?"],
     });
   });
@@ -199,6 +209,13 @@ describe("parseCsvData", () => {
   it("file with no data rows", () => {
     checkBadInput(
       " , ROI-1, ROI-2, ROI-3, ROI-4",
+      "Data file has no frame data"
+    );
+  });
+
+  it("file with single data row", () => {
+    checkBadInput(
+      " , ROI-1, ROI-2, ROI-3, ROI-4\n1, 10.000,    1.5,   1.1,   1",
       "Data file has no frame data"
     );
   });

@@ -1,12 +1,3 @@
-import {
-  CategoryScale,
-  Chart,
-  LinearScale,
-  LineController,
-  LineElement,
-  PointElement,
-} from "chart.js";
-import annotationPlugin from "chartjs-plugin-annotation";
 import React, { MutableRefObject, useEffect, useRef } from "react";
 import {
   Annotation,
@@ -26,43 +17,23 @@ import {
   setCurrentNextAction,
   setCurrentPreviousAction,
 } from "../model/Actions";
+import plot, { LineAnnotationType, Plot } from "../plot/Plot";
 
 const SELECTED_CURRENT_TRACE_COLOUR = "navy";
-const UNSELECTED_CURRENT_TRACE_COLOUR = "rgba(164,0,0,1)";
+const UNSELECTED_CURRENT_TRACE_COLOUR = "rgba(164,0,0)";
 const UNSCANNED_CURRENT_TRACE_COLOUR = "black";
-const CURRENT_TRACE_WIDTH = 2;
-const SELECTED_TRACE_COLOUR = "rgba(0,0,128,0.4)";
+const SELECTED_TRACE_COLOUR = "rgba(0,0,128,0.16)";
 const UNSELECTED_TRACE_COLOUR = "rgba(164,0,0,0.2)";
 const UNSCANNED_TRACE_COLOUR = "rgba(0,0,0,0.1)";
-const DEFAULT_TRACE_WIDTH = 1;
 
-Chart.register(
-  LineController,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  annotationPlugin
-);
-
-type LineAnnotationType = {
-  type: "line";
-  drawTime: string;
-  borderColor: string;
-  borderWidth: number;
-  value: number;
-  endValue: number;
-  scaleID: string;
-  label: Record<string, any>;
-};
 
 export default function ChartView() {
-  const channel1Chart: MutableRefObject<Chart | null> = React.useRef(null);
-  const channel1ChartDOMRef: MutableRefObject<HTMLCanvasElement | null> = React.useRef(
+  const channel1Chart: MutableRefObject<Plot | null> = React.useRef(null);
+  const channel1ChartDOMRef: MutableRefObject<HTMLDivElement | null> = React.useRef(
     null
   );
-  const channel2Chart: MutableRefObject<Chart | null> = React.useRef(null);
-  const channel2ChartDOMRef: MutableRefObject<HTMLCanvasElement | null> = React.useRef(
+  const channel2Chart: MutableRefObject<Plot | null> = React.useRef(null);
+  const channel2ChartDOMRef: MutableRefObject<HTMLDivElement | null> = React.useRef(
     null
   );
   const dispatch = useAppDispatch();
@@ -112,108 +83,30 @@ export default function ChartView() {
     const prevEditAnnotation = prevEditAnnotationRef.current;
 
     function getAnnotations() {
-      const result: Record<string, any> = {};
-      annotations.forEach((annotation, index) => {
-        if (
-          showSingleTrace ||
-          !editAnnotation ||
-          editAnnotation.index !== index
-        ) {
-          const lineAnnotation: LineAnnotationType = {
-            type: "line",
-            drawTime: "beforeDatasetsDraw",
-            borderColor: "gray",
-            borderWidth: 2,
-            scaleID: annotation.axis === AXIS_V ? "x" : "y",
-            value: annotation.value,
-            endValue: annotation.value,
-            label: {
-              content: annotation.name,
-              enabled: true,
-              position: annotation.axis === AXIS_V ? "start" : "end",
-              backgroundColor: "gray",
-            },
-          };
-          result[`line-${index}`] = lineAnnotation;
-        }
-      });
+      const result: LineAnnotationType[] = annotations
+        .filter(
+          (_, index) =>
+            showSingleTrace || !editAnnotation || editAnnotation.index !== index
+        )
+        .map((annotation) => ({
+          colour: "#00000080",
+          lineWidth: 2,
+          ori: annotation.axis === AXIS_V ? 1 : 0,
+          value: annotation.value,
+          label: annotation.name,
+        }));
+
       if (editAnnotation && !showSingleTrace) {
-        const lineAnnotation: LineAnnotationType = {
-          type: "line",
-          drawTime: "beforeDatasetsDraw",
-          borderColor: "red",
-          borderWidth: 2,
-          scaleID: editAnnotation.annotation.axis === AXIS_V ? "x" : "y",
+        result.push({
+          colour: "red",
+          lineWidth: 2,
+          ori: editAnnotation.annotation.axis === AXIS_V ? 1:0,
           value: editAnnotation.annotation.value,
-          endValue: editAnnotation.annotation.value,
-          label: {
-            content: editAnnotation.annotation.name,
-            enabled: true,
-            position:
-              editAnnotation.annotation.axis === AXIS_V ? "start" : "end",
-            backgroundColor: "red",
-          },
-        };
-        result[`line-${editAnnotation.index}`] = lineAnnotation;
+          label:editAnnotation.annotation.name,
+        });
       }
 
       return result;
-    }
-
-    function createChart(
-      chartRef: CanvasRenderingContext2D,
-      chartData: number[][]
-    ) {
-      const chart = new Chart(chartRef, {
-        type: "line",
-        data: {
-          labels: chartFrameLabels,
-          datasets: getChartDatasets(chartData),
-        },
-        options: {
-          animation: false,
-          elements: { point: { radius: 0 } },
-          maintainAspectRatio: false,
-          events: ["click"],
-          onClick: () => dispatch(toggleCurrentItemSelectedAction()),
-          plugins: { annotation: { annotations: getAnnotations() } },
-          scales: { x: { type: "linear" } },
-        },
-      });
-
-      return chart;
-    }
-
-    function updateChart(
-      chart: MutableRefObject<Chart>,
-      chartData: number[][]
-    ) {
-      chart.current!.data = {
-        labels: chartFrameLabels,
-        datasets: getChartDatasets(chartData),
-      };
-      chartData!.forEach((data, index) => {
-        let isCurrentTrace = currentIndex === index;
-        chart.current!.setDatasetVisibility(
-          index,
-          !showSingleTrace || isCurrentTrace
-        );
-      });
-      chart.current!.update();
-    }
-
-    function getChartDatasets(chartData: number[][]) {
-      return chartData!.map((data, index) => {
-        let isCurrentTrace = currentIndex === index;
-        return {
-          data: data,
-          label: items[index],
-          borderWidth: isCurrentTrace
-            ? CURRENT_TRACE_WIDTH
-            : DEFAULT_TRACE_WIDTH,
-          borderColor: calcTraceColour(scanStatus[index], isCurrentTrace),
-        };
-      });
     }
 
     const channel1ChartDataUpdated =
@@ -227,67 +120,63 @@ export default function ChartView() {
       annotations !== prevAnnotations || editAnnotation !== prevEditAnnotation;
 
     function createOrUpdateChart(
-      chart: MutableRefObject<Chart | null>,
-      chartDOMRef: any,
+      chart: MutableRefObject<Plot | null>,
+      chartDOMRef: HTMLDivElement,
       chartDataUpdated: boolean,
-      chartData: number[][]
+      chartXData: number[],
+      chartYData: number[][]
     ) {
-      if (chart.current === null) {
-        chart.current = createChart(chartDOMRef.getContext("2d")!, chartData);
-      } else if (chartDataUpdated) {
-        updateChart(chart as MutableRefObject<Chart>, chartData);
-      } else if (showSingleTraceUpdated) {
-        chartData!.forEach((data, index) => {
-          chart.current!.setDatasetVisibility(
-            index,
-            !showSingleTrace || currentIndex === index
-          );
-        });
-        if (chart.current?.options?.plugins?.annotation) {
-          chart.current!.options!.plugins!.annotation!.annotations = getAnnotations();
+      if (!chart.current || chartDataUpdated) {
+        const colours: string[] = [
+          ...scanStatus.map((status, index) =>
+            calcTraceColour(status, currentIndex === index)
+          ),
+        ];
+        chart.current?.destroy();
+        chart.current = plot(
+          chartDOMRef,
+          colours,
+          chartXData,
+          chartYData,
+          getAnnotations()
+        );
+        if (currentIndex >= 0) {
+          chart.current!.setSeries(currentIndex, true);
         }
-        chart.current.update();
+      } else if (showSingleTraceUpdated) {
+        chart.current.showUnfocussedSeries(!showSingleTrace);
       } else {
-        const chartDatasets = chart.current.data.datasets;
         if (scanStatusUpdated) {
           scanStatus.forEach((newValue, index) => {
             if (!prevScanStatus || newValue !== prevScanStatus[index]) {
-              chartDatasets[index].borderColor = calcTraceColour(
-                scanStatus[index],
-                currentIndex === index
+              chart.current!.setSeries(
+                index,
+                undefined,
+                calcTraceColour(scanStatus[index], currentIndex === index)
               );
             }
           });
         }
 
-        if (annotationsUpdated && chart.current?.options?.plugins?.annotation) {
-          chart.current!.options!.plugins!.annotation!.annotations = getAnnotations();
+        if (annotationsUpdated) {
+          chart.current!.setAnnotations(getAnnotations());
         }
 
         if (currentIndexUpdated && currentIndex >= 0) {
-          chartDatasets[currentIndex].borderWidth = CURRENT_TRACE_WIDTH;
-          chartDatasets[currentIndex].borderColor = calcTraceColour(
-            scanStatus[currentIndex],
-            true
+          chart.current!.setSeries(
+            currentIndex,
+            true,
+            calcTraceColour(scanStatus[currentIndex], true)
           );
 
           if (prevCurrentIndex !== undefined && prevCurrentIndex >= 0) {
-            chartDatasets[prevCurrentIndex].borderWidth = DEFAULT_TRACE_WIDTH;
-            chartDatasets[prevCurrentIndex].borderColor = calcTraceColour(
-              scanStatus[prevCurrentIndex],
-              false
+            chart.current!.setSeries(
+              prevCurrentIndex,
+              undefined,
+              calcTraceColour(scanStatus[prevCurrentIndex], false)
             );
           }
-
-          if (showSingleTrace) {
-            chart.current.setDatasetVisibility(currentIndex, true);
-            if (prevCurrentIndex !== undefined) {
-              chart.current.setDatasetVisibility(prevCurrentIndex, false);
-            }
-          }
         }
-
-        chart.current.update();
       }
     }
 
@@ -295,7 +184,8 @@ export default function ChartView() {
       createOrUpdateChart(
         channel1Chart,
         channel1ChartDOMRef.current!,
-        channel1ChartDataUpdated,
+        channel1ChartDataUpdated || channel2ChartDataUpdated,
+        chartFrameLabels,
         channel1ChartData
       );
     }
@@ -305,6 +195,7 @@ export default function ChartView() {
         channel2Chart,
         channel2ChartDOMRef.current!,
         channel2ChartDataUpdated,
+        chartFrameLabels,
         channel2ChartData
       );
     } else if (channel2Chart.current) {
@@ -355,10 +246,25 @@ export default function ChartView() {
 
   return (
     <div id="chartsPanel">
-      <div className={`chartPanel ${channel2Loaded ? "halfheight" : "fullheight"}`}>
-        <canvas
-          id="channel1Chart"
-          ref={channel1ChartDOMRef}
+      <div
+        className={`chartPanel ${channel2Loaded ? "halfheight" : "fullheight"}`}
+        id="channel1Chart"
+        ref={channel1ChartDOMRef}
+        onWheel={(event) =>
+          dispatch(
+            event.deltaY > 0
+              ? setCurrentNextAction()
+              : setCurrentPreviousAction()
+          )
+        }
+        onClick={() => dispatch(toggleCurrentItemSelectedAction())}
+      ></div>
+
+      {channel2Loaded && (
+        <div
+          className="chartPanel halfheight"
+          id="channel2Chart"
+          ref={channel2ChartDOMRef}
           onWheel={(event) =>
             dispatch(
               event.deltaY > 0
@@ -366,23 +272,8 @@ export default function ChartView() {
                 : setCurrentPreviousAction()
             )
           }
-        ></canvas>
-      </div>
-
-      {channel2Loaded && (
-        <div className="chartPanel halfheight">
-          <canvas
-            id="channel2Chart"
-            ref={channel2ChartDOMRef}
-            onWheel={(event) =>
-              dispatch(
-                event.deltaY > 0
-                  ? setCurrentNextAction()
-                  : setCurrentPreviousAction()
-              )
-            }
-          ></canvas>
-        </div>
+          onClick={() => dispatch(toggleCurrentItemSelectedAction())}
+        ></div>
       )}
     </div>
   );
