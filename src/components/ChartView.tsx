@@ -2,6 +2,10 @@ import React, { MutableRefObject, useEffect, useRef } from "react";
 import {
   Annotation,
   AXIS_V,
+  Channel,
+  CHANNEL_1,
+  CHANNEL_2,
+  CHANNEL_BOTH,
   EditAnnotation,
   ScanStatus,
   SCANSTATUS_SELECTED,
@@ -25,7 +29,6 @@ const UNSCANNED_CURRENT_TRACE_COLOUR = "black";
 const SELECTED_TRACE_COLOUR = "rgba(0,0,128,0.16)";
 const UNSELECTED_TRACE_COLOUR = "rgba(164,0,0,0.2)";
 const UNSCANNED_TRACE_COLOUR = "rgba(0,0,0,0.1)";
-
 
 export default function ChartView() {
   const channel1Chart: MutableRefObject<Plot | null> = React.useRef(null);
@@ -82,11 +85,14 @@ export default function ChartView() {
     const prevAnnotations = prevAnnotationsRef.current;
     const prevEditAnnotation = prevEditAnnotationRef.current;
 
-    function getAnnotations() {
+    function getAnnotations(chartChannel: Channel) {
       const result: LineAnnotationType[] = annotations
         .filter(
-          (_, index) =>
-            showSingleTrace || !editAnnotation || editAnnotation.index !== index
+          ({ channel }, index) =>
+            (channel === chartChannel || channel === CHANNEL_BOTH) &&
+            (showSingleTrace ||
+              !editAnnotation ||
+              editAnnotation.index !== index)
         )
         .map((annotation) => ({
           colour: "#00000080",
@@ -96,13 +102,18 @@ export default function ChartView() {
           label: annotation.name,
         }));
 
-      if (editAnnotation && !showSingleTrace) {
+      if (
+        editAnnotation &&
+        !showSingleTrace &&
+        (editAnnotation.annotation.channel === chartChannel ||
+          editAnnotation.annotation.channel === CHANNEL_BOTH)
+      ) {
         result.push({
           colour: "red",
           lineWidth: 2,
-          ori: editAnnotation.annotation.axis === AXIS_V ? 1:0,
+          ori: editAnnotation.annotation.axis === AXIS_V ? 1 : 0,
           value: editAnnotation.annotation.value,
-          label:editAnnotation.annotation.name,
+          label: editAnnotation.annotation.name,
         });
       }
 
@@ -124,7 +135,8 @@ export default function ChartView() {
       chartDOMRef: HTMLDivElement,
       chartDataUpdated: boolean,
       chartXData: number[],
-      chartYData: number[][]
+      chartYData: number[][],
+      channel: Channel
     ) {
       if (!chart.current || chartDataUpdated) {
         const colours: string[] = [
@@ -138,7 +150,7 @@ export default function ChartView() {
           colours,
           chartXData,
           chartYData,
-          getAnnotations()
+          getAnnotations(channel)
         );
         if (currentIndex >= 0) {
           chart.current!.setSeries(currentIndex, true);
@@ -159,7 +171,7 @@ export default function ChartView() {
         }
 
         if (annotationsUpdated) {
-          chart.current!.setAnnotations(getAnnotations());
+          chart.current!.setAnnotations(getAnnotations(channel));
         }
 
         if (currentIndexUpdated && currentIndex >= 0) {
@@ -186,7 +198,8 @@ export default function ChartView() {
         channel1ChartDOMRef.current!,
         channel1ChartDataUpdated || channel2ChartDataUpdated,
         chartFrameLabels,
-        channel1ChartData
+        channel1ChartData,
+        CHANNEL_1
       );
     }
 
@@ -196,7 +209,8 @@ export default function ChartView() {
         channel2ChartDOMRef.current!,
         channel2ChartDataUpdated,
         chartFrameLabels,
-        channel2ChartData
+        channel2ChartData,
+        CHANNEL_2
       );
     } else if (channel2Chart.current) {
       channel2Chart.current.destroy();

@@ -4,7 +4,16 @@ import {
   updateEditAnnotationAction,
 } from "../model/Actions";
 import { useAppDispatch, useAppSelector } from "../model/RoiDataModel";
-import { AXIS_H, AXIS_V } from "../model/Types";
+import {
+  AnnotationChannel,
+  Axis,
+  AXIS_H,
+  AXIS_V,
+  CHANNEL_1,
+  CHANNEL_2,
+  CHANNEL_BOTH,
+  EditAnnotation,
+} from "../model/Types";
 
 export default function EditAnnotationPanel() {
   const dispatch = useAppDispatch();
@@ -38,6 +47,46 @@ export default function EditAnnotationPanel() {
     dispatch(updateEditAnnotationAction(undefined));
   }
 
+  function checkbox(
+    id: string,
+    propertyName: string,
+    value: any,
+    label: string
+  ) {
+    return (
+      <label htmlFor={id}>
+        <input
+          id={id}
+          type="radio"
+          name={propertyName}
+          value={value}
+          checked={(annotation as Record<string, any>)[propertyName] === value}
+          onChange={() =>
+            dispatch(
+              updateEditAnnotationAction({
+                ...editAnnotation,
+                annotation: { ...annotation, [propertyName]: value },
+              } as EditAnnotation)
+            )
+          }
+        />
+        {label}
+      </label>
+    );
+  }
+
+  function axisCheckbox(id: string, value: Axis, label: string) {
+    return checkbox(id, "axis", value, label);
+  }
+
+  function channelCheckbox(
+    id: string,
+    value: AnnotationChannel,
+    label: string
+  ) {
+    return checkbox(id, "channel", value, label);
+  }
+
   return (
     <div id="editAnnotationPanel">
       <form>
@@ -58,43 +107,9 @@ export default function EditAnnotationPanel() {
           />
           <span>Direction</span>
 
-          <label htmlFor="editAnnotationHorizontal">
-            <input
-              id="editAnnotationHorizontal"
-              type="radio"
-              name="axis"
-              value={AXIS_H}
-              checked={annotation.axis === AXIS_H}
-              onChange={() =>
-                dispatch(
-                  updateEditAnnotationAction({
-                    ...editAnnotation,
-                    annotation: { ...annotation, axis: AXIS_H },
-                  })
-                )
-              }
-            />
-            Horizontal
-          </label>
+          {axisCheckbox("editAnnotationHorizontal", AXIS_H, "Horizontal")}
           <span></span>
-          <label htmlFor="editAnnotationVertical">
-            <input
-              id="editAnnotationVertical"
-              type="radio"
-              name="axis"
-              value={AXIS_V}
-              checked={annotation.axis === AXIS_V}
-              onChange={() =>
-                dispatch(
-                  updateEditAnnotationAction({
-                    ...editAnnotation,
-                    annotation: { ...annotation, axis: AXIS_V },
-                  })
-                )
-              }
-            />
-            Vertical
-          </label>
+          {axisCheckbox("editAnnotationVertical", AXIS_V, "Vertical")}
 
           <label htmlFor="editAnnotationValue">Value</label>
           <input
@@ -113,6 +128,18 @@ export default function EditAnnotationPanel() {
               )
             }
           />
+
+          <span>Channels</span>
+
+          {channelCheckbox(
+            "editAnnotationChannelBoth",
+            CHANNEL_BOTH,
+            "Both channels"
+          )}
+          <span></span>
+          {channelCheckbox("editAnnotationChannel1", CHANNEL_1, "Channel 1")}
+          <span></span>
+          {channelCheckbox("editAnnotationChannel2", CHANNEL_2, "Channel 2")}
         </div>
       </form>
       <div id="editAnnotationActions">

@@ -1,7 +1,7 @@
 import React from "react";
 import { updateEditAnnotationAction } from "../model/Actions";
 import { useAppDispatch, useAppSelector } from "../model/RoiDataModel";
-import { AXIS_V } from "../model/Types";
+import { AXIS_V, CHANNEL_BOTH } from "../model/Types";
 import EditAnnotationPanel from "./EditAnnotationPanel";
 
 export default function AnnotationsView() {
@@ -19,7 +19,7 @@ export default function AnnotationsView() {
     dispatch(
       updateEditAnnotationAction({
         index: annotations.length,
-        annotation: { name: "", axis: AXIS_V, value: 1 },
+        annotation: { name: "", axis: AXIS_V, value: 1, channel: CHANNEL_BOTH },
       })
     );
   }

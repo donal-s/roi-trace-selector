@@ -4,7 +4,14 @@ import React from "react";
 import { render, unmountComponentAtNode } from "react-dom";
 import { act, Simulate } from "react-dom/test-utils";
 import EditAnnotationPanel from "./EditAnnotationPanel";
-import { Annotation, AXIS_H, AXIS_V } from "../model/Types";
+import {
+  Annotation,
+  AXIS_H,
+  AXIS_V,
+  CHANNEL_1,
+  CHANNEL_2,
+  CHANNEL_BOTH,
+} from "../model/Types";
 import roiDataStore from "../model/RoiDataModel";
 import { Provider } from "react-redux";
 import {
@@ -17,6 +24,7 @@ describe("component EditAnnotationPanel", () => {
     name: "test annotation",
     axis: AXIS_H,
     value: 17,
+    channel: CHANNEL_1,
   };
 
   let container: HTMLElement;
@@ -70,13 +78,15 @@ describe("component EditAnnotationPanel", () => {
     Simulate.change(verticalAxisField());
     valueField().value = "43";
     Simulate.change(valueField());
+    Simulate.change(channelBothField());
+
     expect(saveAnnotationButton().disabled).toBe(false);
 
     Simulate.click(saveAnnotationButton());
 
     expect(roiDataStore.getState().editAnnotation).toBeUndefined();
     expect(roiDataStore.getState().annotations).toStrictEqual([
-      { name: "new value", axis: AXIS_V, value: 43 },
+      { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_BOTH },
     ]);
   });
 
@@ -88,6 +98,7 @@ describe("component EditAnnotationPanel", () => {
           name: "test annotation",
           axis: AXIS_V,
           value: 17,
+          channel: CHANNEL_1,
         },
       })
     );
@@ -95,6 +106,7 @@ describe("component EditAnnotationPanel", () => {
       name: "test annotation",
       axis: AXIS_V,
       value: 17,
+      channel: CHANNEL_1,
     });
     Simulate.change(horizontalAxisField());
     expect(saveAnnotationButton().disabled).toBe(false);
@@ -103,7 +115,45 @@ describe("component EditAnnotationPanel", () => {
 
     expect(roiDataStore.getState().editAnnotation).toBeUndefined();
     expect(roiDataStore.getState().annotations).toStrictEqual([
-      { name: "test annotation", axis: AXIS_H, value: 17 },
+      { name: "test annotation", axis: AXIS_H, value: 17, channel: CHANNEL_1 },
+    ]);
+  });
+
+  it("save annotation channel 2 - for test coverage", () => {
+    roiDataStore.dispatch(
+      updateEditAnnotationAction({
+        index: 0,
+        annotation: TEST_ANNOTATION,
+      })
+    );
+    checkPanelRender(TEST_ANNOTATION);
+    Simulate.change(channel2Field());
+    expect(saveAnnotationButton().disabled).toBe(false);
+
+    Simulate.click(saveAnnotationButton());
+
+    expect(roiDataStore.getState().editAnnotation).toBeUndefined();
+    expect(roiDataStore.getState().annotations).toStrictEqual([
+      { ...TEST_ANNOTATION, channel: CHANNEL_2 },
+    ]);
+  });
+
+  it("save annotation channel 1 - for test coverage", () => {
+    roiDataStore.dispatch(
+      updateEditAnnotationAction({
+        index: 0,
+        annotation: { ...TEST_ANNOTATION, channel: CHANNEL_2 },
+      })
+    );
+    checkPanelRender({ ...TEST_ANNOTATION, channel: CHANNEL_2 });
+    Simulate.change(channel1Field());
+    expect(saveAnnotationButton().disabled).toBe(false);
+
+    Simulate.click(saveAnnotationButton());
+
+    expect(roiDataStore.getState().editAnnotation).toBeUndefined();
+    expect(roiDataStore.getState().annotations).toStrictEqual([
+      { ...TEST_ANNOTATION, channel: CHANNEL_1 },
     ]);
   });
 
@@ -111,7 +161,7 @@ describe("component EditAnnotationPanel", () => {
     roiDataStore.dispatch(
       updateAnnotationsAction([
         TEST_ANNOTATION,
-        { name: "new value", axis: AXIS_V, value: 43 },
+        { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_BOTH },
       ])
     );
     roiDataStore.dispatch(
@@ -122,7 +172,7 @@ describe("component EditAnnotationPanel", () => {
 
     Simulate.click(deleteAnnotationButton());
     expect(roiDataStore.getState().annotations).toStrictEqual([
-      { name: "new value", axis: AXIS_V, value: 43 },
+      { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_BOTH },
     ]);
     expect(roiDataStore.getState().editAnnotation).toBeUndefined();
   });
@@ -131,7 +181,7 @@ describe("component EditAnnotationPanel", () => {
     roiDataStore.dispatch(
       updateAnnotationsAction([
         TEST_ANNOTATION,
-        { name: "new value", axis: AXIS_V, value: 43 },
+        { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_2 },
       ])
     );
     roiDataStore.dispatch(
@@ -145,7 +195,7 @@ describe("component EditAnnotationPanel", () => {
     roiDataStore.dispatch(
       updateAnnotationsAction([
         TEST_ANNOTATION,
-        { name: "new value", axis: AXIS_V, value: 43 },
+        { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_2 },
       ])
     );
     roiDataStore.dispatch(
@@ -156,7 +206,7 @@ describe("component EditAnnotationPanel", () => {
     Simulate.click(cancelButton());
     expect(roiDataStore.getState().annotations).toStrictEqual([
       TEST_ANNOTATION,
-      { name: "new value", axis: AXIS_V, value: 43 },
+      { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_2 },
     ]);
     expect(roiDataStore.getState().editAnnotation).toBeUndefined();
   });
@@ -169,6 +219,13 @@ describe("component EditAnnotationPanel", () => {
     container.querySelector("#editAnnotationVertical")!;
   const valueField = (): HTMLInputElement =>
     container.querySelector("#editAnnotationValue")!;
+  const channel1Field = (): HTMLInputElement =>
+    container.querySelector("#editAnnotationChannel1")!;
+  const channel2Field = (): HTMLInputElement =>
+    container.querySelector("#editAnnotationChannel2")!;
+  const channelBothField = (): HTMLInputElement =>
+    container.querySelector("#editAnnotationChannelBoth")!;
+
   const saveAnnotationButton = (): HTMLButtonElement =>
     container.querySelector("#editAnnotationSaveButton")!;
   const deleteAnnotationButton = (): HTMLButtonElement =>

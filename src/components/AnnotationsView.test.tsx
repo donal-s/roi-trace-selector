@@ -4,7 +4,7 @@ import React from "react";
 import { render, unmountComponentAtNode } from "react-dom";
 import { act, Simulate } from "react-dom/test-utils";
 import AnnotationsView from "./AnnotationsView";
-import { Annotation, AXIS_H, AXIS_V } from "../model/Types";
+import { Annotation, AXIS_H, AXIS_V, CHANNEL_BOTH } from "../model/Types";
 import roiDataStore from "../model/RoiDataModel";
 import { Provider } from "react-redux";
 import {
@@ -17,6 +17,7 @@ describe("component AnnotationsView", () => {
     name: "test annotation",
     axis: AXIS_H,
     value: 17,
+    channel: CHANNEL_BOTH,
   };
 
   let container: HTMLElement;
@@ -94,7 +95,7 @@ describe("component AnnotationsView", () => {
 
     expect(roiDataStore.getState().editAnnotation).toStrictEqual({
       index: 2,
-      annotation: { name: "", axis: AXIS_V, value: 1 },
+      annotation: { name: "", axis: AXIS_V, value: 1, channel: CHANNEL_BOTH },
     });
   });
 

@@ -44,10 +44,17 @@ export const AXIS_H = "h";
 export const AXIS_V = "v";
 export type Axis = typeof AXIS_H | typeof AXIS_V;
 
+export const CHANNEL_BOTH = "both";
+export type AnnotationChannel =
+  | typeof CHANNEL_1
+  | typeof CHANNEL_2
+  | typeof CHANNEL_BOTH;
+
 export type Annotation = {
   name: string;
   axis: Axis;
   value: number;
+  channel: AnnotationChannel;
 };
 
 export type EditAnnotation = {

@@ -35,6 +35,7 @@ import {
   SCANSTATUS_UNSELECTED,
   Channel,
   CHANNEL_2,
+  CHANNEL_BOTH,
 } from "./Types";
 import {
   closeChannelAction,
@@ -1015,27 +1016,13 @@ describe("roiDataReducer", () => {
     // Valid cases
     await checkReducerAndStore(
       { ...LOADED_STATE, annotations: [] },
-      updateAnnotationsAction([{ name: "test1", axis: AXIS_H, value: 5 }]),
-      {
-        ...LOADED_STATE,
-        annotations: [{ name: "test1", axis: AXIS_H, value: 5 }],
-      }
-    );
-
-    await checkReducerAndStore(
-      {
-        ...LOADED_STATE,
-        annotations: [{ name: "test1", axis: AXIS_H, value: 5 }],
-      },
       updateAnnotationsAction([
-        { name: "test1", axis: AXIS_H, value: 5 },
-        { name: "test2", axis: AXIS_V, value: 15 },
+        { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_2 },
       ]),
       {
         ...LOADED_STATE,
         annotations: [
-          { name: "test1", axis: AXIS_H, value: 5 },
-          { name: "test2", axis: AXIS_V, value: 15 },
+          { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_2 },
         ],
       }
     );
@@ -1043,7 +1030,29 @@ describe("roiDataReducer", () => {
     await checkReducerAndStore(
       {
         ...LOADED_STATE,
-        annotations: [{ name: "test1", axis: AXIS_H, value: 5 }],
+        annotations: [
+          { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_1 },
+        ],
+      },
+      updateAnnotationsAction([
+        { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_BOTH },
+        { name: "test2", axis: AXIS_V, value: 15, channel: CHANNEL_2 },
+      ]),
+      {
+        ...LOADED_STATE,
+        annotations: [
+          { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_BOTH },
+          { name: "test2", axis: AXIS_V, value: 15, channel: CHANNEL_2 },
+        ],
+      }
+    );
+
+    await checkReducerAndStore(
+      {
+        ...LOADED_STATE,
+        annotations: [
+          { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_1 },
+        ],
       },
       updateAnnotationsAction([]),
       { ...LOADED_STATE, annotations: [] }
@@ -1056,13 +1065,23 @@ describe("roiDataReducer", () => {
       { ...LOADED_STATE, editAnnotation: undefined },
       updateEditAnnotationAction({
         index: 3,
-        annotation: { name: "test1", axis: AXIS_H, value: 5 },
+        annotation: {
+          name: "test1",
+          axis: AXIS_H,
+          value: 5,
+          channel: CHANNEL_1,
+        },
       }),
       {
         ...LOADED_STATE,
         editAnnotation: {
           index: 3,
-          annotation: { name: "test1", axis: AXIS_H, value: 5 },
+          annotation: {
+            name: "test1",
+            axis: AXIS_H,
+            value: 5,
+            channel: CHANNEL_1,
+          },
         },
       }
     );
@@ -1072,7 +1091,12 @@ describe("roiDataReducer", () => {
         ...LOADED_STATE,
         editAnnotation: {
           index: 3,
-          annotation: { name: "test1", axis: AXIS_H, value: 5 },
+          annotation: {
+            name: "test1",
+            axis: AXIS_H,
+            value: 5,
+            channel: CHANNEL_1,
+          },
         },
       },
       updateEditAnnotationAction(undefined),
