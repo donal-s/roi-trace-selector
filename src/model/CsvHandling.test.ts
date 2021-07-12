@@ -162,6 +162,18 @@ describe("parseCsvData", () => {
         [1.1, 2.2, 3.3, 2.2, 1.1],
         [1, 2, 3, 4, 5],
       ],
+      scaledTraceData: [
+        [
+          expect.closeTo(0.0),
+          expect.closeTo(0.14),
+          expect.closeTo(0.71),
+          expect.closeTo(0.86),
+          1,
+        ],
+        [0, 0, 0, 0, 0],
+        [0, expect.closeTo(1.1), expect.closeTo(2.2), expect.closeTo(1.1), 0],
+        [0, 0.25, 0.5, 0.75, 1],
+      ],
       scanStatus: ["?", "?", "?", "?"],
     });
   });
@@ -174,6 +186,7 @@ describe("parseCsvData", () => {
       currentIndex: 0,
       items: ["ROI-1"],
       originalTraceData: [[1, 2, 3, 4, 5]],
+      scaledTraceData: [[0, 0.25, 0.5, 0.75, 1]],
       scanStatus: ["?"],
     });
   });
@@ -197,6 +210,12 @@ describe("parseCsvData", () => {
         [1.5, 1.5],
         [1.1, 2.2],
         [1, 2],
+      ],
+      scaledTraceData: [
+        [-0, 1],
+        [0, 0],
+        [0, 1],
+        [0, 1],
       ],
       scanStatus: ["?", "?", "?", "?"],
     });

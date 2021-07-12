@@ -20,6 +20,9 @@ import {
   CSV_DATA_2,
   DUAL_CHANNEL_LOADED_STATE,
   EMPTY_STATE,
+  EXPECTED_CHANNEL1_DATASET,
+  EXPECTED_DUAL_CHANNEL_LOADED_STATE,
+  EXPECTED_LOADED_STATE,
   flushPromises,
   LOADED_STATE,
 } from "../TestUtils";
@@ -36,6 +39,14 @@ import {
   Channel,
   CHANNEL_2,
   CHANNEL_BOTH,
+  SELECTION_MANUAL,
+  SELECTION_MINIMUM_STDEV_BY_STDEV,
+  SelectionMinimumStdev,
+  SELECTION_PERCENT_CHANGE,
+  SelectionPercentChange,
+  SelectionStdev,
+  SELECTION_STDEV,
+  SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT,
 } from "./Types";
 import {
   closeChannelAction,
@@ -52,6 +63,7 @@ import {
   setCurrentSelectedAction,
   setCurrentUnscannedAction,
   setCurrentUnselectedAction,
+  setSelectionAction,
   toggleCurrentItemSelectedAction,
   updateAnnotationsAction,
   updateChartAlignmentAction,
@@ -79,73 +91,11 @@ describe("roiDataReducer", () => {
       initialisingState: false,
     });
 
-    expect(LOADED_STATE).toStrictEqual({
-      channel1Dataset: {
-        chartData: [
-          [10, 9, 5, 4, 3],
-          [1.5, 1.5, 1.5, 1.5, 1.5],
-          [1.1, 2.2, 3.3, 2.2, 1.1],
-          [1, 2, 3, 4, 5],
-        ],
-        originalTraceData: [
-          [10, 9, 5, 4, 3],
-          [1.5, 1.5, 1.5, 1.5, 1.5],
-          [1.1, 2.2, 3.3, 2.2, 1.1],
-          [1, 2, 3, 4, 5],
-        ],
-        filename: "new file",
-        alignment: {
-          channel: CHANNEL_1,
-          enableYMaxAlignment: false,
-          alignToYMax: false,
-          yMaxValue: 200,
-          yMaxFrame: 1,
-          enableYMinAlignment: false,
-          alignToYMin: false,
-          yMinValue: 0,
-          yMinFrame: 5,
-        },
-      },
-      items: ["ROI-1", "ROI-2", "ROI-3", "ROI-4"],
-      scanStatus: ["?", "?", "?", "?"],
-      currentIndex: 0,
-      currentChannel: CHANNEL_1,
-      chartFrameLabels: [1, 2, 3, 4, 5],
+    expect(LOADED_STATE).toMatchObject(EXPECTED_LOADED_STATE);
 
-      showSingleTrace: false,
-      annotations: [],
-      initialisingState: false,
-    });
-
-    expect(DUAL_CHANNEL_LOADED_STATE).toStrictEqual({
-      ...LOADED_STATE,
-      channel2Dataset: {
-        chartData: [
-          [30, 29, 25, 24, 23],
-          [21.5, 21.5, 21.5, 21.5, 21.5],
-          [21.1, 22.2, 23.3, 22.2, 21.1],
-          [21, 22, 23, 24, 25],
-        ],
-        originalTraceData: [
-          [30, 29, 25, 24, 23],
-          [21.5, 21.5, 21.5, 21.5, 21.5],
-          [21.1, 22.2, 23.3, 22.2, 21.1],
-          [21, 22, 23, 24, 25],
-        ],
-        filename: "new file2",
-        alignment: {
-          channel: CHANNEL_2,
-          enableYMaxAlignment: false,
-          alignToYMax: false,
-          yMaxValue: 200,
-          yMaxFrame: 1,
-          enableYMinAlignment: false,
-          alignToYMin: false,
-          yMinValue: 0,
-          yMinFrame: 5,
-        },
-      },
-    });
+    expect(DUAL_CHANNEL_LOADED_STATE).toStrictEqual(
+      EXPECTED_DUAL_CHANNEL_LOADED_STATE
+    );
   });
 
   it("initial state", async () => {
@@ -171,12 +121,12 @@ describe("roiDataReducer", () => {
 
     // Valid cases
     await checkReducerAndStore(LOADED_STATE, setCurrentIndexAction(2), {
-      ...LOADED_STATE,
+      ...EXPECTED_LOADED_STATE,
       currentIndex: 2,
     });
 
     await checkReducerAndStore(LOADED_STATE, setCurrentIndexAction(1), {
-      ...LOADED_STATE,
+      ...EXPECTED_LOADED_STATE,
       currentIndex: 1,
     });
   });
@@ -259,7 +209,11 @@ describe("roiDataReducer", () => {
       await checkReducerAndStore(
         { ...LOADED_STATE, currentIndex: 0, scanStatus: ["?", "?", "?", "?"] },
         setCurrentNextUnscannedAction(),
-        { ...LOADED_STATE, currentIndex: 1, scanStatus: ["?", "?", "?", "?"] }
+        {
+          ...EXPECTED_LOADED_STATE,
+          currentIndex: 1,
+          scanStatus: ["?", "?", "?", "?"],
+        }
       );
     });
 
@@ -267,7 +221,11 @@ describe("roiDataReducer", () => {
       await checkReducerAndStore(
         { ...LOADED_STATE, currentIndex: 0, scanStatus: ["?", "y", "n", "?"] },
         setCurrentNextUnscannedAction(),
-        { ...LOADED_STATE, currentIndex: 3, scanStatus: ["?", "y", "n", "?"] }
+        {
+          ...EXPECTED_LOADED_STATE,
+          currentIndex: 3,
+          scanStatus: ["?", "y", "n", "?"],
+        }
       );
     });
 
@@ -275,7 +233,11 @@ describe("roiDataReducer", () => {
       await checkReducerAndStore(
         { ...LOADED_STATE, currentIndex: 2, scanStatus: ["n", "?", "?", "y"] },
         setCurrentNextUnscannedAction(),
-        { ...LOADED_STATE, currentIndex: 1, scanStatus: ["n", "?", "?", "y"] }
+        {
+          ...EXPECTED_LOADED_STATE,
+          currentIndex: 1,
+          scanStatus: ["n", "?", "?", "y"],
+        }
       );
     });
   });
@@ -292,19 +254,31 @@ describe("roiDataReducer", () => {
     await checkReducerAndStore(
       { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
       setCurrentScanStatusAction(SCANSTATUS_UNSCANNED),
-      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "?", "n"] }
+      {
+        ...EXPECTED_LOADED_STATE,
+        currentIndex: 2,
+        scanStatus: ["y", "y", "?", "n"],
+      }
     );
 
     await checkReducerAndStore(
       { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
       setCurrentScanStatusAction(SCANSTATUS_SELECTED),
-      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "y", "n"] }
+      {
+        ...EXPECTED_LOADED_STATE,
+        currentIndex: 2,
+        scanStatus: ["y", "y", "y", "n"],
+      }
     );
 
     await checkReducerAndStore(
       { ...LOADED_STATE, currentIndex: 1, scanStatus: ["y", "y", "n", "n"] },
       setCurrentScanStatusAction(SCANSTATUS_UNSELECTED),
-      { ...LOADED_STATE, currentIndex: 1, scanStatus: ["y", "n", "n", "n"] }
+      {
+        ...EXPECTED_LOADED_STATE,
+        currentIndex: 1,
+        scanStatus: ["y", "n", "n", "n"],
+      }
     );
   });
 
@@ -320,19 +294,31 @@ describe("roiDataReducer", () => {
     await checkReducerAndStore(
       { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
       toggleCurrentItemSelectedAction(),
-      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "?", "n"] }
+      {
+        ...EXPECTED_LOADED_STATE,
+        currentIndex: 2,
+        scanStatus: ["y", "y", "?", "n"],
+      }
     );
 
     await checkReducerAndStore(
       { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "?", "n"] },
       toggleCurrentItemSelectedAction(),
-      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "y", "n"] }
+      {
+        ...EXPECTED_LOADED_STATE,
+        currentIndex: 2,
+        scanStatus: ["y", "y", "y", "n"],
+      }
     );
 
     await checkReducerAndStore(
       { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "y", "n"] },
       toggleCurrentItemSelectedAction(),
-      { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] }
+      {
+        ...EXPECTED_LOADED_STATE,
+        currentIndex: 2,
+        scanStatus: ["y", "y", "n", "n"],
+      }
     );
   });
 
@@ -348,42 +334,42 @@ describe("roiDataReducer", () => {
     await checkReducerAndStore(
       { ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] },
       selectAllItemsAction(),
-      { ...LOADED_STATE, scanStatus: ["y", "y", "y", "y"] }
+      { ...EXPECTED_LOADED_STATE, scanStatus: ["y", "y", "y", "y"] }
     );
 
     // With data all selected -> unselected
     await checkReducerAndStore(
       { ...LOADED_STATE, scanStatus: ["y", "y", "y", "y"] },
       selectAllItemsAction(),
-      { ...LOADED_STATE, scanStatus: ["n", "n", "n", "n"] }
+      { ...EXPECTED_LOADED_STATE, scanStatus: ["n", "n", "n", "n"] }
     );
 
     // With data all unselected -> clear
     await checkReducerAndStore(
       { ...LOADED_STATE, scanStatus: ["n", "n", "n", "n"] },
       selectAllItemsAction(),
-      { ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
+      { ...EXPECTED_LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
     );
 
     // With data 1 selected -> clear
     await checkReducerAndStore(
       { ...LOADED_STATE, scanStatus: ["?", "y", "?", "?"] },
       selectAllItemsAction(),
-      { ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
+      { ...EXPECTED_LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
     );
 
     // With data 1 unselected -> clear
     await checkReducerAndStore(
       { ...LOADED_STATE, scanStatus: ["?", "n", "?", "?"] },
       selectAllItemsAction(),
-      { ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
+      { ...EXPECTED_LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
     );
 
     // With data mix -> clear
     await checkReducerAndStore(
       { ...LOADED_STATE, scanStatus: ["?", "n", "y", "?"] },
       selectAllItemsAction(),
-      { ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
+      { ...EXPECTED_LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
     );
   });
 
@@ -423,11 +409,8 @@ describe("roiDataReducer", () => {
         LOADED_STATE,
         updateChartAlignmentAction(params),
         {
-          ...LOADED_STATE,
-          channel1Dataset: {
-            ...LOADED_STATE.channel1Dataset!,
-            alignment: params,
-          },
+          ...EXPECTED_LOADED_STATE,
+          channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, alignment: params },
         }
       );
     });
@@ -448,9 +431,9 @@ describe("roiDataReducer", () => {
         LOADED_STATE,
         updateChartAlignmentAction(params),
         {
-          ...LOADED_STATE,
+          ...EXPECTED_LOADED_STATE,
           channel1Dataset: {
-            ...LOADED_STATE.channel1Dataset!,
+            ...EXPECTED_CHANNEL1_DATASET,
             chartData: [
               [5, 4, 0, -1, -2],
               [5, 5, 5, 5, 5],
@@ -479,9 +462,9 @@ describe("roiDataReducer", () => {
         LOADED_STATE,
         updateChartAlignmentAction(params),
         {
-          ...LOADED_STATE,
+          ...EXPECTED_LOADED_STATE,
           channel1Dataset: {
-            ...LOADED_STATE.channel1Dataset!,
+            ...EXPECTED_CHANNEL1_DATASET,
             chartData: [
               [6, 5, 1, 0, -1],
               [5, 5, 5, 5, 5],
@@ -510,9 +493,9 @@ describe("roiDataReducer", () => {
         LOADED_STATE,
         updateChartAlignmentAction(params),
         {
-          ...LOADED_STATE,
+          ...EXPECTED_LOADED_STATE,
           channel1Dataset: {
-            ...LOADED_STATE.channel1Dataset!,
+            ...EXPECTED_CHANNEL1_DATASET,
             chartData: [
               [5, 4, 0, -1, -2],
               [5, 5, 5, 5, 5],
@@ -547,13 +530,19 @@ describe("roiDataReducer", () => {
         LOADED_STATE,
         updateChartAlignmentAction(params),
         {
-          ...LOADED_STATE,
+          ...EXPECTED_LOADED_STATE,
           channel1Dataset: {
-            ...LOADED_STATE.channel1Dataset!,
+            ...EXPECTED_CHANNEL1_DATASET,
             chartData: [
-              [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
+              [
+                5,
+                expect.closeTo(4.43),
+                expect.closeTo(2.14),
+                expect.closeTo(1.57),
+                1,
+              ],
               [5, 5, 5, 5, 5],
-              [5, 6.1, 7.199999999999999, 6.1, 5],
+              [5, 6.1, expect.closeTo(7.2), 6.1, 5],
               [5, 4, 3, 2, 1],
             ],
             alignment: params,
@@ -578,13 +567,19 @@ describe("roiDataReducer", () => {
         LOADED_STATE,
         updateChartAlignmentAction(params),
         {
-          ...LOADED_STATE,
+          ...EXPECTED_LOADED_STATE,
           channel1Dataset: {
-            ...LOADED_STATE.channel1Dataset!,
+            ...EXPECTED_CHANNEL1_DATASET,
             chartData: [
-              [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
+              [
+                5,
+                expect.closeTo(4.43),
+                expect.closeTo(2.14),
+                expect.closeTo(1.57),
+                1,
+              ],
               [5, 5, 5, 5, 5],
-              [1, 3.0000000000000004, 5, 3.0000000000000004, 1],
+              [1, expect.closeTo(3.0), 5, expect.closeTo(3.0), 1],
               [1, 2, 3, 4, 5],
             ],
             alignment: params,
@@ -609,13 +604,19 @@ describe("roiDataReducer", () => {
         DUAL_CHANNEL_LOADED_STATE,
         updateChartAlignmentAction(params),
         {
-          ...DUAL_CHANNEL_LOADED_STATE,
+          ...EXPECTED_DUAL_CHANNEL_LOADED_STATE,
           channel2Dataset: {
-            ...DUAL_CHANNEL_LOADED_STATE.channel2Dataset!,
+            ...EXPECTED_DUAL_CHANNEL_LOADED_STATE.channel2Dataset!,
             chartData: [
-              [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
+              [
+                5,
+                expect.closeTo(4.43),
+                expect.closeTo(2.14),
+                expect.closeTo(1.57),
+                1,
+              ],
               [5, 5, 5, 5, 5],
-              [1, 2.999999999999997, 5, 2.999999999999997, 1],
+              [1, expect.closeTo(3.0), 5, expect.closeTo(3.0), 1],
               [1, 2, 3, 4, 5],
             ],
             alignment: params,
@@ -698,7 +699,7 @@ describe("roiDataReducer", () => {
           channel: CHANNEL_1,
           filename: "new file",
         }),
-        LOADED_STATE
+        EXPECTED_LOADED_STATE
       );
     });
 
@@ -710,7 +711,7 @@ describe("roiDataReducer", () => {
           channel: CHANNEL_1,
           filename: "new file",
         }),
-        LOADED_STATE
+        EXPECTED_LOADED_STATE
       );
     });
 
@@ -723,9 +724,9 @@ describe("roiDataReducer", () => {
           filename: "new file3",
         }),
         {
-          ...DUAL_CHANNEL_LOADED_STATE,
+          ...EXPECTED_DUAL_CHANNEL_LOADED_STATE,
           channel1Dataset: {
-            ...DUAL_CHANNEL_LOADED_STATE.channel1Dataset!,
+            ...EXPECTED_DUAL_CHANNEL_LOADED_STATE.channel1Dataset!,
             filename: "new file3",
           },
         }
@@ -747,7 +748,7 @@ describe("roiDataReducer", () => {
           filename: "new file3",
         }),
         {
-          ...LOADED_STATE,
+          ...EXPECTED_LOADED_STATE,
           channel1Dataset: {
             chartData: [
               [10, 9, 5, 4, 3],
@@ -760,7 +761,25 @@ describe("roiDataReducer", () => {
               [1.5, 1.5, 1.5, 1.5, 1.5],
               [1.1, 2.2, 3.3, 2.2, 1.1],
             ],
-            alignment: LOADED_STATE.channel1Dataset!.alignment,
+            scaledTraceData: [
+              [
+                expect.closeTo(0.0),
+                expect.closeTo(0.14),
+                expect.closeTo(0.71),
+                expect.closeTo(0.86),
+                1,
+              ],
+              [0, 0, 0, 0, 0],
+              [
+                0,
+                expect.closeTo(1.1),
+                expect.closeTo(2.2),
+                expect.closeTo(1.1),
+                0,
+              ],
+            ],
+            alignment: EXPECTED_CHANNEL1_DATASET.alignment,
+            selection: { type: SELECTION_MANUAL },
           },
           channel2Dataset: undefined,
           chartFrameLabels: [1, 2, 3, 4, 5],
@@ -844,7 +863,7 @@ describe("roiDataReducer", () => {
           channel: CHANNEL_2,
           filename: "new file2",
         }),
-        DUAL_CHANNEL_LOADED_STATE
+        EXPECTED_DUAL_CHANNEL_LOADED_STATE
       );
     });
   });
@@ -875,7 +894,7 @@ describe("roiDataReducer", () => {
         },
         closeChannelAction(CHANNEL_2),
         {
-          ...LOADED_STATE,
+          ...EXPECTED_LOADED_STATE,
           channel2Dataset: undefined,
           currentIndex: 2,
           scanStatus: ["?", "n", "y", "?"],
@@ -901,7 +920,7 @@ describe("roiDataReducer", () => {
           currentChannel: CHANNEL_2,
         },
         closeChannelAction(CHANNEL_2),
-        { ...LOADED_STATE, channel2Dataset: undefined }
+        { ...EXPECTED_LOADED_STATE, channel2Dataset: undefined }
       );
     });
   });
@@ -925,13 +944,13 @@ describe("roiDataReducer", () => {
       await checkReducerAndStore(
         LOADED_STATE,
         setCurrentChannelAction(CHANNEL_2),
-        { ...LOADED_STATE, currentChannel: CHANNEL_2 }
+        { ...EXPECTED_LOADED_STATE, currentChannel: CHANNEL_2 }
       );
 
       await checkReducerAndStore(
         { ...LOADED_STATE, currentChannel: CHANNEL_2 },
         setCurrentChannelAction(CHANNEL_1),
-        LOADED_STATE
+        EXPECTED_LOADED_STATE
       );
     });
   });
@@ -981,7 +1000,7 @@ describe("roiDataReducer", () => {
       { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
       setCurrentUnscannedAction(),
       {
-        ...LOADED_STATE,
+        ...EXPECTED_LOADED_STATE,
         currentIndex: 2,
         scanStatus: ["y", "y", "?", "n"],
       }
@@ -993,7 +1012,7 @@ describe("roiDataReducer", () => {
       { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
       setCurrentSelectedAction(),
       {
-        ...LOADED_STATE,
+        ...EXPECTED_LOADED_STATE,
         currentIndex: 2,
         scanStatus: ["y", "y", "y", "n"],
       }
@@ -1005,7 +1024,7 @@ describe("roiDataReducer", () => {
       { ...LOADED_STATE, currentIndex: 1, scanStatus: ["y", "y", "n", "n"] },
       setCurrentUnselectedAction(),
       {
-        ...LOADED_STATE,
+        ...EXPECTED_LOADED_STATE,
         currentIndex: 1,
         scanStatus: ["y", "n", "n", "n"],
       }
@@ -1020,7 +1039,7 @@ describe("roiDataReducer", () => {
         { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_2 },
       ]),
       {
-        ...LOADED_STATE,
+        ...EXPECTED_LOADED_STATE,
         annotations: [
           { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_2 },
         ],
@@ -1039,7 +1058,7 @@ describe("roiDataReducer", () => {
         { name: "test2", axis: AXIS_V, value: 15, channel: CHANNEL_2 },
       ]),
       {
-        ...LOADED_STATE,
+        ...EXPECTED_LOADED_STATE,
         annotations: [
           { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_BOTH },
           { name: "test2", axis: AXIS_V, value: 15, channel: CHANNEL_2 },
@@ -1055,7 +1074,7 @@ describe("roiDataReducer", () => {
         ],
       },
       updateAnnotationsAction([]),
-      { ...LOADED_STATE, annotations: [] }
+      { ...EXPECTED_LOADED_STATE, annotations: [] }
     );
   });
 
@@ -1073,7 +1092,7 @@ describe("roiDataReducer", () => {
         },
       }),
       {
-        ...LOADED_STATE,
+        ...EXPECTED_LOADED_STATE,
         editAnnotation: {
           index: 3,
           annotation: {
@@ -1101,10 +1120,535 @@ describe("roiDataReducer", () => {
       },
       updateEditAnnotationAction(undefined),
       {
-        ...LOADED_STATE,
+        ...EXPECTED_LOADED_STATE,
         editAnnotation: undefined,
       }
     );
+  });
+
+  describe("setSelectionAction", () => {
+    const ALL_SELECTED: ScanStatus[] = [
+      SCANSTATUS_SELECTED,
+      SCANSTATUS_SELECTED,
+      SCANSTATUS_SELECTED,
+      SCANSTATUS_SELECTED,
+    ];
+
+    it("empty state - no effect", async () => {
+      const selection: SelectionMinimumStdev = {
+        type: SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT,
+        selectedTraceCount: 5,
+        selectedStdev: 1.2,
+      };
+      await checkReducerAndEmptyStore(
+        EMPTY_STATE,
+        setSelectionAction(selection),
+        EMPTY_STATE
+      );
+    });
+
+    it("percent change selection - all selected", async () => {
+      const selection: SelectionPercentChange = {
+        type: SELECTION_PERCENT_CHANGE,
+        startFrame: 0,
+        endFrame: 4,
+        percentChange: 0,
+      };
+
+      await checkReducerAndStore(
+        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
+        setSelectionAction(selection),
+        {
+          ...EXPECTED_LOADED_STATE,
+          scanStatus: ALL_SELECTED,
+          channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
+        }
+      );
+    });
+
+    it("percent change selection - two selected", async () => {
+      const selection: SelectionPercentChange = {
+        type: SELECTION_PERCENT_CHANGE,
+        startFrame: 1,
+        endFrame: 2,
+        percentChange: 0.5,
+      };
+
+      await checkReducerAndStore(
+        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
+        setSelectionAction(selection),
+        {
+          ...EXPECTED_LOADED_STATE,
+          scanStatus: [
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_UNSELECTED,
+          ],
+          channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
+        }
+      );
+    });
+
+    it("percent change selection - one selected", async () => {
+      const selection: SelectionPercentChange = {
+        type: SELECTION_PERCENT_CHANGE,
+        startFrame: 2,
+        endFrame: 3,
+        percentChange: 0.2,
+      };
+
+      await checkReducerAndStore(
+        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
+        setSelectionAction(selection),
+        {
+          ...EXPECTED_LOADED_STATE,
+          scanStatus: [
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_SELECTED,
+          ],
+          channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
+        }
+      );
+    });
+
+    it("stdev selection - case 1", async () => {
+      // Expected calculations - 4 ROIs per line
+      // Mean        6.200   1.500   1.980   3.000
+      // stdev       3.114   0.000   0.920   1.581
+      // upper bound 9.314   1.500   2.900   4.581
+      // lower bound 3.086   1.500   1.060   1.419
+
+      const selection: SelectionStdev = {
+        type: SELECTION_STDEV,
+        startBaselineFrame: 0,
+        endBaselineFrame: 4,
+        startDetectionFrame: 0,
+        endDetectionFrame: 4,
+        stdevMultiple: 1,
+      };
+
+      await checkReducerAndStore(
+        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
+        setSelectionAction(selection),
+        {
+          ...EXPECTED_LOADED_STATE,
+          scanStatus: [
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_SELECTED,
+          ],
+          channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
+        }
+      );
+    });
+
+    it("stdev selection - case 2", async () => {
+      // Expected calculations - 4 ROIs per line
+      // Mean        6.200   1.500   1.980   3.000
+      // stdev       3.114   0.000   0.920   1.581
+      // upper bound 9.314   1.500   2.900   4.581
+      // lower bound 3.086   1.500   1.060   1.419
+      const selection: SelectionStdev = {
+        type: SELECTION_STDEV,
+        startBaselineFrame: 0,
+        endBaselineFrame: 4,
+        startDetectionFrame: 1,
+        endDetectionFrame: 3,
+        stdevMultiple: 1,
+      };
+
+      await checkReducerAndStore(
+        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
+        setSelectionAction(selection),
+        {
+          ...EXPECTED_LOADED_STATE,
+          scanStatus: [
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_UNSELECTED,
+          ],
+          channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
+        }
+      );
+    });
+
+    it("stdev selection - case 3", async () => {
+      // Expected calculations - 4 ROIs per line
+      // Mean        6.200   1.500   1.980   3.000
+      // stdev       3.114   0.000   0.920   1.581
+      // upper bound 10.093  1.500   3.130   4.976
+      // lower bound 2.307   1.500   0.830   1.024
+
+      const selection: SelectionStdev = {
+        type: SELECTION_STDEV,
+        startBaselineFrame: 0,
+        endBaselineFrame: 4,
+        startDetectionFrame: 0,
+        endDetectionFrame: 4,
+        stdevMultiple: 1.25,
+      };
+
+      await checkReducerAndStore(
+        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
+        setSelectionAction(selection),
+        {
+          ...EXPECTED_LOADED_STATE,
+          scanStatus: [
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_SELECTED,
+          ],
+          channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
+        }
+      );
+    });
+
+    it("stdev selection - case 4", async () => {
+      // Expected calculations - 4 ROIs per line
+      // Mean        4.500   1.500   2.750   3.500
+      // stdev       0.707   0.000   0.778   0.707
+      // upper bound 5.207   1.500   3.528   4.207
+      // lower bound 3.793   1.500   1.972   2.793
+
+      const selection: SelectionStdev = {
+        type: SELECTION_STDEV,
+        startBaselineFrame: 2,
+        endBaselineFrame: 3,
+        startDetectionFrame: 0,
+        endDetectionFrame: 4,
+        stdevMultiple: 1,
+      };
+
+      await checkReducerAndStore(
+        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
+        setSelectionAction(selection),
+        {
+          ...EXPECTED_LOADED_STATE,
+          scanStatus: [
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_SELECTED,
+          ],
+          channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
+        }
+      );
+    });
+
+    it("stdev selection - case 5", async () => {
+      // Expected calculations - 4 ROIs per line
+      // Mean        4.500   1.500   2.750   3.500
+      // stdev       0.707   0.000   0.778   0.707
+      // upper bound 5.207   1.500   3.528   4.207
+      // lower bound 3.793   1.500   1.972   2.793
+
+      const selection: SelectionStdev = {
+        type: SELECTION_STDEV,
+        startBaselineFrame: 2,
+        endBaselineFrame: 3,
+        startDetectionFrame: 1,
+        endDetectionFrame: 1,
+        stdevMultiple: 1,
+      };
+
+      await checkReducerAndStore(
+        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
+        setSelectionAction(selection),
+        {
+          ...EXPECTED_LOADED_STATE,
+          scanStatus: [
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_SELECTED,
+          ],
+          channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
+        }
+      );
+    });
+
+    it("stdev selection - case 6", async () => {
+      // Expected calculations - 4 ROIs per line
+      // Mean        4.500   1.500   2.750   3.500
+      // stdev       0.707   0.000   0.778   0.707
+      // upper bound 5.207   1.500   3.528   4.207
+      // lower bound 3.793   1.500   1.972   2.793
+
+      const selection: SelectionStdev = {
+        type: SELECTION_STDEV,
+        startBaselineFrame: 2,
+        endBaselineFrame: 3,
+        startDetectionFrame: 0,
+        endDetectionFrame: 4,
+        stdevMultiple: 2,
+      };
+
+      await checkReducerAndStore(
+        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
+        setSelectionAction(selection),
+        {
+          ...EXPECTED_LOADED_STATE,
+          scanStatus: [
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_SELECTED,
+          ],
+          channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
+        }
+      );
+    });
+
+    it("stdev selection - case 7", async () => {
+      // Expected calculations - 4 ROIs per line
+      // Mean        4.500   1.500   2.750   3.500
+      // stdev       0.707   0.000   0.778   0.707
+      // upper bound 8.036   1.500   6.639   7.036
+      // lower bound 0.964   1.500   -1.139  -0.036
+
+      const selection: SelectionStdev = {
+        type: SELECTION_STDEV,
+        startBaselineFrame: 2,
+        endBaselineFrame: 3,
+        startDetectionFrame: 0,
+        endDetectionFrame: 4,
+        stdevMultiple: 5,
+      };
+
+      await checkReducerAndStore(
+        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
+        setSelectionAction(selection),
+        {
+          ...EXPECTED_LOADED_STATE,
+          scanStatus: [
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_UNSELECTED,
+          ],
+          channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
+        }
+      );
+    });
+
+    it("minimum stdev selection by trace count - 4 traces", async () => {
+      const selection: SelectionMinimumStdev = {
+        type: SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT,
+        selectedTraceCount: 4,
+        selectedStdev: 0,
+      };
+
+      await checkReducerAndStore(
+        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
+        setSelectionAction(selection),
+        {
+          ...EXPECTED_LOADED_STATE,
+          scanStatus: [
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_SELECTED,
+          ],
+          channel1Dataset: {
+            ...EXPECTED_CHANNEL1_DATASET,
+            selection: { ...selection, selectedStdev: expect.closeTo(2.49) },
+          },
+        }
+      );
+    });
+
+    it("minimum stdev selection by trace count - 3 traces", async () => {
+      const selection: SelectionMinimumStdev = {
+        type: SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT,
+        selectedTraceCount: 3,
+        selectedStdev: 0,
+      };
+
+      await checkReducerAndStore(
+        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
+        setSelectionAction(selection),
+        {
+          ...EXPECTED_LOADED_STATE,
+          scanStatus: [
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_SELECTED,
+          ],
+          channel1Dataset: {
+            ...EXPECTED_CHANNEL1_DATASET,
+            selection: { ...selection, selectedStdev: expect.closeTo(1.00) },
+          },
+        }
+      );
+    });
+
+    it("minimum stdev selection by trace count - 2 traces", async () => {
+      const selection: SelectionMinimumStdev = {
+        type: SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT,
+        selectedTraceCount: 2,
+        selectedStdev: 0,
+      };
+
+      await checkReducerAndStore(
+        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
+        setSelectionAction(selection),
+        {
+          ...EXPECTED_LOADED_STATE,
+          scanStatus: [
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_SELECTED,
+          ],
+          channel1Dataset: {
+            ...EXPECTED_CHANNEL1_DATASET,
+            selection: { ...selection, selectedStdev: expect.closeTo(0.89) },
+          },
+        }
+      );
+    });
+
+    it("minimum stdev selection by trace count - 1 trace is treated as 2 traces", async () => {
+      const selection: SelectionMinimumStdev = {
+        type: SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT,
+        selectedTraceCount: 1,
+        selectedStdev: 0,
+      };
+
+      await checkReducerAndStore(
+        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
+        setSelectionAction(selection),
+        {
+          ...EXPECTED_LOADED_STATE,
+          scanStatus: [
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_SELECTED,
+          ],
+          channel1Dataset: {
+            ...EXPECTED_CHANNEL1_DATASET,
+            selection: { ...selection, selectedStdev: expect.closeTo(0.89) },
+          },
+        }
+      );
+    });
+
+    // @Test
+    // public void testUpdateDeviationAutoRoiSelection_incorrectFrameSelections() throws Exception {
+    //     ChannelData channel = new ChannelData(new StringReader(INPUT_DATA));
+    //     assertEquals(4, channel.roiCount);
+
+    //     JCheckBox[] checkBoxes = new JCheckBox[4];
+    //     for (int index = 0; index < 4; index++) {
+    //         checkBoxes[index] = new JCheckBox("", true);
+    //     }
+    //     checkRoiSelection(channel, checkBoxes, true, true, true, true);
+
+    //     channel.updateDeviationAutoRoiSelection(checkBoxes, 2, 2, 0, 4, 100);
+    //     checkRoiSelection(channel, checkBoxes, false, false, false, false);
+
+    //     setRoiSelection(channel, checkBoxes, true, true, true, true);
+    //     channel.updateDeviationAutoRoiSelection(checkBoxes, 3, 2, 0, 4, 100);
+    //     checkRoiSelection(channel, checkBoxes, false, false, false, false);
+
+    //     setRoiSelection(channel, checkBoxes, true, true, true, true);
+    //     channel.updateDeviationAutoRoiSelection(checkBoxes, 0, 4, 3, 2, 100);
+    //     checkRoiSelection(channel, checkBoxes, false, false, false, false);
+    // }
+
+    // @Test
+    // public void testUpdateManualRoiSelection() throws Exception {
+    //     ChannelData channel = new ChannelData(new StringReader(INPUT_DATA));
+
+    //     assertBoolArrayEquals(new boolean[] { true, true, true, true }, channel.roiSelected);
+    //     assertEquals(4, channel.roiCount);
+    //     assertEquals(4, channel.getSelectedRoiCount());
+
+    //     channel.updatePlots(false, false, 0, 0, false, false, 0, 0, -1, VARIANCE_TYPE.STDDEV, false);
+
+    //     // 5 Frames x 4 rois
+    //     double[][] plotData = { { 10, 1.5, 1.1, 1 }, { 9, 1.5, 2.2, 2 }, { 5, 1.5, 3.3, 3 }, { 4, 1.5, 2.2, 4 }, { 3, 1.5, 1.1, 5 }, };
+
+    //     checkPlot(plotData, channel.tracesPlot, new boolean[] { true, true, true, true });
+    //     checkMeanPlot(calculateMeans(plotData), calculateSampleStandardDeviations(plotData), channel.meanPlot);
+
+    //     channel.updatePlots(false, false, 0, 0, false, false, 0, 0, -1, VARIANCE_TYPE.SEM, false);
+    //     checkPlot(plotData, channel.tracesPlot, new boolean[] { true, true, true, true });
+    //     checkMeanPlot(calculateMeans(plotData), calculateStandardErrors(plotData), channel.meanPlot);
+
+    //     // Unselect rois
+    //     JCheckBox[] checkBoxes = new JCheckBox[4];
+    //     for (int index = 0; index < 4; index++) {
+    //         checkBoxes[index] = new JCheckBox("", true);
+    //     }
+
+    //     checkBoxes[1].setSelected(false);
+    //     checkBoxes[3].setSelected(false);
+
+    //     channel.updateManualRoiSelection(checkBoxes);
+
+    //     assertBoolArrayEquals(new boolean[] { true, false, true, false }, channel.roiSelected);
+    //     assertEquals(4, channel.roiCount);
+    //     assertEquals(2, channel.getSelectedRoiCount());
+
+    //     double[][] meanPlotData = new double[][] { { 10, 1.1 }, { 9, 2.2 }, { 5, 3.3 }, { 4, 2.2 }, { 3, 1.1 }, };
+
+    //     channel.updatePlots(false, false, 0, 0, false, false, 0, 0, -1, VARIANCE_TYPE.STDDEV, false);
+    //     checkPlot(plotData, channel.tracesPlot, new boolean[] { true, false, true, false });
+    //     checkMeanPlot(calculateMeans(meanPlotData), calculateSampleStandardDeviations(meanPlotData), channel.meanPlot);
+
+    //     channel.updatePlots(false, false, 0, 0, false, false, 0, 0, -1, VARIANCE_TYPE.SEM, false);
+    //     checkPlot(plotData, channel.tracesPlot, new boolean[] { true, false, true, false });
+    //     checkMeanPlot(calculateMeans(meanPlotData), calculateStandardErrors(meanPlotData), channel.meanPlot);
+
+    //     for (int index = 0; index < 4; index++) {
+    //         checkBoxes[index].setSelected(!checkBoxes[index].isSelected());
+    //     }
+
+    //     channel.updateManualRoiSelection(checkBoxes);
+
+    //     assertBoolArrayEquals(new boolean[] { false, true, false, true }, channel.roiSelected);
+    //     assertEquals(4, channel.roiCount);
+    //     assertEquals(2, channel.getSelectedRoiCount());
+
+    //     meanPlotData = new double[][] { { 1.5, 1 }, { 1.5, 2 }, { 1.5, 3 }, { 1.5, 4 }, { 1.5, 5 }, };
+
+    //     channel.updatePlots(false, false, 0, 0, false, false, 0, 0, -1, VARIANCE_TYPE.STDDEV, false);
+    //     checkPlot(plotData, channel.tracesPlot, new boolean[] { false, true, false, true });
+    //     checkMeanPlot(calculateMeans(meanPlotData), calculateSampleStandardDeviations(meanPlotData), channel.meanPlot);
+
+    //     channel.updatePlots(false, false, 0, 0, false, false, 0, 0, -1, VARIANCE_TYPE.SEM, false);
+    //     checkPlot(plotData, channel.tracesPlot, new boolean[] { false, true, false, true });
+    //     checkMeanPlot(calculateMeans(meanPlotData), calculateStandardErrors(meanPlotData), channel.meanPlot);
+
+    //     for (int index = 0; index < 4; index++) {
+    //         checkBoxes[index].setSelected(false);
+    //     }
+
+    //     channel.updateManualRoiSelection(checkBoxes);
+
+    //     assertBoolArrayEquals(new boolean[] { false, false, false, false }, channel.roiSelected);
+    //     assertEquals(4, channel.roiCount);
+    //     assertEquals(0, channel.getSelectedRoiCount());
+
+    //     channel.updatePlots(false, false, 0, 0, false, false, 0, 0, -1, VARIANCE_TYPE.STDDEV, false);
+    //     checkPlot(plotData, channel.tracesPlot, new boolean[] { false, false, false, false });
+    //     assertNotNull(channel.meanPlot);
+    //     assertEquals(0, channel.meanPlot.getSeriesCount());
+
+    //     channel.updatePlots(false, false, 0, 0, false, false, 0, 0, -1, VARIANCE_TYPE.SEM, false);
+    //     checkPlot(plotData, channel.tracesPlot, new boolean[] { false, false, false, false });
+    //     assertNotNull(channel.meanPlot);
+    //     assertEquals(0, channel.meanPlot.getSeriesCount());
+    // }
   });
 
   const PERSIST_PARTIAL = { _persist: { version: -1, rehydrated: true } };
@@ -1116,7 +1660,7 @@ describe("roiDataReducer", () => {
   ) {
     expect(
       persistedReducer({ ...initialState, ...PERSIST_PARTIAL }, action)
-    ).toStrictEqual({ ...expectedState, ...PERSIST_PARTIAL });
+    ).toMatchObject({ ...expectedState, ...PERSIST_PARTIAL });
     await flushPromises();
     await persistor.flush();
 
@@ -1134,7 +1678,7 @@ describe("roiDataReducer", () => {
       expectedPeristence.channel2Dataset = expectedState.channel2Dataset;
     }
 
-    expect(await getStoredState({ key: "rts-assay", storage })).toStrictEqual(
+    expect(await getStoredState({ key: "rts-assay", storage })).toMatchObject(
       expectedPeristence
     );
   }

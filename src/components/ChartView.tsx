@@ -10,6 +10,9 @@ import {
   ScanStatus,
   SCANSTATUS_SELECTED,
   SCANSTATUS_UNSELECTED,
+  Selection,
+  SELECTION_PERCENT_CHANGE,
+  SELECTION_STDEV,
 } from "../model/Types";
 import {
   isChannel2Loaded,
@@ -21,7 +24,12 @@ import {
   setCurrentNextAction,
   setCurrentPreviousAction,
 } from "../model/Actions";
-import plot, { LineAnnotationType, Plot } from "../plot/Plot";
+import plot, {
+  LineAnnotationType,
+  Orientation,
+  Plot,
+  RangeMarker,
+} from "../plot/Plot";
 
 const SELECTED_CURRENT_TRACE_COLOUR = "navy";
 const UNSELECTED_CURRENT_TRACE_COLOUR = "rgba(164,0,0)";
@@ -48,6 +56,12 @@ export default function ChartView() {
   const channel2ChartData = useAppSelector(
     (state) => state.channel2Dataset?.chartData
   );
+  const channel1Selection = useAppSelector(
+    (state) => state.channel1Dataset?.selection
+  );
+  const channel2Selection = useAppSelector(
+    (state) => state.channel2Dataset?.selection
+  );
   const items = useAppSelector((state) => state.items);
   const currentIndex = useAppSelector((state) => state.currentIndex);
   const scanStatus = useAppSelector((state) => state.scanStatus);
@@ -61,6 +75,12 @@ export default function ChartView() {
   > = useRef();
   const prevChannel2ChartDataRef: MutableRefObject<
     number[][] | undefined
+  > = useRef();
+  const prevChannel1SelectionRef: MutableRefObject<
+    Selection | undefined
+  > = useRef();
+  const prevChannel2SelectionRef: MutableRefObject<
+    Selection | undefined
   > = useRef();
   const prevShowSingleTraceRef: MutableRefObject<
     boolean | undefined
@@ -79,6 +99,8 @@ export default function ChartView() {
   useEffect(() => {
     const prevChannel1ChartData = prevChannel1ChartDataRef.current;
     const prevChannel2ChartData = prevChannel2ChartDataRef.current;
+    const prevChannel1Selection = prevChannel1SelectionRef.current;
+    const prevChannel2Selection = prevChannel2SelectionRef.current;
     const prevShowSingleTrace = prevShowSingleTraceRef.current;
     const prevCurrentIndex = prevCurrentIndexRef.current;
     const prevScanStatus = prevScanStatusRef.current;
@@ -120,10 +142,60 @@ export default function ChartView() {
       return result;
     }
 
+    function calculateStdevRange() {
+      return [100, 200];
+    }
+
+    function getRangeMarkers(selection?: Selection): RangeMarker[] {
+      switch (selection?.type) {
+        case SELECTION_PERCENT_CHANGE:
+          return [
+            {
+              borderColour: "#0000FF40",
+              fillColour: "#0000FF20",
+              startValue: chartFrameLabels[selection.startFrame],
+              endValue: chartFrameLabels[selection.endFrame],
+              ori: Orientation.Horizontal,
+            },
+          ];
+        case SELECTION_STDEV:
+          const [stdevStart, stdevEnd] = calculateStdevRange();
+          return [
+            {
+              borderColour: "#00FF0080",
+              fillColour: "#00FF0020",
+              startValue: chartFrameLabels[selection.startBaselineFrame],
+              endValue: chartFrameLabels[selection.endBaselineFrame],
+              ori: Orientation.Horizontal,
+            },
+            {
+              borderColour: "#0000FF40",
+              fillColour: "#0000FF20",
+              startValue: chartFrameLabels[selection.startDetectionFrame],
+              endValue: chartFrameLabels[selection.endDetectionFrame],
+              ori: Orientation.Horizontal,
+            },
+            {
+              borderColour: "#FF000040",
+              fillColour: "#FF000020",
+              startValue: stdevStart,
+              endValue: stdevEnd,
+              ori: Orientation.Vertical,
+            },
+          ];
+        default:
+          return [];
+      }
+    }
+
     const channel1ChartDataUpdated =
       channel1ChartData !== prevChannel1ChartData;
     const channel2ChartDataUpdated =
       channel2ChartData !== prevChannel2ChartData;
+      const channel1SelectionUpdated =
+      channel1ChartData !== prevChannel1Selection;
+    const channel2SelectionUpdated =
+      channel2Selection !== prevChannel2Selection;
     const showSingleTraceUpdated = showSingleTrace !== prevShowSingleTrace;
     const currentIndexUpdated = currentIndex !== prevCurrentIndex;
     const scanStatusUpdated = scanStatus !== prevScanStatus;
@@ -134,8 +206,10 @@ export default function ChartView() {
       chart: MutableRefObject<Plot | null>,
       chartDOMRef: HTMLDivElement,
       chartDataUpdated: boolean,
+      chartSelectionUpdated: boolean,
       chartXData: number[],
       chartYData: number[][],
+      chartSelection: Selection | undefined,
       channel: Channel
     ) {
       if (!chart.current || chartDataUpdated) {
@@ -150,7 +224,8 @@ export default function ChartView() {
           colours,
           chartXData,
           chartYData,
-          getAnnotations(channel)
+          getAnnotations(channel),
+          getRangeMarkers(chartSelection)
         );
         if (currentIndex >= 0) {
           chart.current!.setSeries(currentIndex, true);
@@ -172,6 +247,10 @@ export default function ChartView() {
 
         if (annotationsUpdated) {
           chart.current!.setAnnotations(getAnnotations(channel));
+        }
+
+        if (chartSelectionUpdated) {
+          chart.current!.setRangeMarkers(getRangeMarkers(chartSelection));
         }
 
         if (currentIndexUpdated && currentIndex >= 0) {
@@ -197,8 +276,10 @@ export default function ChartView() {
         channel1Chart,
         channel1ChartDOMRef.current!,
         channel1ChartDataUpdated || channel2ChartDataUpdated,
+        channel1SelectionUpdated,
         chartFrameLabels,
         channel1ChartData,
+        channel1Selection,
         CHANNEL_1
       );
     }
@@ -208,8 +289,10 @@ export default function ChartView() {
         channel2Chart,
         channel2ChartDOMRef.current!,
         channel2ChartDataUpdated,
+        channel2SelectionUpdated,
         chartFrameLabels,
         channel2ChartData,
+        channel2Selection,
         CHANNEL_2
       );
     } else if (channel2Chart.current) {
@@ -231,6 +314,8 @@ export default function ChartView() {
     channel2ChartDOMRef,
     channel1ChartData,
     channel2ChartData,
+    channel1Selection,
+    channel2Selection,
     items,
     currentIndex,
     scanStatus,

@@ -2,8 +2,9 @@ import { loadChannelAction } from "./model/Actions";
 import roiDataStore, {
   RoiDataModelState,
   roiDataReducer,
+  RoiDataset,
 } from "./model/RoiDataModel";
-import { CHANNEL_1, Channel, CHANNEL_2 } from "./model/Types";
+import { CHANNEL_1, Channel, CHANNEL_2, SELECTION_MANUAL } from "./model/Types";
 import configureMockStore from "redux-mock-store";
 import thunk, { ThunkDispatch } from "redux-thunk";
 import { AnyAction } from "redux";
@@ -46,6 +47,60 @@ export const LOADED_STATE = roiDataReducer(
   })
 );
 
+// Floating point issues - add rounding matchers
+export const EXPECTED_CHANNEL1_DATASET: RoiDataset = {
+  chartData: [
+    [10, 9, 5, 4, 3],
+    [1.5, 1.5, 1.5, 1.5, 1.5],
+    [1.1, 2.2, 3.3, 2.2, 1.1],
+    [1, 2, 3, 4, 5],
+  ],
+  originalTraceData: [
+    [10, 9, 5, 4, 3],
+    [1.5, 1.5, 1.5, 1.5, 1.5],
+    [1.1, 2.2, 3.3, 2.2, 1.1],
+    [1, 2, 3, 4, 5],
+  ],
+  scaledTraceData: [
+    [
+      expect.closeTo(0.0),
+      expect.closeTo(0.14),
+      expect.closeTo(0.71),
+      expect.closeTo(0.86),
+      1,
+    ],
+    [0, 0, 0, 0, 0],
+    [0, expect.closeTo(1.1), expect.closeTo(2.2), expect.closeTo(1.1), 0],
+    [0, 0.25, 0.5, 0.75, 1],
+  ],
+  filename: "new file",
+  alignment: {
+    channel: CHANNEL_1,
+    enableYMaxAlignment: false,
+    alignToYMax: false,
+    yMaxValue: 200,
+    yMaxFrame: 1,
+    enableYMinAlignment: false,
+    alignToYMin: false,
+    yMinValue: 0,
+    yMinFrame: 5,
+  },
+  selection: { type: SELECTION_MANUAL },
+};
+
+export const EXPECTED_LOADED_STATE: RoiDataModelState = {
+  channel1Dataset: EXPECTED_CHANNEL1_DATASET,
+  items: ["ROI-1", "ROI-2", "ROI-3", "ROI-4"],
+  scanStatus: ["?", "?", "?", "?"],
+  currentIndex: 0,
+  currentChannel: CHANNEL_1,
+  chartFrameLabels: [1, 2, 3, 4, 5],
+
+  showSingleTrace: false,
+  annotations: [],
+  initialisingState: false,
+};
+
 export const DUAL_CHANNEL_LOADED_STATE = roiDataReducer(
   LOADED_STATE,
   loadChannelAction({
@@ -54,6 +109,50 @@ export const DUAL_CHANNEL_LOADED_STATE = roiDataReducer(
     filename: "new file2",
   })
 );
+
+// Floating point issues - add rounding matchers
+export const EXPECTED_DUAL_CHANNEL_LOADED_STATE: RoiDataModelState = {
+  ...EXPECTED_LOADED_STATE,
+  channel2Dataset: {
+    chartData: [
+      [30, 29, 25, 24, 23],
+      [21.5, 21.5, 21.5, 21.5, 21.5],
+      [21.1, 22.2, 23.3, 22.2, 21.1],
+      [21, 22, 23, 24, 25],
+    ],
+    originalTraceData: [
+      [30, 29, 25, 24, 23],
+      [21.5, 21.5, 21.5, 21.5, 21.5],
+      [21.1, 22.2, 23.3, 22.2, 21.1],
+      [21, 22, 23, 24, 25],
+    ],
+    scaledTraceData: [
+      [
+        expect.closeTo(0.0),
+        expect.closeTo(0.14),
+        expect.closeTo(0.71),
+        expect.closeTo(0.86),
+        1,
+      ],
+      [0, 0, 0, 0, 0],
+      [0, expect.closeTo(1.1), expect.closeTo(2.2), expect.closeTo(1.1), 0],
+      [0, 0.25, 0.5, 0.75, 1],
+    ],
+    filename: "new file2",
+    alignment: {
+      channel: CHANNEL_2,
+      enableYMaxAlignment: false,
+      alignToYMax: false,
+      yMaxValue: 200,
+      yMaxFrame: 1,
+      enableYMinAlignment: false,
+      alignToYMin: false,
+      yMinValue: 0,
+      yMinFrame: 5,
+    },
+    selection: { type: SELECTION_MANUAL },
+  },
+};
 
 // test functions
 

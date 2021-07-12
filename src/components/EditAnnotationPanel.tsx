@@ -47,10 +47,10 @@ export default function EditAnnotationPanel() {
     dispatch(updateEditAnnotationAction(undefined));
   }
 
-  function checkbox(
+  function radioButton(
     id: string,
-    propertyName: string,
-    value: any,
+    propertyName: "axis" | "channel",
+    value: Axis | AnnotationChannel,
     label: string
   ) {
     return (
@@ -75,16 +75,16 @@ export default function EditAnnotationPanel() {
     );
   }
 
-  function axisCheckbox(id: string, value: Axis, label: string) {
-    return checkbox(id, "axis", value, label);
+  function axisRadioButton(id: string, value: Axis, label: string) {
+    return radioButton(id, "axis", value, label);
   }
 
-  function channelCheckbox(
+  function channelRadioButton(
     id: string,
     value: AnnotationChannel,
     label: string
   ) {
-    return checkbox(id, "channel", value, label);
+    return radioButton(id, "channel", value, label);
   }
 
   return (
@@ -107,9 +107,9 @@ export default function EditAnnotationPanel() {
           />
           <span>Direction</span>
 
-          {axisCheckbox("editAnnotationHorizontal", AXIS_H, "Horizontal")}
+          {axisRadioButton("editAnnotationHorizontal", AXIS_H, "Horizontal")}
           <span></span>
-          {axisCheckbox("editAnnotationVertical", AXIS_V, "Vertical")}
+          {axisRadioButton("editAnnotationVertical", AXIS_V, "Vertical")}
 
           <label htmlFor="editAnnotationValue">Value</label>
           <input
@@ -131,15 +131,15 @@ export default function EditAnnotationPanel() {
 
           <span>Channels</span>
 
-          {channelCheckbox(
+          {channelRadioButton(
             "editAnnotationChannelBoth",
             CHANNEL_BOTH,
             "Both channels"
           )}
           <span></span>
-          {channelCheckbox("editAnnotationChannel1", CHANNEL_1, "Channel 1")}
+          {channelRadioButton("editAnnotationChannel1", CHANNEL_1, "Channel 1")}
           <span></span>
-          {channelCheckbox("editAnnotationChannel2", CHANNEL_2, "Channel 2")}
+          {channelRadioButton("editAnnotationChannel2", CHANNEL_2, "Channel 2")}
         </div>
       </form>
       <div id="editAnnotationActions">

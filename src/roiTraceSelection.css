@@ -169,17 +169,20 @@ button#remainingCount:disabled,
   box-shadow: none;
 }
 
-#traceAlignmentPanel {
+#traceAlignmentPanel,
+#percentChangePanel {
   display: grid;
   grid-template-columns: 1fr 0fr;
   grid-gap: 10px;
 }
 
-#traceAlignmentPanel input {
+#traceAlignmentPanel input,
+#percentChangePanel input {
   margin-right: auto;
 }
 
-#traceAlignmentPanel label {
+#traceAlignmentPanel label,
+#percentChangePanel label {
   text-align: left;
 }
 

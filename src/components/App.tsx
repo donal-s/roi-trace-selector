@@ -17,6 +17,7 @@ import {
   toggleCurrentItemSelectedAction,
 } from "../model/Actions";
 import AnnotationsView from "./AnnotationsView";
+import SelectionView from "./SelectionView";
 import ChannelSelectionPanel from "./ChannelSelectionPanel";
 
 export default function App() {
@@ -72,7 +73,7 @@ export default function App() {
       </a>
     );
   }
-
+  // <AnnotationsView />
   return (
     <div className={"App" + (showSingleTrace ? " scan" : "")}>
       <div id="header">
@@ -89,7 +90,7 @@ export default function App() {
         <ChannelSelectionPanel />
         <FileAccessView />
         <TraceAlignmentView />
-        <AnnotationsView />
+        <SelectionView />
       </div>
       {channel1Filename != null ? (
         <ChartView />

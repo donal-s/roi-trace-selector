@@ -83,6 +83,8 @@ export interface Plot {
   showUnfocussedSeries(show: boolean): void;
 
   setAnnotations(annotations: LineAnnotationType[]): void;
+
+  setRangeMarkers(rangeMarkers: RangeMarker[]): void;
 }
 
 export type LineAnnotationType = {
@@ -93,12 +95,21 @@ export type LineAnnotationType = {
   label: string;
 };
 
+export type RangeMarker = {
+  borderColour: string;
+  fillColour: string;
+  startValue: number;
+  endValue: number;
+  ori: Orientation;
+};
+
 export default function plot(
   container: HTMLElement,
   ySeriesColours: string[],
   xData: number[],
   yData: number[][],
-  _annotations: LineAnnotationType[]
+  _annotations: LineAnnotationType[],
+  _rangeMarkers?: RangeMarker[]
 ): Plot {
   const root = document.createElement("div");
   root.classList.add("u-hz");
@@ -170,6 +181,7 @@ export default function plot(
   };
 
   let annotations: LineAnnotationType[] = [..._annotations];
+  let rangeMarkers: RangeMarker[] = _rangeMarkers ? [..._rangeMarkers] : [];
 
   let plotWidth = 0;
   let plotHeight = 0;
@@ -393,6 +405,30 @@ export default function plot(
     });
   }
 
+  function drawRangeMarkers() {
+    rangeMarkers.forEach((rangeMarker) => {
+      let x0: number, y0: number, x1: number, y1: number;
+
+      if (rangeMarker.ori === Orientation.Vertical) {
+        x0 = plotLeft;
+        y0 = yAxis.scale.getPos(rangeMarker.startValue, plotHeight, plotTop);
+        x1 = plotWidth;
+        y1 = yAxis.scale.getPos(rangeMarker.endValue, plotHeight, plotTop) - y0;
+      } else {
+        x0 = xAxis.scale.getPos(rangeMarker.startValue, plotWidth, plotLeft);
+        y0 = plotTop;
+        x1 = xAxis.scale.getPos(rangeMarker.endValue, plotWidth, plotLeft) - x0;
+        y1 = plotHeight;
+      }
+
+      ctx.fillStyle = rangeMarker.fillColour;
+      ctx.fillRect(x0, y0, x1, y1);
+      ctx.strokeStyle = rangeMarker.borderColour;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x0, y0, x1, y1);
+    });
+  }
+
   let queuedCommit = false;
 
   function commit() {
@@ -408,6 +444,7 @@ export default function plot(
     if (can.width > 0 && can.height > 0) {
       ctx.clearRect(0, 0, can.width, can.height);
       drawAxesGrid();
+      drawRangeMarkers();
       drawAnnotations();
       drawSeries();
     }
@@ -445,6 +482,11 @@ export default function plot(
     commit();
   }
 
+  function setRangeMarkers(_rangeMarkers: RangeMarker[]) {
+    rangeMarkers = [..._rangeMarkers];
+    commit();
+  }
+
   // TODO ensure gets called when chart closed
   function destroy() {
     window.removeEventListener(resize, resizeToFit);
@@ -459,7 +501,13 @@ export default function plot(
 
   window.addEventListener(resize, resizeToFit, { passive: true });
 
-  return { showUnfocussedSeries, destroy, setSeries, setAnnotations };
+  return {
+    showUnfocussedSeries,
+    destroy,
+    setSeries,
+    setAnnotations,
+    setRangeMarkers,
+  };
 }
 
 const fmtNum = new Intl.NumberFormat(navigator.language).format;

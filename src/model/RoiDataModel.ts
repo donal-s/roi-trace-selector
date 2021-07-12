@@ -11,6 +11,15 @@ import {
   CHANNEL_1,
   Channel,
   CHANNEL_2,
+  Selection,
+  SELECTION_MANUAL,
+  SELECTION_PERCENT_CHANGE,
+  SELECTION_STDEV,
+  SELECTION_MINIMUM_STDEV_BY_STDEV,
+  SelectionPercentChange,
+  SelectionStdev,
+  SelectionMinimumStdev,
+  SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT,
 } from "./Types";
 import { loadFile, parseCsvData } from "./CsvHandling";
 import {
@@ -37,6 +46,7 @@ import {
   loadChannelAction,
   closeChannelAction,
   setCurrentChannelAction,
+  setSelectionAction,
 } from "./Actions";
 import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
@@ -54,7 +64,9 @@ export type RoiDataset = {
   filename: string;
   chartData: number[][];
   originalTraceData: number[][];
+  scaledTraceData: number[][];
   alignment: ChartAlignment;
+  selection: Selection;
 };
 
 export type PersistedRoiDataModelState = {
@@ -110,6 +122,9 @@ export const roiDataReducer: Reducer<RoiDataModelState> = createReducer(
       .addCase(selectAllItemsAction, (state) => selectAllItems(state))
       .addCase(updateChartAlignmentAction, (state, action) =>
         updateChartAlignment(state, action.payload)
+      )
+      .addCase(setSelectionAction, (state, action) =>
+        setSelection(state, action.payload)
       )
       .addCase(loadChannelAction, (state, action) =>
         loadData(state, action.payload)
@@ -332,6 +347,286 @@ function updateChartAlignment(
   return state;
 }
 
+function setSelection(state: RoiDataModelState, newSelection: Selection) {
+  const dataset =
+    state.currentChannel === CHANNEL_1
+      ? state.channel1Dataset
+      : state.channel2Dataset;
+  if (!dataset) {
+    return state;
+  }
+  const newState = { ...state };
+  if (state.currentChannel === CHANNEL_1) {
+    newState.channel1Dataset = {
+      ...newState.channel1Dataset,
+      selection: { ...newSelection },
+    } as RoiDataset;
+  } else {
+    newState.channel2Dataset = {
+      ...newState.channel2Dataset,
+      selection: { ...newSelection },
+    } as RoiDataset;
+  }
+  return calculateAutoSelection(newState);
+}
+
+function calculateAutoSelection(state: RoiDataModelState) {
+  let channel1Status: ScanStatus[] | undefined,
+    channel2Status: ScanStatus[] | undefined;
+  let channel1Dataset = state.channel1Dataset;
+  let channel2Dataset = state.channel2Dataset;
+
+  switch (state.channel1Dataset?.selection.type) {
+    case SELECTION_PERCENT_CHANGE:
+      channel1Status = getPercentChangeStatus(state.channel1Dataset);
+      break;
+    case SELECTION_STDEV:
+      channel1Status = getStdevStatus(state.channel1Dataset);
+      break;
+    case SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT:
+      const { scanStatus, selectedStdev } = getMinimumStdevStatus(
+        state.channel1Dataset
+      );
+      channel1Status = scanStatus;
+      channel1Dataset = {
+        ...channel1Dataset,
+        selection: { ...channel1Dataset?.selection, selectedStdev },
+      } as RoiDataset;
+      break;
+  }
+  switch (state.channel2Dataset?.selection.type) {
+    case SELECTION_PERCENT_CHANGE:
+      channel2Status = getPercentChangeStatus(state.channel2Dataset);
+      break;
+    case SELECTION_STDEV:
+      channel2Status = getStdevStatus(state.channel2Dataset);
+      break;
+    case SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT:
+      const { scanStatus, selectedStdev } = getMinimumStdevStatus(
+        state.channel2Dataset
+      );
+      channel2Status = scanStatus;
+      channel2Dataset = {
+        ...channel2Dataset,
+        selection: { ...channel2Dataset?.selection, selectedStdev },
+      } as RoiDataset;
+      break;
+  }
+
+  if (!channel1Status && !channel2Status) {
+    return state;
+  }
+  if (!channel2Status) {
+    return { ...state, scanStatus: channel1Status!, channel1Dataset };
+  }
+  if (!channel1Status) {
+    return { ...state, scanStatus: channel2Status, channel2Dataset };
+  }
+
+  const combinedStatus = channel1Status.map((status1, i) =>
+    status1 === SCANSTATUS_SELECTED &&
+    channel2Status![i] === SCANSTATUS_SELECTED
+      ? SCANSTATUS_SELECTED
+      : SCANSTATUS_UNSELECTED
+  );
+  return {
+    ...state,
+    scanStatus: combinedStatus,
+    channel1Dataset,
+    channel2Dataset,
+  };
+}
+
+function getPercentChangeStatus(dataset: RoiDataset): ScanStatus[] {
+  const {
+    startFrame,
+    endFrame,
+    percentChange,
+  } = dataset.selection as SelectionPercentChange;
+
+  return dataset.scaledTraceData.map((series) => {
+    const scaledChange = series[endFrame] - series[startFrame];
+    const selected =
+      percentChange >= 0
+        ? scaledChange >= percentChange
+        : scaledChange <= percentChange;
+    return selected ? SCANSTATUS_SELECTED : SCANSTATUS_UNSELECTED;
+  });
+}
+
+function getStdevStatus(dataset: RoiDataset): ScanStatus[] {
+  const {
+    startBaselineFrame,
+    endBaselineFrame,
+    startDetectionFrame,
+    endDetectionFrame,
+    stdevMultiple,
+  } = dataset.selection as SelectionStdev;
+
+  return dataset.originalTraceData.map((series, i) => {
+    // if (startBaselineFrameIndex >= endBaselineFrameIndex || startDetectionFrameIndex > endDetectionFrameIndex) {
+    //     roiSelected[roiIndex] = false;
+    //     roiChoices[roiIndex].setSelected(false);
+    //     continue;
+    // }
+
+    const mean = calculateRawMean(series, startBaselineFrame, endBaselineFrame);
+    const standardDeviation = calculateRawStandardDeviation(
+      mean,
+      series,
+      startBaselineFrame,
+      endBaselineFrame
+    );
+    const tolerance = standardDeviation * stdevMultiple;
+
+    let selected = false;
+    for (
+      let frameIndex = startDetectionFrame;
+      !selected && frameIndex <= endDetectionFrame;
+      frameIndex++
+    ) {
+      if (Math.abs(series[frameIndex] - mean) > tolerance) {
+        selected = true;
+      }
+    }
+
+    return selected ? SCANSTATUS_SELECTED : SCANSTATUS_UNSELECTED;
+  });
+}
+
+function calculateRawMean(
+  series: number[],
+  startFrame: number,
+  endFrame: number
+): number {
+  if (startFrame < 0 || startFrame >= series.length) {
+    throw new Error("" + startFrame);
+  }
+  if (endFrame < 0 || endFrame >= series.length) {
+    throw new Error("" + endFrame);
+  }
+  if (startFrame >= endFrame) {
+    return 0;
+  }
+
+  let sum = 0;
+  for (let frameIndex = startFrame; frameIndex <= endFrame; frameIndex++) {
+    sum += series[frameIndex];
+  }
+  return sum / (endFrame - startFrame + 1);
+}
+
+function calculateRawStandardDeviation(
+  mean: number,
+  series: number[],
+  startFrame: number,
+  endFrame: number
+) {
+  if (startFrame >= endFrame) {
+    return 0;
+  }
+
+  let variance = 0;
+  for (let frameIndex = startFrame; frameIndex <= endFrame; frameIndex++) {
+    const intensity = series[frameIndex];
+    variance += (intensity - mean) * (intensity - mean);
+  }
+  return Math.sqrt(variance / (endFrame - startFrame));
+}
+
+type MinimumStdevResult = {
+  scanStatus: ScanStatus[];
+  selectedStdev: number;
+};
+
+function getMinimumStdevStatus(dataset: RoiDataset): MinimumStdevResult {
+  const { selectedTraceCount } = dataset.selection as SelectionMinimumStdev;
+
+  let currentTraceCount = dataset.chartData.length;
+  let selectedTraces = Array(currentTraceCount);
+  selectedTraces.fill(true);
+  let currentStdev = calculateMeanStdev(dataset.chartData, selectedTraces);
+
+  while (currentTraceCount > selectedTraceCount) {
+    currentStdev = removeRoiAndReduceDeviation(
+      dataset.chartData,
+      selectedTraces
+    );
+    currentTraceCount--;
+  }
+
+  return {
+    scanStatus: selectedTraces.map((selected) =>
+      selected ? SCANSTATUS_SELECTED : SCANSTATUS_UNSELECTED
+    ),
+    selectedStdev: currentStdev,
+  };
+}
+
+function removeRoiAndReduceDeviation(
+  traces: number[][],
+  selectedTraces: boolean[]
+) {
+  console.log("removeRoiAndReduceDeviation");
+  
+  let candidateIndex = -1;
+  let candidateStdev = Infinity;
+
+  selectedTraces.filter(Boolean).forEach((_, i) => {
+    let candidateSelections = [...selectedTraces];
+    candidateSelections[i] = false;
+    let currentStdev = calculateMeanStdev(traces, candidateSelections);
+    if (currentStdev < candidateStdev) {
+      candidateStdev = currentStdev;
+      candidateIndex = i;
+    }
+  });
+
+  selectedTraces[candidateIndex] = false;
+  console.log("end removeRoiAndReduceDeviation");
+
+  return candidateStdev;
+}
+
+function calculateMeanStdev(traces: number[][], selectedRois: boolean[]) {
+  const selectedRoiCount = selectedRois.filter(Boolean).length;
+  const frameCount = traces[0].length;
+  if (selectedRoiCount < 2) {
+    return 0;
+  }
+
+  const means: number[] = [];
+  for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
+    let sum = 0;
+    traces.forEach((trace, i) => {
+      if (selectedRois[i]) {
+        sum += trace[frameIndex];
+      }
+    });
+    means[frameIndex] = sum / selectedRoiCount;
+  }
+
+  let variance: number[] = [];
+  for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
+    let sum = 0;
+    traces.forEach((trace, i) => {
+      if (selectedRois[i]) {
+        sum +=
+          (trace[frameIndex] - means[frameIndex]) *
+          (trace[frameIndex] - means[frameIndex]);
+      }
+    });
+    variance[frameIndex] = Math.sqrt(sum / (selectedRoiCount - 1));
+  }
+
+  let sum = 0;
+  variance.forEach((current) => {
+    sum += current;
+  });
+
+  return sum / frameCount;
+}
+
 function arraysEqual(array1: any[], array2: any[]) {
   return (
     array1.length === array2.length &&
@@ -349,6 +644,7 @@ function loadData(state: RoiDataModelState, file: ChannelData) {
     chartFrameLabels,
     chartData,
     originalTraceData,
+    scaledTraceData,
   } = parseCsvData(file.csvData);
   const alignment: ChartAlignment = {
     channel: file.channel,
@@ -365,7 +661,9 @@ function loadData(state: RoiDataModelState, file: ChannelData) {
     filename: file.filename,
     chartData,
     originalTraceData,
+    scaledTraceData,
     alignment,
+    selection: { type: SELECTION_MANUAL },
   };
   const result = {
     ...state,
@@ -562,7 +860,7 @@ export function isCurrentUnscanned({
   );
 }
 
-function getItemCount({ items }: RoiDataModelState) {
+export function getItemCount({ items }: RoiDataModelState) {
   return items.length;
 }
 

@@ -29,6 +29,8 @@ const mockShowUnfocussedSeries = jest.fn();
 
 const mockSetAnnotations = jest.fn();
 
+const mockSetRangeMarkers = jest.fn();
+
 jest.mock("../plot/Plot", () => {
   return {
     __esModule: true,
@@ -37,6 +39,7 @@ jest.mock("../plot/Plot", () => {
       setSeries: mockSetSeries,
       showUnfocussedSeries: mockShowUnfocussedSeries,
       setAnnotations: mockSetAnnotations,
+      setRangeMarkers: mockSetRangeMarkers,
     })),
   };
 });
@@ -72,6 +75,7 @@ describe("component ChartView", () => {
         ["black", "rgba(0,0,0,0.1)", "rgba(0,0,0,0.1)", "rgba(0,0,0,0.1)"],
         EXPECTED_X_DATA,
         EXPECTED_Y_DATA,
+        [],
         []
       );
       expect(mockSetSeries).toHaveBeenCalledTimes(1);

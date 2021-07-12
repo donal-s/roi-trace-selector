@@ -107,6 +107,20 @@ export function parseCsvData(csv: string) {
     roiLabels.push(roiLabel);
   });
 
+  let scaledTraceData: number[][] = originalTraceData.map((series, i) => {
+
+ 
+      let rawYStartValue = series[0];
+      let rawYEndValue = series[series.length - 1];
+      let yOffset = rawYStartValue;
+      let yScale = 1 / (rawYEndValue - rawYStartValue);
+      if (!Number.isFinite(yScale)) {
+          yScale = 1;
+      }
+
+      return series.map(value => (value - yOffset) * yScale)
+  });
+
   const uniqueValues = new Set(roiLabels);
   if (roiLabels.length !== uniqueValues.size) {
     throw new Error("Data file has duplicate item label");
@@ -119,10 +133,11 @@ export function parseCsvData(csv: string) {
   return {
     items: roiLabels,
     currentIndex: 0,
-    scanStatus: scanStatus,
+    scanStatus,
     chartFrameLabels: chartFrameLabels,
-    chartData: chartData,
-    originalTraceData: originalTraceData,
+    chartData,
+    originalTraceData,
+    scaledTraceData
   };
 }
 

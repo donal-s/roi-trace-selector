@@ -9,6 +9,7 @@ import {
   Annotation,
   EditAnnotation,
   Channel,
+  Selection,
 } from "./Types";
 
 function withPayloadType<T>() {
@@ -48,6 +49,12 @@ export const closeChannelAction = createAction(
   "closeChannel",
   withPayloadType<Channel>()
 );
+
+export const setSelectionAction = createAction(
+  "setSelection",
+  withPayloadType<Selection>()
+);
+
 export const resetStateAction = createAction("resetState");
 
 export const setCurrentScanStatusAction = createAction(
