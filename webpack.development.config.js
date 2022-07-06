@@ -3,11 +3,9 @@ process.env.NODE_ENV = "development";
 
 const path = require("path");
 const webpack = require("webpack");
-const resolve = require("resolve");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const ESLintPlugin = require("eslint-webpack-plugin");
 const InterpolateHtmlPlugin = require("react-dev-utils/InterpolateHtmlPlugin");
-const WatchMissingNodeModulesPlugin = require("react-dev-utils/WatchMissingNodeModulesPlugin");
 
 const cwd = process.cwd();
 
@@ -108,8 +106,6 @@ module.exports = {
     ],
   },
   devServer: {
-    contentBase: path.resolve(cwd, "public"),
-    compress: true,
     port: 3000,
     open: true,
     hot: true,
@@ -136,8 +132,6 @@ module.exports = {
         PUBLIC_URL: JSON.stringify("."),
       },
     }),
-    new webpack.HotModuleReplacementPlugin(),
-    new WatchMissingNodeModulesPlugin(path.resolve("node_modules")),
     new webpack.IgnorePlugin({
       resourceRegExp: /^\.\/locale$/,
       contextRegExp: /moment$/,

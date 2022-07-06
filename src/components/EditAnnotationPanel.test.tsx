@@ -1,8 +1,6 @@
 /* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect", "checkPanelRender"] }] */
 
 import React from "react";
-import { render, unmountComponentAtNode } from "react-dom";
-import { act, Simulate } from "react-dom/test-utils";
 import EditAnnotationPanel from "./EditAnnotationPanel";
 import {
   Annotation,
@@ -13,11 +11,11 @@ import {
   CHANNEL_BOTH,
 } from "../model/Types";
 import roiDataStore from "../model/RoiDataModel";
-import { Provider } from "react-redux";
 import {
   updateAnnotationsAction,
   updateEditAnnotationAction,
 } from "../model/Actions";
+import { renderWithProvider } from "../TestUtils";
 
 describe("component EditAnnotationPanel", () => {
   const TEST_ANNOTATION: Annotation = {
@@ -27,19 +25,6 @@ describe("component EditAnnotationPanel", () => {
     channel: CHANNEL_1,
   };
 
-  let container: HTMLElement;
-  beforeEach(() => {
-    // setup a DOM element as a render target
-    container = document.createElement("div");
-    document.body.appendChild(container);
-  });
-
-  afterEach(() => {
-    // cleanup on exiting
-    unmountComponentAtNode(container);
-    container.remove();
-  });
-
   it("initial state", () => {
     roiDataStore.dispatch(
       updateEditAnnotationAction({ index: 0, annotation: TEST_ANNOTATION })
@@ -47,42 +32,40 @@ describe("component EditAnnotationPanel", () => {
     checkPanelRender(TEST_ANNOTATION);
   });
 
-  it("validate name", () => {
+  it("validate name", async () => {
     roiDataStore.dispatch(
       updateEditAnnotationAction({ index: 0, annotation: TEST_ANNOTATION })
     );
-    checkPanelRender(TEST_ANNOTATION);
-    nameField().value = "";
-    Simulate.change(nameField());
+    const { user } = checkPanelRender(TEST_ANNOTATION);
+    await user.clear(nameField());
 
-    expect(saveAnnotationButton().disabled).toBe(true);
+    expect(saveAnnotationButton()).toBeDisabled();
 
-    nameField().value = "not empty";
-    Simulate.change(nameField());
+    await user.type(nameField(), "not empty");
 
-    expect(saveAnnotationButton().disabled).toBe(false);
+    expect(saveAnnotationButton()).not.toBeDisabled();
 
-    nameField().value = "  \t   ";
-    Simulate.change(nameField());
+    await user.clear(nameField());
+    await user.type(nameField(), "  \t   ");
 
-    expect(saveAnnotationButton().disabled).toBe(true);
+    expect(saveAnnotationButton()).toBeDisabled();
   });
 
-  it("save annotation vertical axis", () => {
+  it("save annotation vertical axis", async () => {
     roiDataStore.dispatch(
       updateEditAnnotationAction({ index: 0, annotation: TEST_ANNOTATION })
     );
-    checkPanelRender(TEST_ANNOTATION);
-    nameField().value = "   new value   ";
-    Simulate.change(nameField());
-    Simulate.change(verticalAxisField());
-    valueField().value = "43";
-    Simulate.change(valueField());
-    Simulate.change(channelBothField());
+    const { user } = checkPanelRender(TEST_ANNOTATION);
+    await user.clear(nameField());
+    await user.type(nameField(), "   new value   ");
+    await user.click(verticalAxisField());
+    await user.clear(valueField());
+    await user.type(valueField(), "43");
+    await user.click(channelBothField());
 
-    expect(saveAnnotationButton().disabled).toBe(false);
+    expect(saveAnnotationButton()).not.toBeDisabled();
 
-    Simulate.click(saveAnnotationButton());
+    await user.click(saveAnnotationButton());
 
     expect(roiDataStore.getState().editAnnotation).toBeUndefined();
     expect(roiDataStore.getState().annotations).toStrictEqual([
@@ -90,7 +73,7 @@ describe("component EditAnnotationPanel", () => {
     ]);
   });
 
-  it("save annotation horizontal axis - for test coverage", () => {
+  it("save annotation horizontal axis - for test coverage", async () => {
     roiDataStore.dispatch(
       updateEditAnnotationAction({
         index: 0,
@@ -102,16 +85,16 @@ describe("component EditAnnotationPanel", () => {
         },
       })
     );
-    checkPanelRender({
+    const { user } = checkPanelRender({
       name: "test annotation",
       axis: AXIS_V,
       value: 17,
       channel: CHANNEL_1,
     });
-    Simulate.change(horizontalAxisField());
-    expect(saveAnnotationButton().disabled).toBe(false);
+    await user.click(horizontalAxisField());
+    expect(saveAnnotationButton()).not.toBeDisabled();
 
-    Simulate.click(saveAnnotationButton());
+    await user.click(saveAnnotationButton());
 
     expect(roiDataStore.getState().editAnnotation).toBeUndefined();
     expect(roiDataStore.getState().annotations).toStrictEqual([
@@ -119,18 +102,18 @@ describe("component EditAnnotationPanel", () => {
     ]);
   });
 
-  it("save annotation channel 2 - for test coverage", () => {
+  it("save annotation channel 2 - for test coverage", async () => {
     roiDataStore.dispatch(
       updateEditAnnotationAction({
         index: 0,
         annotation: TEST_ANNOTATION,
       })
     );
-    checkPanelRender(TEST_ANNOTATION);
-    Simulate.change(channel2Field());
-    expect(saveAnnotationButton().disabled).toBe(false);
+    const { user } = checkPanelRender(TEST_ANNOTATION);
+    await user.click(channel2Field());
+    expect(saveAnnotationButton()).not.toBeDisabled();
 
-    Simulate.click(saveAnnotationButton());
+    await user.click(saveAnnotationButton());
 
     expect(roiDataStore.getState().editAnnotation).toBeUndefined();
     expect(roiDataStore.getState().annotations).toStrictEqual([
@@ -138,18 +121,21 @@ describe("component EditAnnotationPanel", () => {
     ]);
   });
 
-  it("save annotation channel 1 - for test coverage", () => {
+  it("save annotation channel 1 - for test coverage", async () => {
     roiDataStore.dispatch(
       updateEditAnnotationAction({
         index: 0,
         annotation: { ...TEST_ANNOTATION, channel: CHANNEL_2 },
       })
     );
-    checkPanelRender({ ...TEST_ANNOTATION, channel: CHANNEL_2 });
-    Simulate.change(channel1Field());
-    expect(saveAnnotationButton().disabled).toBe(false);
+    const { user } = checkPanelRender({
+      ...TEST_ANNOTATION,
+      channel: CHANNEL_2,
+    });
+    await user.click(channel1Field());
+    expect(saveAnnotationButton()).not.toBeDisabled();
 
-    Simulate.click(saveAnnotationButton());
+    await user.click(saveAnnotationButton());
 
     expect(roiDataStore.getState().editAnnotation).toBeUndefined();
     expect(roiDataStore.getState().annotations).toStrictEqual([
@@ -157,7 +143,7 @@ describe("component EditAnnotationPanel", () => {
     ]);
   });
 
-  it("delete annotation", () => {
+  it("delete annotation", async () => {
     roiDataStore.dispatch(
       updateAnnotationsAction([
         TEST_ANNOTATION,
@@ -167,10 +153,10 @@ describe("component EditAnnotationPanel", () => {
     roiDataStore.dispatch(
       updateEditAnnotationAction({ index: 0, annotation: TEST_ANNOTATION })
     );
-    checkPanelRender(TEST_ANNOTATION);
-    expect(deleteAnnotationButton().disabled).toBe(false);
+    const { user } = checkPanelRender(TEST_ANNOTATION);
+    expect(deleteAnnotationButton()).not.toBeDisabled();
 
-    Simulate.click(deleteAnnotationButton());
+    await user.click(deleteAnnotationButton());
     expect(roiDataStore.getState().annotations).toStrictEqual([
       { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_BOTH },
     ]);
@@ -188,10 +174,10 @@ describe("component EditAnnotationPanel", () => {
       updateEditAnnotationAction({ index: 2, annotation: TEST_ANNOTATION })
     );
     checkPanelRender(TEST_ANNOTATION);
-    expect(deleteAnnotationButton().disabled).toBe(true);
+    expect(deleteAnnotationButton()).toBeDisabled();
   });
 
-  it("close", () => {
+  it("close", async () => {
     roiDataStore.dispatch(
       updateAnnotationsAction([
         TEST_ANNOTATION,
@@ -201,9 +187,9 @@ describe("component EditAnnotationPanel", () => {
     roiDataStore.dispatch(
       updateEditAnnotationAction({ index: 0, annotation: TEST_ANNOTATION })
     );
-    checkPanelRender(TEST_ANNOTATION);
+    const { user } = checkPanelRender(TEST_ANNOTATION);
 
-    Simulate.click(cancelButton());
+    await user.click(cancelButton());
     expect(roiDataStore.getState().annotations).toStrictEqual([
       TEST_ANNOTATION,
       { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_2 },
@@ -212,36 +198,29 @@ describe("component EditAnnotationPanel", () => {
   });
 
   const nameField = (): HTMLInputElement =>
-    container.querySelector("#editAnnotationName")!;
+    document.querySelector("#editAnnotationName")!;
   const horizontalAxisField = (): HTMLInputElement =>
-    container.querySelector("#editAnnotationHorizontal")!;
+    document.querySelector("#editAnnotationHorizontal")!;
   const verticalAxisField = (): HTMLInputElement =>
-    container.querySelector("#editAnnotationVertical")!;
+    document.querySelector("#editAnnotationVertical")!;
   const valueField = (): HTMLInputElement =>
-    container.querySelector("#editAnnotationValue")!;
+    document.querySelector("#editAnnotationValue")!;
   const channel1Field = (): HTMLInputElement =>
-    container.querySelector("#editAnnotationChannel1")!;
+    document.querySelector("#editAnnotationChannel1")!;
   const channel2Field = (): HTMLInputElement =>
-    container.querySelector("#editAnnotationChannel2")!;
+    document.querySelector("#editAnnotationChannel2")!;
   const channelBothField = (): HTMLInputElement =>
-    container.querySelector("#editAnnotationChannelBoth")!;
+    document.querySelector("#editAnnotationChannelBoth")!;
 
   const saveAnnotationButton = (): HTMLButtonElement =>
-    container.querySelector("#editAnnotationSaveButton")!;
+    document.querySelector("#editAnnotationSaveButton")!;
   const deleteAnnotationButton = (): HTMLButtonElement =>
-    container.querySelector("#editAnnotationDeleteButton")!;
+    document.querySelector("#editAnnotationDeleteButton")!;
   const cancelButton = (): HTMLButtonElement =>
-    container.querySelector("#editAnnotationCancelButton")!;
+    document.querySelector("#editAnnotationCancelButton")!;
 
   function checkPanelRender(annotation: Annotation) {
-    act(() => {
-      render(
-        <Provider store={roiDataStore}>
-          <EditAnnotationPanel />
-        </Provider>,
-        container
-      );
-    });
+    const result = renderWithProvider(<EditAnnotationPanel />);
 
     expect(nameField()).toHaveValue(annotation.name);
     expect(horizontalAxisField().checked).toStrictEqual(
@@ -251,5 +230,7 @@ describe("component EditAnnotationPanel", () => {
       annotation.axis === AXIS_V
     );
     expect(valueField()).toHaveValue(annotation.value);
+
+    return result;
   }
 });

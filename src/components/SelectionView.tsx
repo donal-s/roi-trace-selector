@@ -27,7 +27,7 @@ export default function SelectionView() {
   );
 
   const selection: Selection = channelSelection || DEFAULT_SELECTION;
-  const currentChannelLoaded = !!channelSelection;
+  // const currentChannelLoaded = !!channelSelection;
 
   const datasetFrameCount = useAppSelector(
     (state) => state.chartFrameLabels.length || 1

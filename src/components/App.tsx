@@ -7,7 +7,6 @@ import FullscreenButton from "./FullscreenButton";
 import ChartView from "./ChartView";
 import SelectionIconView from "./SelectionIconView";
 import RemainingCountButton from "./RemainingCountButton";
-import InfoIcon from "@material-ui/icons/Info";
 import version from "../version";
 import { loadTestData } from "../model/CsvHandling";
 import { useAppDispatch, useAppSelector } from "../model/RoiDataModel";
@@ -16,9 +15,9 @@ import {
   setCurrentPreviousAction,
   toggleCurrentItemSelectedAction,
 } from "../model/Actions";
-import AnnotationsView from "./AnnotationsView";
 import SelectionView from "./SelectionView";
 import ChannelSelectionPanel from "./ChannelSelectionPanel";
+import { InfoIcon } from "./IconSvgs";
 
 export default function App() {
   const dispatch = useAppDispatch();
@@ -69,7 +68,7 @@ export default function App() {
         target="_blank"
         rel="noreferrer"
       >
-        <InfoIcon fontSize="large" id="helpButton" />
+        <InfoIcon id="helpButton" />
       </a>
     );
   }

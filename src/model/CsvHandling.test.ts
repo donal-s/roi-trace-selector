@@ -42,7 +42,7 @@ describe("loadFile", () => {
     const file: File = new File([CSV_DATA], "testFile.csv", {
       type: "mimeType",
     });
-    await store.dispatch(loadFile({ file, channel: CHANNEL_1 }));
+    await store.dispatch(loadFile({ file, channel: CHANNEL_1 }) as any);
     expect(store.getActions()).toStrictEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -63,7 +63,7 @@ describe("loadFile", () => {
     const file: File = new File([CSV_DATA_2], "testFile2.csv", {
       type: "mimeType",
     });
-    await store.dispatch(loadFile({ file, channel: CHANNEL_2 }));
+    await store.dispatch(loadFile({ file, channel: CHANNEL_2 }) as any);
     expect(store.getActions()).toStrictEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -90,7 +90,7 @@ describe("loadFile", () => {
       await expect(
         async () =>
           await store
-            .dispatch(loadFile({ file, channel: CHANNEL_1 }))
+            .dispatch(loadFile({ file, channel: CHANNEL_1 }) as any)
             .then(unwrapResult)
       ).rejects.toStrictEqual("FileReader is not supported in this browser.");
     } finally {
@@ -104,7 +104,7 @@ describe("loadFile", () => {
     const file: File = new File([""], "testFile.csv", {
       type: "mimeType",
     });
-    await store.dispatch(loadFile({ file, channel: CHANNEL_1 }));
+    await store.dispatch(loadFile({ file, channel: CHANNEL_1 }) as any);
     expect(store.getActions()).toStrictEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -134,7 +134,7 @@ describe("loadFile", () => {
       await expect(
         async () =>
           await store
-            .dispatch(loadFile({ file, channel: CHANNEL_1 }))
+            .dispatch(loadFile({ file, channel: CHANNEL_1 }) as any)
             .then(unwrapResult)
       ).rejects.toStrictEqual("Cannot read file !");
     } finally {

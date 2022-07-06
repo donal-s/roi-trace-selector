@@ -1,17 +1,15 @@
 /* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect", "checkInitialChartCreation"] }] */
 
 import React from "react";
-import { render, unmountComponentAtNode } from "react-dom";
-import { act, Simulate } from "react-dom/test-utils";
 import ChartView from "./ChartView";
 import roiDataStore from "../model/RoiDataModel";
-import { Provider } from "react-redux";
 import plot from "../plot/Plot";
-import { CSV_DATA, setCsvData } from "../TestUtils";
+import { CSV_DATA, renderWithProvider, setCsvData } from "../TestUtils";
 import {
   fullscreenModeAction,
   toggleCurrentItemSelectedAction,
 } from "../model/Actions";
+import { act, createEvent, fireEvent, waitFor } from "@testing-library/react";
 
 const EXPECTED_X_DATA = [1, 2, 3, 4, 5];
 const EXPECTED_Y_DATA = [
@@ -22,13 +20,9 @@ const EXPECTED_Y_DATA = [
 ];
 
 const mockDestroy = jest.fn();
-
 const mockSetSeries = jest.fn();
-
 const mockShowUnfocussedSeries = jest.fn();
-
 const mockSetAnnotations = jest.fn();
-
 const mockSetRangeMarkers = jest.fn();
 
 jest.mock("../plot/Plot", () => {
@@ -45,28 +39,14 @@ jest.mock("../plot/Plot", () => {
 });
 
 describe("component ChartView", () => {
-  let container: HTMLElement;
-  beforeEach(() => {
-    // setup a DOM element as a render target
-    container = document.createElement("div");
-    document.body.appendChild(container);
-  });
-
-  afterEach(() => {
-    // cleanup on exiting
-    unmountComponentAtNode(container);
-    container.remove();
-  });
-
   it("initial empty chart", () => {
-    renderComponent();
+    renderWithProvider(<ChartView />);
     expect(plot).not.toHaveBeenCalled();
   });
 
   describe("data tests", () => {
     beforeEach(() => {
       setCsvData(CSV_DATA);
-      renderComponent();
     });
 
     function checkInitialChartCreation() {
@@ -84,16 +64,17 @@ describe("component ChartView", () => {
     }
 
     it("initial chart", () => {
+      renderWithProvider(<ChartView />);
       checkInitialChartCreation();
     });
 
-    it("mouse scroll to change current trace", () => {
+    it("mouse scroll to change current trace", async () => {
+      renderWithProvider(<ChartView />);
       checkInitialChartCreation();
       // Next trace
-      act(() => {
-        Simulate.wheel(chart1Div(), { deltaY: 5 });
-      });
-      expect(mockSetSeries).toHaveBeenCalledTimes(2);
+      fireEvent(chart1Div(), createEvent.wheel(chart1Div(), { deltaY: 5 }));
+
+      await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(2));
       expect(mockSetSeries).toHaveBeenNthCalledWith(1, 1, true, "black");
       expect(mockSetSeries).toHaveBeenNthCalledWith(
         2,
@@ -104,10 +85,9 @@ describe("component ChartView", () => {
       mockSetSeries.mockClear();
 
       // Previous trace
-      act(() => {
-        Simulate.wheel(chart1Div(), { deltaY: -5 });
-      });
-      expect(mockSetSeries).toHaveBeenCalledTimes(2);
+      fireEvent(chart1Div(), createEvent.wheel(chart1Div(), { deltaY: -5 }));
+
+      await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(2));
       expect(mockSetSeries).toHaveBeenNthCalledWith(1, 0, true, "black");
       expect(mockSetSeries).toHaveBeenNthCalledWith(
         2,
@@ -117,46 +97,45 @@ describe("component ChartView", () => {
       );
     });
 
-    it("single trace mode", () => {
+    it("single trace mode", async () => {
+      renderWithProvider(<ChartView />);
       checkInitialChartCreation();
       // Set fullscreen
       act(() => {
         roiDataStore.dispatch(fullscreenModeAction(true));
       });
 
-      expect(mockShowUnfocussedSeries).toHaveBeenCalledTimes(1);
+      await waitFor(() =>
+        expect(mockShowUnfocussedSeries).toHaveBeenCalledTimes(1)
+      );
       expect(mockShowUnfocussedSeries).toHaveBeenCalledWith(false);
 
       // Unset fullscreen
       act(() => {
         roiDataStore.dispatch(fullscreenModeAction(false));
       });
-      expect(mockShowUnfocussedSeries).toHaveBeenCalledTimes(2);
+
+      await waitFor(() =>
+        expect(mockShowUnfocussedSeries).toHaveBeenCalledTimes(2)
+      );
       expect(mockShowUnfocussedSeries).toHaveBeenLastCalledWith(true);
     });
 
-    it("toggle trace", () => {
+    it("toggle trace", async () => {
+      renderWithProvider(<ChartView />);
       checkInitialChartCreation();
       // Set selected
-      act(() => {
-        roiDataStore.dispatch(toggleCurrentItemSelectedAction());
-      });
-      expect(mockSetSeries).toHaveBeenCalledTimes(1);
+      simulateItemToggle();
+
+      await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(1));
       expect(mockSetSeries).toHaveBeenCalledWith(0, undefined, "navy");
       mockSetSeries.mockClear();
 
       // Set unselected
-      act(() => {
-        // Next trace
-        Simulate.wheel(chart1Div(), { deltaY: 5 });
-      });
-      act(() => {
-        roiDataStore.dispatch(toggleCurrentItemSelectedAction());
-      });
-      act(() => {
-        roiDataStore.dispatch(toggleCurrentItemSelectedAction());
-      });
-      expect(mockSetSeries).toHaveBeenCalledTimes(4);
+      // Next trace
+      fireEvent(chart1Div(), createEvent.wheel(chart1Div(), { deltaY: 5 }));
+
+      await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(2));
       expect(mockSetSeries).toHaveBeenNthCalledWith(1, 1, true, "black");
       expect(mockSetSeries).toHaveBeenNthCalledWith(
         2,
@@ -164,9 +143,16 @@ describe("component ChartView", () => {
         undefined,
         "rgba(0,0,128,0.16)"
       );
-      expect(mockSetSeries).toHaveBeenNthCalledWith(3, 1, undefined, "navy");
-      expect(mockSetSeries).toHaveBeenNthCalledWith(
-        4,
+
+      simulateItemToggle();
+
+      await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(3));
+      expect(mockSetSeries).toHaveBeenLastCalledWith(1, undefined, "navy");
+
+      simulateItemToggle();
+
+      await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(4));
+      expect(mockSetSeries).toHaveBeenLastCalledWith(
         1,
         undefined,
         "rgba(164,0,0)"
@@ -174,20 +160,10 @@ describe("component ChartView", () => {
       mockSetSeries.mockClear();
 
       // Set unknown
-      act(() => {
-        // Next trace
-        Simulate.wheel(chart1Div(), { deltaY: 5 });
-      });
-      act(() => {
-        roiDataStore.dispatch(toggleCurrentItemSelectedAction());
-      });
-      act(() => {
-        roiDataStore.dispatch(toggleCurrentItemSelectedAction());
-      });
-      act(() => {
-        roiDataStore.dispatch(toggleCurrentItemSelectedAction());
-      });
-      expect(mockSetSeries).toHaveBeenCalledTimes(5);
+      // Next trace
+      fireEvent(chart1Div(), createEvent.wheel(chart1Div(), { deltaY: 5 }));
+
+      await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(2));
       expect(mockSetSeries).toHaveBeenNthCalledWith(1, 2, true, "black");
       expect(mockSetSeries).toHaveBeenNthCalledWith(
         2,
@@ -195,28 +171,33 @@ describe("component ChartView", () => {
         undefined,
         "rgba(164,0,0,0.2)"
       );
-      expect(mockSetSeries).toHaveBeenNthCalledWith(3, 2, undefined, "navy");
-      expect(mockSetSeries).toHaveBeenNthCalledWith(
-        4,
+
+      simulateItemToggle();
+
+      await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(3));
+      expect(mockSetSeries).toHaveBeenLastCalledWith(2, undefined, "navy");
+
+      simulateItemToggle();
+
+      await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(4));
+      expect(mockSetSeries).toHaveBeenLastCalledWith(
         2,
         undefined,
         "rgba(164,0,0)"
       );
-      expect(mockSetSeries).toHaveBeenNthCalledWith(5, 2, undefined, "black");
+
+      simulateItemToggle();
+
+      await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(5));
+      expect(mockSetSeries).toHaveBeenLastCalledWith(2, undefined, "black");
     });
   });
 
-  const chart1Div = (): HTMLDivElement =>
-    container.querySelector("#channel1Chart")!;
-
-  function renderComponent() {
+  const simulateItemToggle = () =>
     act(() => {
-      render(
-        <Provider store={roiDataStore}>
-          <ChartView />
-        </Provider>,
-        container
-      );
+      roiDataStore.dispatch(toggleCurrentItemSelectedAction());
     });
-  }
+
+  const chart1Div = (): HTMLDivElement =>
+    document.querySelector("#channel1Chart")!;
 });

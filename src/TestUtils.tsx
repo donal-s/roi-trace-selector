@@ -1,3 +1,4 @@
+import React from "react";
 import { loadChannelAction } from "./model/Actions";
 import roiDataStore, {
   RoiDataModelState,
@@ -9,6 +10,10 @@ import configureMockStore from "redux-mock-store";
 import thunk, { ThunkDispatch } from "redux-thunk";
 import { AnyAction } from "redux";
 import "core-js/features/set-immediate";
+import { act, render } from "@testing-library/react";
+import { Provider } from "react-redux";
+import userEvent from "@testing-library/user-event";
+
 // test constants
 
 export const CSV_DATA =
@@ -157,13 +162,15 @@ export const EXPECTED_DUAL_CHANNEL_LOADED_STATE: RoiDataModelState = {
 // test functions
 
 export function setCsvData(csvData: string, channel: Channel = CHANNEL_1) {
-  roiDataStore.dispatch(
-    loadChannelAction({
-      csvData: csvData,
-      channel,
-      filename: channel === CHANNEL_1 ? "Example data" : "Example data2",
-    })
-  );
+  act(() => {
+    roiDataStore.dispatch(
+      loadChannelAction({
+        csvData: csvData,
+        channel,
+        filename: channel === CHANNEL_1 ? "Example data" : "Example data2",
+      })
+    );
+  });
 }
 
 export function classesContain(classes: string | null, expected: string) {
@@ -176,8 +183,17 @@ export const configureAppMockStore = () =>
     ThunkDispatch<RoiDataModelState, void, AnyAction>
   >([thunk]);
 
-export function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export const flushPromises = () => new Promise(setImmediate);
+
+// render with redux store
+export function renderWithProvider(
+  component: React.ReactElement,
+  store = roiDataStore
+) {
+  const user = userEvent.setup();
+  return {
+    store,
+    user,
+    ...render(<Provider store={store}>{component}</Provider>),
+  };
+}

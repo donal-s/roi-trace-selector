@@ -1,38 +1,30 @@
 /* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect", "checkPanel"] }] */
 
 import React from "react";
-import { render, unmountComponentAtNode } from "react-dom";
-import { act, Simulate } from "react-dom/test-utils";
 import SelectionIconView from "./SelectionIconView";
 import roiDataStore from "../model/RoiDataModel";
-import { Provider } from "react-redux";
-import { CSV_DATA, setCsvData, classesContain } from "../TestUtils";
+import { CSV_DATA, setCsvData, renderWithProvider } from "../TestUtils";
 import {
   setCurrentIndexAction,
   setCurrentSelectedAction,
   setCurrentUnselectedAction,
   setCurrentUnscannedAction,
 } from "../model/Actions";
+import { act } from "@testing-library/react";
 
 describe("component SelectionIconView", () => {
-  let container: HTMLElement;
-  beforeEach(() => {
-    // setup a DOM element as a render target
-    container = document.createElement("div");
-    document.body.appendChild(container);
-  });
-
-  afterEach(() => {
-    // cleanup on exiting
-    unmountComponentAtNode(container);
-    container.remove();
-  });
-
   it("disabled initially", () => {
-    checkPanel(true, false, false, false);
+    renderWithProvider(<SelectionIconView />);
+    expect(selectionIconPanel()).toHaveClass("disabled");
+    expect(unselectButton()).not.toHaveClass("selected");
+    expect(clearButton()).not.toHaveClass("selected");
+    expect(selectButton()).not.toHaveClass("selected");
 
     setCsvData(CSV_DATA);
-    checkPanel(false, false, true, false);
+    expect(selectionIconPanel()).not.toHaveClass("disabled");
+    expect(unselectButton()).not.toHaveClass("selected");
+    expect(clearButton()).toHaveClass("selected");
+    expect(selectButton()).not.toHaveClass("selected");
   });
 
   it("change on item selection", () => {
@@ -40,66 +32,63 @@ describe("component SelectionIconView", () => {
     roiDataStore.dispatch(setCurrentIndexAction(1));
 
     roiDataStore.dispatch(setCurrentSelectedAction());
-    checkPanel(false, false, false, true);
+    renderWithProvider(<SelectionIconView />);
+    expect(selectionIconPanel()).not.toHaveClass("disabled");
+    expect(unselectButton()).not.toHaveClass("selected");
+    expect(clearButton()).not.toHaveClass("selected");
+    expect(selectButton()).toHaveClass("selected");
 
-    roiDataStore.dispatch(setCurrentUnselectedAction());
-    checkPanel(false, true, false, false);
+    act(() => {
+      roiDataStore.dispatch(setCurrentUnselectedAction());
+    });
+    expect(selectionIconPanel()).not.toHaveClass("disabled");
+    expect(unselectButton()).toHaveClass("selected");
+    expect(clearButton()).not.toHaveClass("selected");
+    expect(selectButton()).not.toHaveClass("selected");
 
-    roiDataStore.dispatch(setCurrentUnscannedAction());
-    checkPanel(false, false, true, false);
+    act(() => {
+      roiDataStore.dispatch(setCurrentUnscannedAction());
+    });
+    expect(selectionIconPanel()).not.toHaveClass("disabled");
+    expect(unselectButton()).not.toHaveClass("selected");
+    expect(clearButton()).toHaveClass("selected");
+    expect(selectButton()).not.toHaveClass("selected");
   });
 
-  it("change state on click", () => {
+  it("change state on click", async () => {
     setCsvData(CSV_DATA);
     roiDataStore.dispatch(setCurrentIndexAction(1));
-    checkPanel(false, false, true, false);
+    const { user } = renderWithProvider(<SelectionIconView />);
+    expect(selectionIconPanel()).not.toHaveClass("disabled");
+    expect(unselectButton()).not.toHaveClass("selected");
+    expect(clearButton()).toHaveClass("selected");
+    expect(selectButton()).not.toHaveClass("selected");
 
-    Simulate.click(selectButton());
-    checkPanel(false, false, false, true);
+    await user.click(selectButton());
+    expect(selectionIconPanel()).not.toHaveClass("disabled");
+    expect(unselectButton()).not.toHaveClass("selected");
+    expect(clearButton()).not.toHaveClass("selected");
+    expect(selectButton()).toHaveClass("selected");
 
-    Simulate.click(unselectButton());
-    checkPanel(false, true, false, false);
+    await user.click(unselectButton());
+    expect(selectionIconPanel()).not.toHaveClass("disabled");
+    expect(unselectButton()).toHaveClass("selected");
+    expect(clearButton()).not.toHaveClass("selected");
+    expect(selectButton()).not.toHaveClass("selected");
 
-    Simulate.click(clearButton());
-    checkPanel(false, false, true, false);
+    await user.click(clearButton());
+    expect(selectionIconPanel()).not.toHaveClass("disabled");
+    expect(unselectButton()).not.toHaveClass("selected");
+    expect(clearButton()).toHaveClass("selected");
+    expect(selectButton()).not.toHaveClass("selected");
   });
 
   const selectionIconPanel = (): HTMLElement =>
-    container.querySelector("#selectionIconPanel")!;
+    document.querySelector("#selectionIconPanel")!;
   const unselectButton = (): HTMLButtonElement =>
-    container.querySelector("#unselectButton")!;
+    document.querySelector("#unselectButton")!;
   const clearButton = (): HTMLButtonElement =>
-    container.querySelector("#clearButton")!;
+    document.querySelector("#clearButton")!;
   const selectButton = (): HTMLButtonElement =>
-    container.querySelector("#selectButton")!;
-
-  function checkPanel(
-    isDisabled: boolean,
-    unselectedActive: boolean,
-    unscannedActive: boolean,
-    selectedActive: boolean
-  ) {
-    act(() => {
-      render(
-        <Provider store={roiDataStore}>
-          <SelectionIconView />
-        </Provider>,
-        container
-      );
-    });
-
-    expect(selectionIconPanel().className).toBe(isDisabled ? "disabled" : "");
-    checkButtonSelection(unselectButton(), unselectedActive);
-    checkButtonSelection(clearButton(), unscannedActive);
-    checkButtonSelection(selectButton(), selectedActive);
-  }
-
-  function checkButtonSelection(
-    button: HTMLButtonElement,
-    expectedSelected: boolean
-  ) {
-    expect(classesContain(button.getAttribute("class"), "selected")).toBe(
-      expectedSelected
-    );
-  }
+    document.querySelector("#selectButton")!;
 });

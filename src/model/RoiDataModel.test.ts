@@ -40,7 +40,6 @@ import {
   CHANNEL_2,
   CHANNEL_BOTH,
   SELECTION_MANUAL,
-  SELECTION_MINIMUM_STDEV_BY_STDEV,
   SelectionMinimumStdev,
   SELECTION_PERCENT_CHANGE,
   SelectionPercentChange,

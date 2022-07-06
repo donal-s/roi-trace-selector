@@ -7,17 +7,19 @@ import {
   useAppSelector,
   useAppDispatch,
 } from "../model/RoiDataModel";
-import CheckCircleOutlineIcon from "@material-ui/icons/CheckCircleOutline";
-import CheckCircleIcon from "@material-ui/icons/CheckCircle";
-import HelpOutlineIcon from "@material-ui/icons/HelpOutline";
-import HelpIcon from "@material-ui/icons/Help";
-import RemoveCircleOutlineIcon from "@material-ui/icons/RemoveCircleOutline";
-import RemoveCircleIcon from "@material-ui/icons/RemoveCircle";
 import {
   setCurrentUnselectedAction,
   setCurrentUnscannedAction,
   setCurrentSelectedAction,
 } from "../model/Actions";
+import {
+  CheckCircleIcon,
+  CheckCircleOutlineIcon,
+  HelpIcon,
+  HelpOutlineIcon,
+  RemoveCircleIcon,
+  RemoveCircleOutlineIcon,
+} from "./IconSvgs";
 
 export default function SelectionIconView() {
   const dispatch = useAppDispatch();
@@ -30,38 +32,26 @@ export default function SelectionIconView() {
   return (
     <div id="selectionIconPanel" className={!channel1Loaded ? "disabled" : ""}>
       {currentUnselected ? (
-        <RemoveCircleIcon
-          fontSize="large"
-          id="unselectButton"
-          className="selected"
-        />
+        <RemoveCircleIcon id="unselectButton" className="selected" />
       ) : (
         <RemoveCircleOutlineIcon
-          fontSize="large"
           id="unselectButton"
           onClick={() => dispatch(setCurrentUnselectedAction())}
         />
       )}
 
       {currentClear ? (
-        <HelpIcon fontSize="large" id="clearButton" className="selected" />
+        <HelpIcon id="clearButton" className="selected" />
       ) : (
         <HelpOutlineIcon
-          fontSize="large"
           id="clearButton"
           onClick={() => dispatch(setCurrentUnscannedAction())}
         />
       )}
-
       {currentSelected ? (
-        <CheckCircleIcon
-          fontSize="large"
-          id="selectButton"
-          className="selected"
-        />
+        <CheckCircleIcon id="selectButton" className="selected" />
       ) : (
         <CheckCircleOutlineIcon
-          fontSize="large"
           id="selectButton"
           onClick={() => dispatch(setCurrentSelectedAction())}
         />

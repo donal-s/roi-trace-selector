@@ -4,9 +4,8 @@ import {
   useAppDispatch,
   useAppSelector,
 } from "../model/RoiDataModel";
-import FullscreenIcon from "@material-ui/icons/Fullscreen";
-import FullscreenExitIcon from "@material-ui/icons/FullscreenExit";
 import { fullscreenModeAction } from "../model/Actions";
+import { FullscreenExitIcon, FullscreenIcon } from "./IconSvgs";
 
 export default function FullscreenButton() {
   const channel1Loaded = useAppSelector(isChannel1Loaded);
@@ -129,7 +128,6 @@ export default function FullscreenButton() {
   if (isFullscreen()) {
     return (
       <FullscreenExitIcon
-        fontSize="large"
         id="fullscreenButton"
         className={!channel1Loaded ? "disabled" : ""}
         onClick={handleClick}
@@ -139,7 +137,6 @@ export default function FullscreenButton() {
 
   return (
     <FullscreenIcon
-      fontSize="large"
       id="fullscreenButton"
       className={!channel1Loaded ? "disabled" : ""}
       onClick={handleClick}

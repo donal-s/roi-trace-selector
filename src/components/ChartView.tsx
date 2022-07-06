@@ -40,13 +40,11 @@ const UNSCANNED_TRACE_COLOUR = "rgba(0,0,0,0.1)";
 
 export default function ChartView() {
   const channel1Chart: MutableRefObject<Plot | null> = React.useRef(null);
-  const channel1ChartDOMRef: MutableRefObject<HTMLDivElement | null> = React.useRef(
-    null
-  );
+  const channel1ChartDOMRef: MutableRefObject<HTMLDivElement | null> =
+    React.useRef(null);
   const channel2Chart: MutableRefObject<Plot | null> = React.useRef(null);
-  const channel2ChartDOMRef: MutableRefObject<HTMLDivElement | null> = React.useRef(
-    null
-  );
+  const channel2ChartDOMRef: MutableRefObject<HTMLDivElement | null> =
+    React.useRef(null);
   const dispatch = useAppDispatch();
 
   const channel2Loaded = useAppSelector(isChannel2Loaded);
@@ -70,31 +68,23 @@ export default function ChartView() {
   const annotations = useAppSelector((state) => state.annotations);
   const editAnnotation = useAppSelector((state) => state.editAnnotation);
 
-  const prevChannel1ChartDataRef: MutableRefObject<
-    number[][] | undefined
-  > = useRef();
-  const prevChannel2ChartDataRef: MutableRefObject<
-    number[][] | undefined
-  > = useRef();
-  const prevChannel1SelectionRef: MutableRefObject<
-    Selection | undefined
-  > = useRef();
-  const prevChannel2SelectionRef: MutableRefObject<
-    Selection | undefined
-  > = useRef();
-  const prevShowSingleTraceRef: MutableRefObject<
-    boolean | undefined
-  > = useRef();
+  const prevChannel1ChartDataRef: MutableRefObject<number[][] | undefined> =
+    useRef();
+  const prevChannel2ChartDataRef: MutableRefObject<number[][] | undefined> =
+    useRef();
+  const prevChannel1SelectionRef: MutableRefObject<Selection | undefined> =
+    useRef();
+  const prevChannel2SelectionRef: MutableRefObject<Selection | undefined> =
+    useRef();
+  const prevShowSingleTraceRef: MutableRefObject<boolean | undefined> =
+    useRef();
   const prevCurrentIndexRef: MutableRefObject<number | undefined> = useRef();
-  const prevScanStatusRef: MutableRefObject<
-    ScanStatus[] | undefined
-  > = useRef();
-  const prevAnnotationsRef: MutableRefObject<
-    Annotation[] | undefined
-  > = useRef();
-  const prevEditAnnotationRef: MutableRefObject<
-    EditAnnotation | undefined
-  > = useRef();
+  const prevScanStatusRef: MutableRefObject<ScanStatus[] | undefined> =
+    useRef();
+  const prevAnnotationsRef: MutableRefObject<Annotation[] | undefined> =
+    useRef();
+  const prevEditAnnotationRef: MutableRefObject<EditAnnotation | undefined> =
+    useRef();
 
   useEffect(() => {
     const prevChannel1ChartData = prevChannel1ChartDataRef.current;
@@ -192,7 +182,7 @@ export default function ChartView() {
       channel1ChartData !== prevChannel1ChartData;
     const channel2ChartDataUpdated =
       channel2ChartData !== prevChannel2ChartData;
-      const channel1SelectionUpdated =
+    const channel1SelectionUpdated =
       channel1ChartData !== prevChannel1Selection;
     const channel2SelectionUpdated =
       channel2Selection !== prevChannel2Selection;

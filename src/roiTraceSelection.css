@@ -5,6 +5,10 @@ body {
   font-size: 18px;
 }
 
+svg {
+  fill: currentColor;
+}
+
 div#header {
   position: fixed;
   padding: 3px;

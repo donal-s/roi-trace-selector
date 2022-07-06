@@ -1,73 +1,46 @@
 /* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect", "checkChartListSelections"] }] */
 
 import React from "react";
-import { render, unmountComponentAtNode } from "react-dom";
-import { act, Simulate } from "react-dom/test-utils";
 import RoiSelectionListView from "./RoiSelectionListView";
-import roiDataStore from "../model/RoiDataModel";
-import { Provider } from "react-redux";
-import { CSV_DATA, setCsvData, classesContain } from "../TestUtils";
+import {
+  CSV_DATA,
+  setCsvData,
+  classesContain,
+  renderWithProvider,
+} from "../TestUtils";
+import { fireEvent } from "@testing-library/react";
 
 describe("component RoiSelectionListView", () => {
-  let container: HTMLElement;
-  beforeEach(() => {
-    // setup a DOM element as a render target
-    container = document.createElement("div");
-    document.body.appendChild(container);
-  });
-
-  afterEach(() => {
-    // cleanup on exiting
-    unmountComponentAtNode(container);
-    container.remove();
-  });
-
   it("initialisation", () => {
-    act(() => {
-      render(
-        <Provider store={roiDataStore}>
-          <RoiSelectionListView />
-        </Provider>,
-        container
-      );
-    });
+    renderWithProvider(<RoiSelectionListView />);
     checkChartListSelections([], 0);
+    checkChartRoiCounts(0, 0, 0);
 
     setCsvData(CSV_DATA);
-    act(() => {
-      render(
-        <Provider store={roiDataStore}>
-          <RoiSelectionListView />
-        </Provider>,
-        container
-      );
-    });
     checkChartListSelections([CLEAR, CLEAR, CLEAR, CLEAR], 0);
+    checkChartRoiCounts(0, 4, 0);
   });
 
   it("display model selections", () => {
     setCsvData(CSV_DATA);
-    act(() => {
-      render(
-        <Provider store={roiDataStore}>
-          <RoiSelectionListView />
-        </Provider>,
-        container
-      );
-    });
+    renderWithProvider(<RoiSelectionListView />);
     checkChartListSelections([CLEAR, CLEAR, CLEAR, CLEAR], 0);
+    checkChartRoiCounts(0, 4, 0);
 
     clickListItem(1);
     clickListItem(3);
     checkChartListSelections([CLEAR, SELECTED, CLEAR, SELECTED], 3);
+    checkChartRoiCounts(0, 2, 2);
 
     clickListItem(0);
     clickListItem(1);
     clickListItem(2);
     checkChartListSelections([SELECTED, UNSELECTED, SELECTED, SELECTED], 2);
+    checkChartRoiCounts(1, 0, 3);
 
     clickListItem(1);
     checkChartListSelections([SELECTED, CLEAR, SELECTED, SELECTED], 1);
+    checkChartRoiCounts(0, 1, 3);
   });
 
   // Class filters
@@ -85,31 +58,19 @@ describe("component RoiSelectionListView", () => {
     !classesContain(value, "unselectedRoi");
 
   // DOM accessors
-  const roiItemList = (): Element => container.querySelector("#roiChoiceList")!;
+  const roiItemList = (): Element => document.querySelector("#roiChoiceList")!;
   const unselectedRoiCount = (): Element =>
-    container.querySelector("#unselectedRoiCount")!;
+    document.querySelector("#unselectedRoiCount")!;
   const unscannedRoiCount = (): Element =>
-    container.querySelector("#unscannedRoiCount")!;
+    document.querySelector("#unscannedRoiCount")!;
   const selectedRoiCount = (): Element =>
-    container.querySelector("#selectedRoiCount")!;
+    document.querySelector("#selectedRoiCount")!;
 
   function checkChartListSelections(
     expectedSelections: ClassFilter[],
     expectedCurrentIndex: number
   ) {
     expect(roiItemList().childElementCount).toBe(expectedSelections.length);
-
-    let expectedSelectedCount = expectedSelections.filter((e) => e === SELECTED)
-      .length;
-    let expectedUnselectedCount = expectedSelections.filter(
-      (e) => e === UNSELECTED
-    ).length;
-    let expectedClearCount = expectedSelections.filter((e) => e === CLEAR)
-      .length;
-
-    expect(unselectedRoiCount().textContent).toBe("" + expectedUnselectedCount);
-    expect(unscannedRoiCount().textContent).toBe("" + expectedClearCount);
-    expect(selectedRoiCount().textContent).toBe("" + expectedSelectedCount);
 
     expectedSelections.forEach((expectedSelection, index) => {
       let element = roiItemList().children[index];
@@ -122,6 +83,22 @@ describe("component RoiSelectionListView", () => {
     });
   }
 
-  const clickListItem = (index: number ) =>
-    Simulate.mouseUp(roiItemList().children[index]);
+  function checkChartRoiCounts(
+    expectedUnselectedCount: number,
+    expectedClearCount: number,
+    expectedSelectedCount: number
+  ) {
+    expect(unselectedRoiCount()).toHaveTextContent(
+      expectedUnselectedCount.toString()
+    );
+    expect(unscannedRoiCount()).toHaveTextContent(
+      expectedClearCount.toString()
+    );
+    expect(selectedRoiCount()).toHaveTextContent(
+      expectedSelectedCount.toString()
+    );
+  }
+
+  const clickListItem = (index: number) =>
+    fireEvent.mouseUp(roiItemList().children[index]);
 });

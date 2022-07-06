@@ -1,104 +1,79 @@
 import React from "react";
-import { render, unmountComponentAtNode } from "react-dom";
-import { act, Simulate } from "react-dom/test-utils";
 import App from "./App";
 import roiDataStore from "../model/RoiDataModel";
-import { Provider } from "react-redux";
-import { CSV_DATA, setCsvData } from "../TestUtils";
+import { CSV_DATA, renderWithProvider, setCsvData } from "../TestUtils";
 import { resetStateAction } from "../model/Actions";
+import { fireEvent } from "@testing-library/react";
 
 describe("component App", () => {
-  let container: HTMLElement;
   beforeEach(() => {
-    // setup a DOM element as a render target
-    container = document.createElement("div");
-    document.body.appendChild(container);
-    act(() => {
-      roiDataStore.dispatch(resetStateAction());
-    });
-  });
-
-  afterEach(() => {
-    // cleanup on exiting
-    unmountComponentAtNode(container);
-    container.remove();
+    roiDataStore.dispatch(resetStateAction());
   });
 
   it("initial view", () => {
-    renderComponent();
-    expect(appTitle().textContent).toContain("[No file]");
+    renderWithProvider(<App />);
+    expect(appTitle()).toHaveTextContent("[No file]");
     expect(loadTestFileButton()).not.toBeNull();
   });
 
   it("load data title change", () => {
     setCsvData(CSV_DATA);
-    renderComponent();
-    expect(appTitle().textContent).toContain("Example data");
+    renderWithProvider(<App />);
+    expect(appTitle()).toHaveTextContent("Example data");
     expect(loadTestFileButton()).toBeNull();
   });
 
-  it("loadTestData", () => {
-    renderComponent();
+  it("loadTestData", async () => {
+    const { user } = renderWithProvider(<App />);
     expect(roiDataStore.getState().channel1Dataset).not.toBeDefined();
 
-    Simulate.click(loadTestFileButton());
-    renderComponent();
+    await user.click(loadTestFileButton());
+
     expect(roiDataStore.getState().channel1Dataset).toBeDefined();
-    expect(saveFileButton().disabled).toBe(false);
+    expect(saveFileButton()).not.toBeDisabled();
     expect(loadTestFileButton()).toBeNull();
   });
 
-  it("keyboard events", () => {
+  it("keyboard events", async () => {
     setCsvData(CSV_DATA);
-    renderComponent();
+    renderWithProvider(<App />);
     expect(roiDataStore.getState()).toMatchObject({
       scanStatus: ["?", "?", "?", "?"],
       currentIndex: 0,
     });
 
     // Next trace
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
+    fireEvent.keyDown(document, { key: "ArrowDown" });
     expect(roiDataStore.getState()).toMatchObject({
       scanStatus: ["?", "?", "?", "?"],
       currentIndex: 1,
     });
 
     // Toggle select trace
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: " " }));
+    fireEvent.keyDown(document, { key: " " });
     expect(roiDataStore.getState()).toMatchObject({
       scanStatus: ["?", "y", "?", "?"],
       currentIndex: 1,
     });
 
     // Toggle select trace - older browsers
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Spacebar" }));
+    fireEvent.keyDown(document, { key: "Spacebar" });
     expect(roiDataStore.getState()).toMatchObject({
       scanStatus: ["?", "n", "?", "?"],
       currentIndex: 1,
     });
 
     // Previous trace
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp" }));
+    fireEvent.keyDown(document, { key: "ArrowUp" });
     expect(roiDataStore.getState()).toMatchObject({
       scanStatus: ["?", "n", "?", "?"],
       currentIndex: 0,
     });
   });
 
-  const appTitle = (): HTMLElement => container.querySelector("#appTitle")!;
+  const appTitle = (): HTMLElement => document.querySelector("#appTitle")!;
   const loadTestFileButton = (): HTMLButtonElement =>
-    container.querySelector("#openChannel1Test")!;
+    document.querySelector("#openChannel1Test")!;
   const saveFileButton = (): HTMLButtonElement =>
-    container.querySelector("#saveChannel")!;
-
-  function renderComponent() {
-    act(() => {
-      render(
-        <Provider store={roiDataStore}>
-          <App />
-        </Provider>,
-        container
-      );
-    });
-  }
+    document.querySelector("#saveChannel")!;
 });

@@ -3,7 +3,6 @@ process.env.NODE_ENV = "production";
 
 const path = require("path");
 const webpack = require("webpack");
-const resolve = require("resolve");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const InlineChunkHtmlPlugin = require("react-dev-utils/InlineChunkHtmlPlugin");
 const TerserPlugin = require("terser-webpack-plugin");
@@ -56,7 +55,6 @@ module.exports = {
         },
       }),
       new CssMinimizerPlugin({
-        sourceMap: true,
         minimizerOptions: {
           preset: ["default", { minifyFontValues: { removeQuotes: false } }],
         },
@@ -218,7 +216,10 @@ module.exports = {
         return { files: manifestFiles, entrypoints: entrypointFiles };
       },
     }),
-    new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
+    new webpack.IgnorePlugin({
+      resourceRegExp: /^\.\/locale$/,
+      contextRegExp: /moment$/,
+    }),
     new WorkboxWebpackPlugin.GenerateSW({
       clientsClaim: true,
       exclude: [/\.map$/, /asset-manifest\.json$/],

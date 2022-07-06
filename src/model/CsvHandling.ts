@@ -31,22 +31,25 @@ export const loadFile = createAsyncThunk<
     return rejectWithValue("FileReader is not supported in this browser.");
   }
   return readFileAsync(file)
-    .then((csv) => ({
-      csvData: csv as string,
-      channel,
-      filename: file.name,
-    }))
+    .then((csv: string) => {
+      const result: ChannelData = {
+        csvData: csv as string,
+        channel,
+        filename: file.name,
+      };
+      return result;
+    })
     .catch((err) => {
       return rejectWithValue("Cannot read file !");
     });
 });
 
-export function readFileAsync(file: File) {
+export function readFileAsync(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     let reader = new FileReader();
 
     reader.onload = () => {
-      resolve(reader.result);
+      resolve(reader.result as string);
     };
 
     reader.onerror = reject;
@@ -108,17 +111,15 @@ export function parseCsvData(csv: string) {
   });
 
   let scaledTraceData: number[][] = originalTraceData.map((series, i) => {
+    let rawYStartValue = series[0];
+    let rawYEndValue = series[series.length - 1];
+    let yOffset = rawYStartValue;
+    let yScale = 1 / (rawYEndValue - rawYStartValue);
+    if (!Number.isFinite(yScale)) {
+      yScale = 1;
+    }
 
- 
-      let rawYStartValue = series[0];
-      let rawYEndValue = series[series.length - 1];
-      let yOffset = rawYStartValue;
-      let yScale = 1 / (rawYEndValue - rawYStartValue);
-      if (!Number.isFinite(yScale)) {
-          yScale = 1;
-      }
-
-      return series.map(value => (value - yOffset) * yScale)
+    return series.map((value) => (value - yOffset) * yScale);
   });
 
   const uniqueValues = new Set(roiLabels);
@@ -137,7 +138,7 @@ export function parseCsvData(csv: string) {
     chartFrameLabels: chartFrameLabels,
     chartData,
     originalTraceData,
-    scaledTraceData
+    scaledTraceData,
   };
 }
 

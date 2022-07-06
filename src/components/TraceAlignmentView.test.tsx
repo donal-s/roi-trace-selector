@@ -1,44 +1,40 @@
 /* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect", "checkEnabled"] }] */
 
 import React from "react";
-import { render, unmountComponentAtNode } from "react-dom";
-import { act, Simulate } from "react-dom/test-utils";
 import TraceAlignmentView from "./TraceAlignmentView";
 import roiDataStore from "../model/RoiDataModel";
-import { Provider } from "react-redux";
-import { CSV_DATA, CSV_DATA_2, setCsvData } from "../TestUtils";
+import {
+  CSV_DATA,
+  CSV_DATA_2,
+  renderWithProvider,
+  setCsvData,
+} from "../TestUtils";
 import { Channel, CHANNEL_1, CHANNEL_2 } from "../model/Types";
 import { resetStateAction, setCurrentChannelAction } from "../model/Actions";
+import { fireEvent } from "@testing-library/react";
+
+// User event typing on number fields is difficult
+const REPLACE_NUMBER = { initialSelectionStart: 0, initialSelectionEnd: 10 };
 
 describe("component TraceAlignmentView", () => {
-  let container: HTMLElement;
   beforeEach(() => {
-    // setup a DOM element as a render target
-    container = document.createElement("div");
-    document.body.appendChild(container);
     roiDataStore.dispatch(resetStateAction());
   });
 
-  afterEach(() => {
-    // cleanup on exiting
-    unmountComponentAtNode(container);
-    container.remove();
-  });
-
   it("initial empty state channel 1 disabled", () => {
-    renderComponent();
+    renderWithProvider(<TraceAlignmentView />);
 
     checkEnabled(false, false, false, false, false, false, false, false);
-    checkValues(false, false, "200", "1", false, false, "0", "1");
+    checkValues(false, false, 200, 1, false, false, 0, 1);
     checkAlignedChartData(undefined, CHANNEL_1);
   });
 
   it("loaded state channel 1", () => {
     setCsvData(CSV_DATA);
-    renderComponent();
+    renderWithProvider(<TraceAlignmentView />);
 
     checkEnabled(true, false, false, false, false, false, false, false);
-    checkValues(false, false, "200", "1", false, false, "0", "5");
+    checkValues(false, false, 200, 1, false, false, 0, 5);
     checkAlignedChartData(
       [
         [10, 9, 5, 4, 3],
@@ -53,19 +49,19 @@ describe("component TraceAlignmentView", () => {
   it("channel 1 loaded state channel 2 disabled", () => {
     setCsvData(CSV_DATA);
     roiDataStore.dispatch(setCurrentChannelAction(CHANNEL_2));
-    renderComponent();
+    renderWithProvider(<TraceAlignmentView />);
 
     checkEnabled(false, false, false, false, false, false, false, false);
-    checkValues(false, false, "200", "1", false, false, "0", "1");
+    checkValues(false, false, 200, 1, false, false, 0, 1);
     checkAlignedChartData(undefined, CHANNEL_2);
   });
 
-  it("modify settings channel 1", () => {
+  it("modify settings channel 1", async () => {
     setCsvData(CSV_DATA);
-    renderComponent();
+    const { user } = renderWithProvider(<TraceAlignmentView />);
 
     checkEnabled(true, false, false, false, false, false, false, false);
-    checkValues(false, false, "200", "1", false, false, "0", "5");
+    checkValues(false, false, 200, 1, false, false, 0, 5);
     checkAlignedChartData(
       [
         [10, 9, 5, 4, 3],
@@ -77,15 +73,15 @@ describe("component TraceAlignmentView", () => {
     );
 
     // Align max frame 1, value 5
-    setCheckbox(enableYMaxAlignmentField(), true);
-    renderComponent();
-    checkEnabled(true, true, true, true, true, false, false, false);
-    checkValues(true, false, "200", "1", false, false, "0", "5");
+    await user.click(enableYMaxAlignmentField());
 
-    setTextField(yMaxValueField(), "5");
-    renderComponent();
     checkEnabled(true, true, true, true, true, false, false, false);
-    checkValues(true, false, "5", "1", false, false, "0", "5");
+    checkValues(true, false, 200, 1, false, false, 0, 5);
+
+    await user.type(yMaxValueField(), "5", REPLACE_NUMBER);
+
+    checkEnabled(true, true, true, true, true, false, false, false);
+    checkValues(true, false, 5, 1, false, false, 0, 5);
     checkAlignedChartData(
       [
         [5, 4, 0, -1, -2],
@@ -97,10 +93,10 @@ describe("component TraceAlignmentView", () => {
     );
 
     // Align max frame 2, value 5
-    setTextField(yMaxFrameField(), "2");
-    renderComponent();
+    await user.type(yMaxFrameField(), "2", REPLACE_NUMBER);
+
     checkEnabled(true, true, true, true, true, false, false, false);
-    checkValues(true, false, "5", "2", false, false, "0", "5");
+    checkValues(true, false, 5, 2, false, false, 0, 5);
     checkAlignedChartData(
       [
         [6, 5, 1, 0, -1],
@@ -112,19 +108,16 @@ describe("component TraceAlignmentView", () => {
     );
 
     // Align max, max frame, value 5
-    setCheckbox(alignToYMaxField(), true);
-    renderComponent();
+    await user.click(alignToYMaxField()); //, true);
+
     checkEnabled(true, true, true, false, true, false, false, false);
-    checkValues(true, true, "5", "2", false, false, "0", "5");
+    checkValues(true, true, 5, 2, false, false, 0, 5);
     checkAlignedChartData(
       [
         [5, 4, 0, -1, -2],
         [5, 5, 5, 5, 5],
         [
-          2.8000000000000003,
-          3.9000000000000004,
-          5,
-          3.9000000000000004,
+          2.8000000000000003, 3.9000000000000004, 5, 3.9000000000000004,
           2.8000000000000003,
         ],
         [1, 2, 3, 4, 5],
@@ -133,13 +126,13 @@ describe("component TraceAlignmentView", () => {
     );
 
     // Align max frame 1, value 5, min frame 5 value 1
-    setCheckbox(alignToYMaxField(), false);
-    setTextField(yMaxFrameField(), "1");
-    setCheckbox(enableYMinAlignmentField(), true);
-    setTextField(yMinValueField(), "1");
-    renderComponent();
+    await user.click(alignToYMaxField());
+    await user.type(yMaxFrameField(), "1", REPLACE_NUMBER);
+    await user.click(enableYMinAlignmentField());
+    await user.type(yMinValueField(), "1", REPLACE_NUMBER);
+
     checkEnabled(true, true, true, true, true, true, true, true);
-    checkValues(true, false, "5", "1", true, false, "1", "5");
+    checkValues(true, false, 5, 1, true, false, 1, 5);
     checkAlignedChartData(
       [
         [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
@@ -151,11 +144,11 @@ describe("component TraceAlignmentView", () => {
     );
 
     // Align max frame max, value 5, min frame min value 1
-    setCheckbox(alignToYMaxField(), true);
-    setCheckbox(alignToYMinField(), true);
-    renderComponent();
+    await user.click(alignToYMaxField());
+    await user.click(alignToYMinField());
+
     checkEnabled(true, true, true, false, true, true, true, false);
-    checkValues(true, true, "5", "1", true, true, "1", "5");
+    checkValues(true, true, 5, 1, true, true, 1, 5);
     checkAlignedChartData(
       [
         [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
@@ -167,14 +160,14 @@ describe("component TraceAlignmentView", () => {
     );
   });
 
-  it("modify settings channel 2", () => {
+  it("modify settings channel 2", async () => {
     setCsvData(CSV_DATA);
     setCsvData(CSV_DATA_2, CHANNEL_2);
     roiDataStore.dispatch(setCurrentChannelAction(CHANNEL_2));
-    renderComponent();
+    const { user } = renderWithProvider(<TraceAlignmentView />);
 
     checkEnabled(true, false, false, false, false, false, false, false);
-    checkValues(false, false, "200", "1", false, false, "0", "5");
+    checkValues(false, false, 200, 1, false, false, 0, 5);
     checkAlignedChartData(
       [
         [30, 29, 25, 24, 23],
@@ -186,15 +179,15 @@ describe("component TraceAlignmentView", () => {
     );
 
     // Align max frame 1, value 5
-    setCheckbox(enableYMaxAlignmentField(), true);
-    renderComponent();
-    checkEnabled(true, true, true, true, true, false, false, false);
-    checkValues(true, false, "200", "1", false, false, "0", "5");
+    await user.click(enableYMaxAlignmentField());
 
-    setTextField(yMaxValueField(), "5");
-    renderComponent();
     checkEnabled(true, true, true, true, true, false, false, false);
-    checkValues(true, false, "5", "1", false, false, "0", "5");
+    checkValues(true, false, 200, 1, false, false, 0, 5);
+
+    await user.type(yMaxValueField(), "5", REPLACE_NUMBER);
+
+    checkEnabled(true, true, true, true, true, false, false, false);
+    checkValues(true, false, 5, 1, false, false, 0, 5);
     checkAlignedChartData(
       [
         [5, 4, 0, -1, -2],
@@ -206,83 +199,77 @@ describe("component TraceAlignmentView", () => {
     );
   });
 
-  it("input blur", () => {
+  it("input blur", async () => {
     setCsvData(CSV_DATA);
-    renderComponent();
-    setCheckbox(enableYMaxAlignmentField(), true);
-    setCheckbox(enableYMinAlignmentField(), true);
-    renderComponent();
+    const { user } = renderWithProvider(<TraceAlignmentView />);
+    await user.click(enableYMaxAlignmentField());
+    await user.click(enableYMinAlignmentField());
+
     checkEnabled(true, true, true, true, true, true, true, true);
-    checkValues(true, false, "200", "1", true, false, "0", "5");
+    checkValues(true, false, 200, 1, true, false, 0, 5);
 
     // Max <= min
-    setTextField(yMaxValueField(), "0");
-    Simulate.blur(yMaxValueField());
-    renderComponent();
-    checkValues(true, false, "1", "1", true, false, "0", "5");
+    await user.type(yMaxValueField(), "0", REPLACE_NUMBER);
+    fireEvent.blur(yMaxValueField());
 
-    setTextField(yMaxValueField(), "-10");
-    Simulate.blur(yMaxValueField());
-    renderComponent();
-    checkValues(true, false, "1", "1", true, false, "0", "5");
+    checkValues(true, false, 1, 1, true, false, 0, 5);
 
     // Min >= max
-    setTextField(yMaxValueField(), "100");
-    renderComponent();
-    checkValues(true, false, "100", "1", true, false, "0", "5");
+    await user.type(yMaxValueField(), "100", REPLACE_NUMBER);
 
-    setTextField(yMinValueField(), "110");
-    Simulate.blur(yMinValueField()!);
-    renderComponent();
-    checkValues(true, false, "100", "1", true, false, "99", "5");
+    checkValues(true, false, 100, 1, true, false, 0, 5);
 
-    setTextField(yMinValueField(), "100");
-    Simulate.blur(yMinValueField()!);
-    renderComponent();
-    checkValues(true, false, "100", "1", true, false, "99", "5");
+    await user.type(yMinValueField(), "110", REPLACE_NUMBER);
+    fireEvent.blur(yMinValueField()!);
+
+    checkValues(true, false, 100, 1, true, false, 99, 5);
+
+    await user.type(yMinValueField(), "100", REPLACE_NUMBER);
+    fireEvent.blur(yMinValueField()!);
+
+    checkValues(true, false, 100, 1, true, false, 99, 5);
 
     // Max > min
-    setTextField(yMaxValueField(), "15");
-    setTextField(yMinValueField(), "4");
-    Simulate.blur(yMaxValueField()!);
-    Simulate.blur(yMinValueField()!);
-    renderComponent();
-    checkValues(true, false, "15", "1", true, false, "4", "5");
+    await user.type(yMinValueField(), "4", REPLACE_NUMBER);
+    await user.type(yMaxValueField(), "15", REPLACE_NUMBER);
+    fireEvent.blur(yMaxValueField()!);
+
+    checkValues(true, false, 15, 1, true, false, 4, 5);
   });
 
-  it("input empty", () => {
+  it("input empty", async () => {
     setCsvData(CSV_DATA);
-    renderComponent();
-    setCheckbox(enableYMaxAlignmentField(), true);
-    setCheckbox(enableYMinAlignmentField(), true);
-    renderComponent();
+    const { user } = renderWithProvider(<TraceAlignmentView />);
+    await user.click(enableYMaxAlignmentField());
+    await user.click(enableYMinAlignmentField());
+
     checkEnabled(true, true, true, true, true, true, true, true);
-    checkValues(true, false, "200", "1", true, false, "0", "5");
+    checkValues(true, false, 200, 1, true, false, 0, 5);
 
     // Max <= min
-    setTextField(yMaxValueField(), "");
-    setTextField(yMaxFrameField(), "");
-    setTextField(yMinValueField(), "");
-    setTextField(yMinFrameField(), "");
-    checkValues(true, false, "200", "1", true, false, "0", "5");
+    await user.type(yMaxValueField(), "{Delete}", REPLACE_NUMBER);
+    await user.type(yMaxFrameField(), "{Delete}", REPLACE_NUMBER);
+    await user.type(yMinValueField(), "{Delete}", REPLACE_NUMBER);
+    await user.type(yMinFrameField(), "{Delete}", REPLACE_NUMBER);
+    checkValues(true, false, 200, 1, true, false, 0, 5);
   });
 
   const enableYMaxAlignmentField = (): HTMLInputElement =>
-    container.querySelector("#enableYMaxAlignment")!;
+    document.querySelector("#enableYMaxAlignment")!;
   const alignToYMaxField = (): HTMLInputElement =>
-    container.querySelector("#alignToYMax")!;
+    document.querySelector("#alignToYMax")!;
   const yMaxValueField = (): HTMLInputElement =>
-    container.querySelector("#yMaxValue")!;
+    document.querySelector("#yMaxValue")!;
   const yMaxFrameField = (): HTMLInputElement =>
-    container.querySelector("#yMaxFrame")!;
+    document.querySelector("#yMaxFrame")!;
   const enableYMinAlignmentField = (): HTMLInputElement =>
-    container.querySelector("#enableYMinAlignment")!;
+    document.querySelector("#enableYMinAlignment")!;
   const alignToYMinField = (): HTMLInputElement =>
-    container.querySelector("#alignToYMin")!;
+    document.querySelector("#alignToYMin")!;
   const yMinValueField = (): HTMLInputElement =>
-    container.querySelector("#yMinValue")!;
+    document.querySelector("#yMinValue")!;
   const yMinFrameField = (): HTMLInputElement =>
-    container.querySelector("#yMinFrame")!;
+    document.querySelector("#yMinFrame")!;
 
   function checkEnabled(
     enableYMaxAlignment: boolean,
@@ -307,21 +294,21 @@ describe("component TraceAlignmentView", () => {
   function checkValues(
     enableYMaxAlignment: boolean,
     alignToYMax: boolean,
-    yMaxValue: string,
-    yMaxFrame: string,
+    yMaxValue: number,
+    yMaxFrame: number,
     enableYMinAlignment: boolean,
     alignToYMin: boolean,
-    yMinValue: string,
-    yMinFrame: string
+    yMinValue: number,
+    yMinFrame: number
   ) {
     expect(enableYMaxAlignmentField().checked).toBe(enableYMaxAlignment);
     expect(alignToYMaxField().checked).toBe(alignToYMax);
-    expect(yMaxValueField().value).toBe(yMaxValue);
-    expect(yMaxFrameField().value).toBe(yMaxFrame);
+    expect(yMaxValueField()).toHaveValue(yMaxValue);
+    expect(yMaxFrameField()).toHaveValue(yMaxFrame);
     expect(enableYMinAlignmentField().checked).toBe(enableYMinAlignment);
     expect(alignToYMinField().checked).toBe(alignToYMin);
-    expect(yMinValueField().value).toBe(yMinValue);
-    expect(yMinFrameField().value).toBe(yMinFrame);
+    expect(yMinValueField()).toHaveValue(yMinValue);
+    expect(yMinFrameField()).toHaveValue(yMinFrame);
   }
 
   function checkAlignedChartData(
@@ -333,26 +320,5 @@ describe("component TraceAlignmentView", () => {
         ? roiDataStore.getState().channel1Dataset
         : roiDataStore.getState().channel2Dataset;
     expect(dataset?.chartData).toStrictEqual(expectedData);
-  }
-
-  function renderComponent() {
-    act(() => {
-      render(
-        <Provider store={roiDataStore}>
-          <TraceAlignmentView />
-        </Provider>,
-        container
-      );
-    });
-  }
-
-  function setCheckbox(checkbox: HTMLInputElement, checked: boolean) {
-    //@ts-ignore
-    Simulate.change(checkbox, { target: { checked } });
-  }
-
-  function setTextField(textField: HTMLInputElement, value: string) {
-    textField.value = value;
-    Simulate.change(textField);
   }
 });

@@ -15,7 +15,7 @@ import {
   SELECTION_MANUAL,
   SELECTION_PERCENT_CHANGE,
   SELECTION_STDEV,
-  SELECTION_MINIMUM_STDEV_BY_STDEV,
+  // SELECTION_MINIMUM_STDEV_BY_STDEV,
   SelectionPercentChange,
   SelectionStdev,
   SelectionMinimumStdev,
@@ -26,7 +26,6 @@ import {
   AnyAction,
   configureStore,
   createReducer,
-  getDefaultMiddleware,
   Reducer,
 } from "@reduxjs/toolkit";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
@@ -567,8 +566,6 @@ function removeRoiAndReduceDeviation(
   traces: number[][],
   selectedTraces: boolean[]
 ) {
-  console.log("removeRoiAndReduceDeviation");
-  
   let candidateIndex = -1;
   let candidateStdev = Infinity;
 
@@ -583,8 +580,6 @@ function removeRoiAndReduceDeviation(
   });
 
   selectedTraces[candidateIndex] = false;
-  console.log("end removeRoiAndReduceDeviation");
-
   return candidateStdev;
 }
 
@@ -646,6 +641,7 @@ function loadData(state: RoiDataModelState, file: ChannelData) {
     originalTraceData,
     scaledTraceData,
   } = parseCsvData(file.csvData);
+  
   const alignment: ChartAlignment = {
     channel: file.channel,
     enableYMaxAlignment: false,
@@ -740,7 +736,7 @@ function updateEditAnnotation(
 
 export const store = configureStore({
   reducer: persistedReducer,
-  middleware: getDefaultMiddleware({
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware({
     serializableCheck: {
       ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
     },
