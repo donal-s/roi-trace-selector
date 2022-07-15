@@ -48,6 +48,24 @@ describe("component ChannelSelectionPanel", () => {
     expect(roiDataStore.getState().currentChannel).toStrictEqual(CHANNEL_1);
   });
 
+  it("mouseover channel buttons", async () => {
+    setCsvData(CSV_DATA);
+    const { user } = renderWithProvider(<ChannelSelectionPanel />);
+    expect(roiDataStore.getState().outlineChannel).toBeUndefined();
+
+    await user.hover(channel1Button());
+    expect(roiDataStore.getState().outlineChannel).toStrictEqual(CHANNEL_1);
+
+    await user.unhover(channel1Button());
+    expect(roiDataStore.getState().outlineChannel).toBeUndefined();
+
+    await user.hover(channel2Button());
+    expect(roiDataStore.getState().outlineChannel).toStrictEqual(CHANNEL_2);
+
+    await user.unhover(channel2Button());
+    expect(roiDataStore.getState().outlineChannel).toBeUndefined();
+  });
+
   const channel1Button = (): HTMLButtonElement =>
     document.querySelector("#channel1Button")!;
   const channel2Button = (): HTMLButtonElement =>

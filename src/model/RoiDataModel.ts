@@ -46,6 +46,7 @@ import {
   closeChannelAction,
   setCurrentChannelAction,
   setSelectionAction,
+  setOutlineChannelAction,
 } from "./Actions";
 import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
@@ -83,6 +84,7 @@ export type RoiDataModelState = PersistedRoiDataModelState & {
   showSingleTrace: boolean;
   currentIndex: number;
   currentChannel: Channel;
+  outlineChannel?: Channel;
   initialisingState: boolean;
 };
 
@@ -91,6 +93,7 @@ const initialState: RoiDataModelState = {
   scanStatus: [],
   currentIndex: 0,
   currentChannel: CHANNEL_1,
+  outlineChannel: undefined,
   chartFrameLabels: [],
   showSingleTrace: false,
   annotations: [],
@@ -137,6 +140,10 @@ export const roiDataReducer: Reducer<RoiDataModelState> = createReducer(
       .addCase(setCurrentChannelAction, (state, action) =>
         setCurrentChannel(state, action.payload)
       )
+      .addCase(setOutlineChannelAction, (state, action) => ({
+        ...state,
+        outlineChannel: action.payload,
+      }))
       .addCase(resetStateAction, () => initialState)
       .addCase(updateAnnotationsAction, (state, action) =>
         updateAnnotations(state, action.payload)
@@ -437,11 +444,8 @@ function calculateAutoSelection(state: RoiDataModelState) {
 }
 
 function getPercentChangeStatus(dataset: RoiDataset): ScanStatus[] {
-  const {
-    startFrame,
-    endFrame,
-    percentChange,
-  } = dataset.selection as SelectionPercentChange;
+  const { startFrame, endFrame, percentChange } =
+    dataset.selection as SelectionPercentChange;
 
   return dataset.scaledTraceData.map((series) => {
     const scaledChange = series[endFrame] - series[startFrame];
@@ -641,7 +645,7 @@ function loadData(state: RoiDataModelState, file: ChannelData) {
     originalTraceData,
     scaledTraceData,
   } = parseCsvData(file.csvData);
-  
+
   const alignment: ChartAlignment = {
     channel: file.channel,
     enableYMaxAlignment: false,
@@ -736,17 +740,19 @@ function updateEditAnnotation(
 
 export const store = configureStore({
   reducer: persistedReducer,
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware({
-    serializableCheck: {
-      ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-    },
-  }),
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+      },
+    }),
 });
 export const persistor = persistStore(store);
 
 export type AppDispatch = typeof store.dispatch;
 export const useAppDispatch = () => useDispatch<AppDispatch>();
-export const useAppSelector: TypedUseSelectorHook<RoiDataModelState> = useSelector;
+export const useAppSelector: TypedUseSelectorHook<RoiDataModelState> =
+  useSelector;
 
 export default store;
 

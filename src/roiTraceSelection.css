@@ -59,6 +59,15 @@ div.chartPanel.halfheight {
   height: 50%;
 }
 
+div.chartPanel {
+  border: white 2px solid;
+  margin-right: 5px;
+}
+
+div.chartPanel.outline {
+  border-color: #4caf50; /* Green */
+}
+
 div#mainPanel {
   display: flex;
   align-items: center;

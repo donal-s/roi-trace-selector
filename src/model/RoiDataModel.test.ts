@@ -62,6 +62,7 @@ import {
   setCurrentSelectedAction,
   setCurrentUnscannedAction,
   setCurrentUnselectedAction,
+  setOutlineChannelAction,
   setSelectionAction,
   toggleCurrentItemSelectedAction,
   updateAnnotationsAction,
@@ -499,10 +500,7 @@ describe("roiDataReducer", () => {
               [5, 4, 0, -1, -2],
               [5, 5, 5, 5, 5],
               [
-                2.8000000000000003,
-                3.9000000000000004,
-                5,
-                3.9000000000000004,
+                2.8000000000000003, 3.9000000000000004, 5, 3.9000000000000004,
                 2.8000000000000003,
               ],
               [1, 2, 3, 4, 5],
@@ -950,6 +948,46 @@ describe("roiDataReducer", () => {
         { ...LOADED_STATE, currentChannel: CHANNEL_2 },
         setCurrentChannelAction(CHANNEL_1),
         EXPECTED_LOADED_STATE
+      );
+    });
+  });
+
+  describe("setOutlineChannelAction", () => {
+    it("set and unset channels should succeed", async () => {
+      await checkReducerAndStore(
+        EMPTY_STATE,
+        setOutlineChannelAction(CHANNEL_1),
+        { ...EMPTY_STATE, outlineChannel: CHANNEL_1 }
+      );
+
+      await checkReducerAndStore(
+        { ...EMPTY_STATE, outlineChannel: CHANNEL_1 },
+        setOutlineChannelAction(undefined),
+        EMPTY_STATE
+      );
+
+      await checkReducerAndStore(
+        EMPTY_STATE,
+        setOutlineChannelAction(CHANNEL_2),
+        { ...EMPTY_STATE, outlineChannel: CHANNEL_2 }
+      );
+
+      await checkReducerAndStore(
+        { ...EMPTY_STATE, outlineChannel: CHANNEL_2 },
+        setOutlineChannelAction(undefined),
+        EMPTY_STATE
+      );
+
+      await checkReducerAndStore(
+        { ...EMPTY_STATE, outlineChannel: CHANNEL_1 },
+        setOutlineChannelAction(CHANNEL_2),
+        { ...EMPTY_STATE, outlineChannel: CHANNEL_2 }
+      );
+
+      await checkReducerAndStore(
+        { ...EMPTY_STATE, outlineChannel: CHANNEL_2 },
+        setOutlineChannelAction(CHANNEL_1),
+        { ...EMPTY_STATE, outlineChannel: CHANNEL_1 }
       );
     });
   });
@@ -1482,7 +1520,7 @@ describe("roiDataReducer", () => {
           ],
           channel1Dataset: {
             ...EXPECTED_CHANNEL1_DATASET,
-            selection: { ...selection, selectedStdev: expect.closeTo(1.00) },
+            selection: { ...selection, selectedStdev: expect.closeTo(1.0) },
           },
         }
       );

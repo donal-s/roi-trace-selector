@@ -1,5 +1,8 @@
 import React from "react";
-import { setCurrentChannelAction } from "../model/Actions";
+import {
+  setCurrentChannelAction,
+  setOutlineChannelAction,
+} from "../model/Actions";
 import {
   isChannel1Loaded,
   useAppDispatch,
@@ -22,6 +25,12 @@ export default function ChannelSelectionPanel() {
           dispatch(setCurrentChannelAction(CHANNEL_1));
           event.currentTarget.blur();
         }}
+        onMouseOver={() => {
+          dispatch(setOutlineChannelAction(CHANNEL_1));
+        }}
+        onMouseLeave={() => {
+          dispatch(setOutlineChannelAction(undefined));
+        }}
       >
         Channel 1
       </button>
@@ -32,6 +41,12 @@ export default function ChannelSelectionPanel() {
         onClick={(event) => {
           dispatch(setCurrentChannelAction(CHANNEL_2));
           event.currentTarget.blur();
+        }}
+        onMouseOver={() => {
+          dispatch(setOutlineChannelAction(CHANNEL_2));
+        }}
+        onMouseLeave={() => {
+          dispatch(setOutlineChannelAction(undefined));
         }}
         disabled={!channel1Loaded}
       >

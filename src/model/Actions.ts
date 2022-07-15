@@ -41,6 +41,10 @@ export const setCurrentChannelAction = createAction(
   "setCurrentChannel",
   withPayloadType<Channel>()
 );
+export const setOutlineChannelAction = createAction(
+  "setOutlineChannel",
+  withPayloadType<Channel|undefined>()
+);
 export const loadChannelAction = createAction(
   "loadChannel",
   withPayloadType<ChannelData>()

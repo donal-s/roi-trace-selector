@@ -67,6 +67,7 @@ export default function ChartView() {
   const chartFrameLabels = useAppSelector((state) => state.chartFrameLabels);
   const annotations = useAppSelector((state) => state.annotations);
   const editAnnotation = useAppSelector((state) => state.editAnnotation);
+  const outlineChannel = useAppSelector((state) => state.outlineChannel);
 
   const prevChannel1ChartDataRef: MutableRefObject<number[][] | undefined> =
     useRef();
@@ -333,10 +334,16 @@ export default function ChartView() {
     }
   }
 
+  const channel1Outline =
+    channel2Loaded && !showSingleTrace && outlineChannel === CHANNEL_1;
+  const channel2Outline = !showSingleTrace && outlineChannel === CHANNEL_2;
+
   return (
     <div id="chartsPanel">
       <div
-        className={`chartPanel ${channel2Loaded ? "halfheight" : "fullheight"}`}
+        className={`chartPanel ${
+          channel2Loaded ? "halfheight" : "fullheight"
+        } ${channel1Outline ? "outline" : ""}`}
         id="channel1Chart"
         ref={channel1ChartDOMRef}
         onWheel={(event) =>
@@ -351,7 +358,9 @@ export default function ChartView() {
 
       {channel2Loaded && (
         <div
-          className="chartPanel halfheight"
+          className={`chartPanel halfheight ${
+            channel2Outline ? "outline" : ""
+          }`}
           id="channel2Chart"
           ref={channel2ChartDOMRef}
           onWheel={(event) =>

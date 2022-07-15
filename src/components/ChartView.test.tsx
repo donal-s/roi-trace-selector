@@ -7,9 +7,12 @@ import plot from "../plot/Plot";
 import { CSV_DATA, renderWithProvider, setCsvData } from "../TestUtils";
 import {
   fullscreenModeAction,
+  resetStateAction,
+  setOutlineChannelAction,
   toggleCurrentItemSelectedAction,
 } from "../model/Actions";
 import { act, createEvent, fireEvent, waitFor } from "@testing-library/react";
+import { CHANNEL_1, CHANNEL_2 } from "../model/Types";
 
 const EXPECTED_X_DATA = [1, 2, 3, 4, 5];
 const EXPECTED_Y_DATA = [
@@ -193,6 +196,79 @@ describe("component ChartView", () => {
     });
   });
 
+  describe("chart outline tests", () => {
+    beforeEach(() => {
+      roiDataStore.dispatch(resetStateAction());
+    });
+
+    it("single chart view - no outline", async () => {
+      setCsvData(CSV_DATA);
+      roiDataStore.dispatch(setOutlineChannelAction(CHANNEL_1));
+      renderWithProvider(<ChartView />);
+
+      expect(chart1Div()).not.toHaveClass("outline");
+    });
+
+    it("dual chart view", async () => {
+      setCsvData(CSV_DATA);
+      setCsvData(CSV_DATA, CHANNEL_2);
+
+      // No outline
+      renderWithProvider(<ChartView />);
+      expect(chart1Div()).not.toHaveClass("outline");
+      expect(chart2Div()).not.toHaveClass("outline");
+
+      // Chart 1 outline
+      act(() => {
+        roiDataStore.dispatch(setOutlineChannelAction(CHANNEL_1));
+      });
+      expect(chart1Div()).toHaveClass("outline");
+      expect(chart2Div()).not.toHaveClass("outline");
+      
+      // Chart 2 outline
+      act(() => {
+        roiDataStore.dispatch(setOutlineChannelAction(CHANNEL_2));
+      });
+      expect(chart1Div()).not.toHaveClass("outline");
+      await waitFor(() => expect(chart2Div()).toHaveClass("outline"));
+
+      // No outline
+      act(() => {
+        roiDataStore.dispatch(setOutlineChannelAction(undefined));
+      });
+      expect(chart1Div()).not.toHaveClass("outline");
+      expect(chart2Div()).not.toHaveClass("outline");
+    });
+
+    it("dual chart view, fullscreen - no outline", async () => {
+      setCsvData(CSV_DATA);
+      setCsvData(CSV_DATA, CHANNEL_2);
+      roiDataStore.dispatch(setOutlineChannelAction(CHANNEL_1));
+
+      renderWithProvider(<ChartView />);
+
+      // Chart 1 outline
+      expect(chart1Div()).toHaveClass("outline");
+      expect(chart2Div()).not.toHaveClass("outline");
+
+      // Set fullscreen
+      act(() => {
+        roiDataStore.dispatch(fullscreenModeAction(true));
+      });
+
+      expect(chart1Div()).not.toHaveClass("outline");
+      expect(chart2Div()).not.toHaveClass("outline");
+
+      // Unset fullscreen
+      act(() => {
+        roiDataStore.dispatch(fullscreenModeAction(false));
+      });
+
+      expect(chart1Div()).toHaveClass("outline");
+      expect(chart2Div()).not.toHaveClass("outline");
+    });
+  });
+
   const simulateItemToggle = () =>
     act(() => {
       roiDataStore.dispatch(toggleCurrentItemSelectedAction());
@@ -200,4 +276,7 @@ describe("component ChartView", () => {
 
   const chart1Div = (): HTMLDivElement =>
     document.querySelector("#channel1Chart")!;
+
+  const chart2Div = (): HTMLDivElement =>
+    document.querySelector("#channel2Chart")!;
 });
