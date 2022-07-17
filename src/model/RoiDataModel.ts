@@ -377,61 +377,25 @@ function setSelection(state: RoiDataModelState, newSelection: Selection) {
 }
 
 function calculateAutoSelection(state: RoiDataModelState) {
-  let channel1Status: ScanStatus[] | undefined,
-    channel2Status: ScanStatus[] | undefined;
-  let channel1Dataset = state.channel1Dataset;
-  let channel2Dataset = state.channel2Dataset;
+  const channel1 = calculateChannelAutoSelection(state.channel1Dataset);
+  const channel2 = calculateChannelAutoSelection(state.channel2Dataset);
 
-  switch (state.channel1Dataset?.selection.type) {
-    case SELECTION_PERCENT_CHANGE:
-      channel1Status = getPercentChangeStatus(state.channel1Dataset);
-      break;
-    case SELECTION_STDEV:
-      channel1Status = getStdevStatus(state.channel1Dataset);
-      break;
-    case SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT:
-      const { scanStatus, selectedStdev } = getMinimumStdevStatus(
-        state.channel1Dataset
-      );
-      channel1Status = scanStatus;
-      channel1Dataset = {
-        ...channel1Dataset,
-        selection: { ...channel1Dataset?.selection, selectedStdev },
-      } as RoiDataset;
-      break;
-  }
-  switch (state.channel2Dataset?.selection.type) {
-    case SELECTION_PERCENT_CHANGE:
-      channel2Status = getPercentChangeStatus(state.channel2Dataset);
-      break;
-    case SELECTION_STDEV:
-      channel2Status = getStdevStatus(state.channel2Dataset);
-      break;
-    case SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT:
-      const { scanStatus, selectedStdev } = getMinimumStdevStatus(
-        state.channel2Dataset
-      );
-      channel2Status = scanStatus;
-      channel2Dataset = {
-        ...channel2Dataset,
-        selection: { ...channel2Dataset?.selection, selectedStdev },
-      } as RoiDataset;
-      break;
-  }
+  const channel1Dataset = channel1.channelDataset;
+  const channel2Dataset = channel2.channelDataset;
 
-  if (!channel1Status && !channel2Status) {
+  if (!channel1.status && !channel2.status) {
     return state;
   }
-  if (!channel2Status) {
-    return { ...state, scanStatus: channel1Status!, channel1Dataset };
+  if (!channel2.status) {
+    return { ...state, scanStatus: channel1.status!, channel1Dataset };
   }
-  if (!channel1Status) {
-    return { ...state, scanStatus: channel2Status, channel2Dataset };
+  if (!channel1.status) {
+    return { ...state, scanStatus: channel2.status, channel2Dataset };
   }
 
-  const combinedStatus = channel1Status.map((status1, i) =>
+  const combinedStatus = channel1.status.map((status1, i) =>
     status1 === SCANSTATUS_SELECTED &&
-    channel2Status![i] === SCANSTATUS_SELECTED
+    channel2.status![i] === SCANSTATUS_SELECTED
       ? SCANSTATUS_SELECTED
       : SCANSTATUS_UNSELECTED
   );
@@ -441,6 +405,30 @@ function calculateAutoSelection(state: RoiDataModelState) {
     channel1Dataset,
     channel2Dataset,
   };
+}
+
+function calculateChannelAutoSelection(channelDataset: RoiDataset | undefined) {
+  let status: ScanStatus[] | undefined;
+
+  switch (channelDataset?.selection.type) {
+    case SELECTION_PERCENT_CHANGE:
+      status = getPercentChangeStatus(channelDataset);
+      break;
+    case SELECTION_STDEV:
+      status = getStdevStatus(channelDataset);
+      break;
+    case SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT:
+      const { scanStatus, selectedStdev } =
+        getMinimumStdevStatus(channelDataset);
+      status = scanStatus;
+      channelDataset = {
+        ...channelDataset,
+        selection: { ...channelDataset?.selection, selectedStdev },
+      } as RoiDataset;
+      break;
+  }
+
+  return { channelDataset, status };
 }
 
 function getPercentChangeStatus(dataset: RoiDataset): ScanStatus[] {
@@ -548,12 +536,14 @@ function getMinimumStdevStatus(dataset: RoiDataset): MinimumStdevResult {
   let currentTraceCount = dataset.chartData.length;
   let selectedTraces = Array(currentTraceCount);
   selectedTraces.fill(true);
-  let currentStdev = calculateMeanStdev(dataset.chartData, selectedTraces);
+  let meanStdev = calculateMeanStdev(dataset.chartData, selectedTraces);
+  let currentStdev = meanStdev.stdev;
 
   while (currentTraceCount > selectedTraceCount) {
     currentStdev = removeRoiAndReduceDeviation(
       dataset.chartData,
-      selectedTraces
+      selectedTraces,
+      meanStdev.pointVariances
     );
     currentTraceCount--;
   }
@@ -568,53 +558,71 @@ function getMinimumStdevStatus(dataset: RoiDataset): MinimumStdevResult {
 
 function removeRoiAndReduceDeviation(
   traces: number[][],
-  selectedTraces: boolean[]
+  selectedTraces: boolean[],
+  pointVariances: number[][]
 ) {
-  let candidateIndex = -1;
-  let candidateStdev = Infinity;
+  const frameCount = traces[0].length;
 
-  selectedTraces.filter(Boolean).forEach((_, i) => {
-    let candidateSelections = [...selectedTraces];
-    candidateSelections[i] = false;
-    let currentStdev = calculateMeanStdev(traces, candidateSelections);
-    if (currentStdev < candidateStdev) {
-      candidateStdev = currentStdev;
-      candidateIndex = i;
+  // Calculate trace variance sums
+  let traceVariances: number[] = Array(traces.length).fill(0);
+  for (let traceIndex = 0; traceIndex < traces.length; traceIndex++) {
+    if (selectedTraces[traceIndex]) {
+      for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
+        traceVariances[traceIndex] += pointVariances[traceIndex][frameIndex];
+      }
     }
-  });
+  }
 
+  // Candidate has max point variance sum
+  var candidateIndex = traceVariances.reduce(
+    (maxIndex, x, i, arr) => (x > arr[maxIndex] ? i : maxIndex),
+    0
+  );
+
+  // Remove candidate and recalculate stdev
   selectedTraces[candidateIndex] = false;
+  let candidateStdev = calculateMeanStdev(traces, selectedTraces).stdev;
+
   return candidateStdev;
 }
 
 function calculateMeanStdev(traces: number[][], selectedRois: boolean[]) {
+  const pointVariances = Array(traces.length)
+    .fill(0)
+    .map((x) => Array(traces[0].length).fill(0));
   const selectedRoiCount = selectedRois.filter(Boolean).length;
   const frameCount = traces[0].length;
   if (selectedRoiCount < 2) {
-    return 0;
+    return { stdev: 0, pointVariances: [] };
   }
 
   const means: number[] = [];
   for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
     let sum = 0;
-    traces.forEach((trace, i) => {
-      if (selectedRois[i]) {
+    traces.forEach((trace, traceIndex) => {
+      if (selectedRois[traceIndex]) {
         sum += trace[frameIndex];
       }
     });
     means[frameIndex] = sum / selectedRoiCount;
   }
 
-  let variance: number[] = [];
   for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
-    let sum = 0;
     traces.forEach((trace, i) => {
       if (selectedRois[i]) {
-        sum +=
+        pointVariances[i][frameIndex] =
           (trace[frameIndex] - means[frameIndex]) *
           (trace[frameIndex] - means[frameIndex]);
       }
     });
+  }
+
+  let variance: number[] = [];
+  for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
+    let sum = 0;
+    for (let traceIndex = 0; traceIndex < traces.length; traceIndex++) {
+      sum += pointVariances[traceIndex][frameIndex];
+    }
     variance[frameIndex] = Math.sqrt(sum / (selectedRoiCount - 1));
   }
 
@@ -623,7 +631,7 @@ function calculateMeanStdev(traces: number[][], selectedRois: boolean[]) {
     sum += current;
   });
 
-  return sum / frameCount;
+  return { stdev: sum / frameCount, pointVariances };
 }
 
 function arraysEqual(array1: any[], array2: any[]) {
@@ -724,17 +732,11 @@ function setCurrentChannel(state: RoiDataModelState, channel: Channel) {
   return { ...state, currentChannel: channel };
 }
 
-function updateMarkers(
-  state: RoiDataModelState,
-  markers: Marker[]
-) {
+function updateMarkers(state: RoiDataModelState, markers: Marker[]) {
   return { ...state, markers };
 }
 
-function updateEditMarker(
-  state: RoiDataModelState,
-  editMarker?: EditMarker
-) {
+function updateEditMarker(state: RoiDataModelState, editMarker?: EditMarker) {
   return { ...state, editMarker };
 }
 

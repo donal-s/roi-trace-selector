@@ -1540,19 +1540,19 @@ describe("roiDataReducer", () => {
           ...EXPECTED_LOADED_STATE,
           scanStatus: [
             SCANSTATUS_UNSELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_SELECTED,
             SCANSTATUS_UNSELECTED,
-            SCANSTATUS_SELECTED,
-            SCANSTATUS_SELECTED,
           ],
           channel1Dataset: {
             ...EXPECTED_CHANNEL1_DATASET,
-            selection: { ...selection, selectedStdev: expect.closeTo(0.89) },
+            selection: { ...selection, selectedStdev: expect.closeTo(0.57) },
           },
         }
       );
     });
 
-    it("minimum stdev selection by trace count - 1 trace is treated as 2 traces", async () => {
+    it("minimum stdev selection by trace count - pick last of last 2 traces", async () => {
       const selection: SelectionMinimumStdev = {
         type: SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT,
         selectedTraceCount: 1,
@@ -1568,11 +1568,11 @@ describe("roiDataReducer", () => {
             SCANSTATUS_UNSELECTED,
             SCANSTATUS_UNSELECTED,
             SCANSTATUS_SELECTED,
-            SCANSTATUS_SELECTED,
+            SCANSTATUS_UNSELECTED,
           ],
           channel1Dataset: {
             ...EXPECTED_CHANNEL1_DATASET,
-            selection: { ...selection, selectedStdev: expect.closeTo(0.89) },
+            selection: { ...selection, selectedStdev: 0 },
           },
         }
       );
