@@ -39,7 +39,7 @@ export const EMPTY_STATE: RoiDataModelState = {
   currentChannel: CHANNEL_1,
   chartFrameLabels: [],
   showSingleTrace: false,
-  annotations: [],
+  markers: [],
   initialisingState: false,
 };
 
@@ -102,7 +102,7 @@ export const EXPECTED_LOADED_STATE: RoiDataModelState = {
   chartFrameLabels: [1, 2, 3, 4, 5],
 
   showSingleTrace: false,
-  annotations: [],
+  markers: [],
   initialisingState: false,
 };
 

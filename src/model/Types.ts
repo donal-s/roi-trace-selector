@@ -45,21 +45,21 @@ export const AXIS_V = "v";
 export type Axis = typeof AXIS_H | typeof AXIS_V;
 
 export const CHANNEL_BOTH = "both";
-export type AnnotationChannel =
+export type MarkerChannel =
   | typeof CHANNEL_1
   | typeof CHANNEL_2
   | typeof CHANNEL_BOTH;
 
-export type Annotation = {
+export type Marker = {
   name: string;
   axis: Axis;
   value: number;
-  channel: AnnotationChannel;
+  channel: MarkerChannel;
 };
 
-export type EditAnnotation = {
+export type EditMarker = {
   index: number;
-  annotation: Annotation;
+  marker: Marker;
 };
 
 export const SELECTION_MANUAL = "manual";

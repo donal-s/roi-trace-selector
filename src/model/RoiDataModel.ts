@@ -6,8 +6,8 @@ import {
   ChannelData,
   ChartAlignment,
   SelectedItemCounts,
-  Annotation,
-  EditAnnotation,
+  Marker,
+  EditMarker,
   CHANNEL_1,
   Channel,
   CHANNEL_2,
@@ -40,8 +40,8 @@ import {
   selectAllItemsAction,
   updateChartAlignmentAction,
   resetStateAction,
-  updateAnnotationsAction,
-  updateEditAnnotationAction,
+  updateMarkersAction,
+  updateEditMarkerAction,
   loadChannelAction,
   closeChannelAction,
   setCurrentChannelAction,
@@ -75,12 +75,12 @@ export type PersistedRoiDataModelState = {
   items: string[];
   scanStatus: ScanStatus[];
   chartFrameLabels: number[];
-  annotations: Annotation[];
+  markers: Marker[];
 };
 
 export type RoiDataModelState = PersistedRoiDataModelState & {
   //Non persisted
-  editAnnotation?: EditAnnotation;
+  editMarker?: EditMarker;
   showSingleTrace: boolean;
   currentIndex: number;
   currentChannel: Channel;
@@ -96,7 +96,7 @@ const initialState: RoiDataModelState = {
   outlineChannel: undefined,
   chartFrameLabels: [],
   showSingleTrace: false,
-  annotations: [],
+  markers: [],
   initialisingState: false,
 };
 
@@ -145,11 +145,11 @@ export const roiDataReducer: Reducer<RoiDataModelState> = createReducer(
         outlineChannel: action.payload,
       }))
       .addCase(resetStateAction, () => initialState)
-      .addCase(updateAnnotationsAction, (state, action) =>
-        updateAnnotations(state, action.payload)
+      .addCase(updateMarkersAction, (state, action) =>
+        updateMarkers(state, action.payload)
       )
-      .addCase(updateEditAnnotationAction, (state, action) =>
-        updateEditAnnotation(state, action.payload)
+      .addCase(updateEditMarkerAction, (state, action) =>
+        updateEditMarker(state, action.payload)
       );
   }
 );
@@ -165,7 +165,7 @@ const persistConfig = {
     "items",
     "scanStatus",
     "chartFrameLabels",
-    "annotations",
+    "markers",
   ],
 };
 
@@ -708,7 +708,7 @@ function closeChannel(
       currentChannel: CHANNEL_1,
       chartFrameLabels: [],
       showSingleTrace: state.showSingleTrace,
-      annotations: state.annotations,
+      markers: state.markers,
       initialisingState: false,
     };
   }
@@ -724,18 +724,18 @@ function setCurrentChannel(state: RoiDataModelState, channel: Channel) {
   return { ...state, currentChannel: channel };
 }
 
-function updateAnnotations(
+function updateMarkers(
   state: RoiDataModelState,
-  annotations: Annotation[]
+  markers: Marker[]
 ) {
-  return { ...state, annotations };
+  return { ...state, markers };
 }
 
-function updateEditAnnotation(
+function updateEditMarker(
   state: RoiDataModelState,
-  editAnnotation?: EditAnnotation
+  editMarker?: EditMarker
 ) {
-  return { ...state, editAnnotation };
+  return { ...state, editMarker };
 }
 
 export const store = configureStore({

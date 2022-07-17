@@ -25,7 +25,7 @@ const EXPECTED_Y_DATA = [
 const mockDestroy = jest.fn();
 const mockSetSeries = jest.fn();
 const mockShowUnfocussedSeries = jest.fn();
-const mockSetAnnotations = jest.fn();
+const mockSetMarkers = jest.fn();
 const mockSetRangeMarkers = jest.fn();
 
 jest.mock("../plot/Plot", () => {
@@ -35,7 +35,7 @@ jest.mock("../plot/Plot", () => {
       destroy: mockDestroy,
       setSeries: mockSetSeries,
       showUnfocussedSeries: mockShowUnfocussedSeries,
-      setAnnotations: mockSetAnnotations,
+      setMarkers: mockSetMarkers,
       setRangeMarkers: mockSetRangeMarkers,
     })),
   };

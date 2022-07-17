@@ -12,14 +12,12 @@ describe("component App", () => {
 
   it("initial view", () => {
     renderWithProvider(<App />);
-    expect(appTitle()).toHaveTextContent("[No file]");
     expect(loadTestFileButton()).not.toBeNull();
   });
 
   it("load data title change", () => {
     setCsvData(CSV_DATA);
     renderWithProvider(<App />);
-    expect(appTitle()).toHaveTextContent("Example data");
     expect(loadTestFileButton()).toBeNull();
   });
 
@@ -71,7 +69,6 @@ describe("component App", () => {
     });
   });
 
-  const appTitle = (): HTMLElement => document.querySelector("#appTitle")!;
   const loadTestFileButton = (): HTMLButtonElement =>
     document.querySelector("#openChannel1Test")!;
   const saveFileButton = (): HTMLButtonElement =>

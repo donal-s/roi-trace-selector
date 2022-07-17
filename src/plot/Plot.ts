@@ -82,12 +82,12 @@ export interface Plot {
 
   showUnfocussedSeries(show: boolean): void;
 
-  setAnnotations(annotations: LineAnnotationType[]): void;
+  setMarkers(markers: LineMarkerType[]): void;
 
   setRangeMarkers(rangeMarkers: RangeMarker[]): void;
 }
 
-export type LineAnnotationType = {
+export type LineMarkerType = {
   colour: string;
   lineWidth: number;
   value: number;
@@ -108,7 +108,7 @@ export default function plot(
   ySeriesColours: string[],
   xData: number[],
   yData: number[][],
-  _annotations: LineAnnotationType[],
+  _markers: LineMarkerType[],
   _rangeMarkers?: RangeMarker[]
 ): Plot {
   const root = document.createElement("div");
@@ -180,7 +180,7 @@ export default function plot(
     plotLabelWidth: 50,
   };
 
-  let annotations: LineAnnotationType[] = [..._annotations];
+  let markers: LineMarkerType[] = [..._markers];
   let rangeMarkers: RangeMarker[] = _rangeMarkers ? [..._rangeMarkers] : [];
 
   let plotWidth = 0;
@@ -343,12 +343,12 @@ export default function plot(
     ctx.stroke();
   }
 
-  function drawAnnotations() {
+  function drawMarkers() {
     ctx.font = AXIS_FONT;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    annotations.forEach((annotation) => {
+    markers.forEach((marker) => {
       let x0: number,
         y0: number,
         x1: number,
@@ -356,16 +356,16 @@ export default function plot(
         xTextCenter: number,
         yTextCenter: number;
 
-      let textSize = ctx.measureText(annotation.label);
+      let textSize = ctx.measureText(marker.label);
       let textRectWidth = textSize.width + 8;
       let textRectHeight =
         textSize.actualBoundingBoxAscent +
         textSize.actualBoundingBoxDescent +
         6;
 
-      let ori = annotation.ori;
+      let ori = marker.ori;
       if (ori === 0) {
-        let value = yAxis.scale.getPos(annotation.value, plotHeight, plotTop);
+        let value = yAxis.scale.getPos(marker.value, plotHeight, plotTop);
 
         x0 = plotLeft;
         y0 = value;
@@ -375,7 +375,7 @@ export default function plot(
         xTextCenter = plotLeft + plotWidth - textRectWidth / 2;
         yTextCenter = value;
       } else {
-        let value = xAxis.scale.getPos(annotation.value, plotWidth, plotLeft);
+        let value = xAxis.scale.getPos(marker.value, plotWidth, plotLeft);
 
         x0 = value;
         y0 = plotTop + textRectHeight;
@@ -386,7 +386,7 @@ export default function plot(
         yTextCenter = plotTop + textRectHeight / 2;
       }
 
-      ctx.fillStyle = annotation.colour;
+      ctx.fillStyle = marker.colour;
       ctx.fillRect(
         xTextCenter - textRectWidth / 2,
         yTextCenter - textRectHeight / 2,
@@ -395,9 +395,9 @@ export default function plot(
       );
 
       ctx.fillStyle = "white";
-      ctx.fillText(annotation.label, xTextCenter, yTextCenter);
+      ctx.fillText(marker.label, xTextCenter, yTextCenter);
 
-      setCtxStyle(annotation.colour, annotation.lineWidth);
+      setCtxStyle(marker.colour, marker.lineWidth);
       ctx.beginPath();
       ctx.moveTo(x0, y0);
       ctx.lineTo(x1, y1);
@@ -445,7 +445,7 @@ export default function plot(
       ctx.clearRect(0, 0, can.width, can.height);
       drawAxesGrid();
       drawRangeMarkers();
-      drawAnnotations();
+      drawMarkers();
       drawSeries();
     }
 
@@ -477,8 +477,8 @@ export default function plot(
     }
   }
 
-  function setAnnotations(_annotations: LineAnnotationType[]) {
-    annotations = [..._annotations];
+  function setMarkers(_markers: LineMarkerType[]) {
+    markers = [..._markers];
     commit();
   }
 
@@ -505,7 +505,7 @@ export default function plot(
     showUnfocussedSeries,
     destroy,
     setSeries,
-    setAnnotations,
+    setMarkers,
     setRangeMarkers,
   };
 }

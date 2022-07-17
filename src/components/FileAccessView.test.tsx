@@ -35,59 +35,73 @@ describe("component FileAccessView", () => {
   });
 
   it("initial empty state channel 1", () => {
-    renderComponent();
+    const { container } = renderComponent();
 
     expect(loadButtonLabel()).not.toHaveClass("disabled");
     expect(loadButton()).not.toBeDisabled();
-    expect(saveButton()).toBeDisabled();
-    expect(closeButton()).toBeDisabled();
+    expect(saveButton()).toHaveClass("disabled");
+    expect(closeButton()).toHaveClass("disabled");
+    expect(container).toHaveTextContent("Open CSV file to begin");
   });
 
   it("initial empty state channel 2 - shouldn't be possible - for test coverage", () => {
-    renderComponent(mockStore({ ...EMPTY_STATE, currentChannel: CHANNEL_2 }));
+    const { container } = renderComponent(
+      mockStore({ ...EMPTY_STATE, currentChannel: CHANNEL_2 })
+    );
 
     expect(loadButtonLabel()).toHaveClass("disabled");
     expect(loadButton()).toBeDisabled();
-    expect(saveButton()).toBeDisabled();
-    expect(closeButton()).toBeDisabled();
+    expect(saveButton()).toHaveClass("disabled");
+    expect(closeButton()).toHaveClass("disabled");
+    expect(container).toHaveTextContent("Open CSV file to begin");
   });
 
   it("one channel loaded channel 1", () => {
-    renderComponent(mockStore(LOADED_STATE));
+    const { container } = renderComponent(mockStore(LOADED_STATE));
 
     expect(loadButtonLabel()).not.toHaveClass("disabled");
     expect(loadButton()).not.toBeDisabled();
-    expect(saveButton()).not.toBeDisabled();
-    expect(closeButton()).not.toBeDisabled();
+    expect(saveButton()).not.toHaveClass("disabled");
+    expect(closeButton()).not.toHaveClass("disabled");
+    expect(container).not.toHaveTextContent("Open CSV file to begin");
+    expect(container).toHaveTextContent("new file");
   });
 
   it("one channel loaded channel 2", () => {
-    renderComponent(mockStore({ ...LOADED_STATE, currentChannel: CHANNEL_2 }));
+    const { container } = renderComponent(
+      mockStore({ ...LOADED_STATE, currentChannel: CHANNEL_2 })
+    );
 
     expect(loadButtonLabel()).not.toHaveClass("disabled");
     expect(loadButton()).not.toBeDisabled();
-    expect(saveButton()).toBeDisabled();
-    expect(closeButton()).toBeDisabled();
+    expect(saveButton()).toHaveClass("disabled");
+    expect(closeButton()).toHaveClass("disabled");
+    expect(container).toHaveTextContent("Open CSV file to begin");
+    expect(container).not.toHaveTextContent("new file");
   });
 
   it("two channels loaded channel 1", () => {
-    renderComponent(mockStore(DUAL_CHANNEL_LOADED_STATE));
+    const { container } = renderComponent(mockStore(DUAL_CHANNEL_LOADED_STATE));
 
     expect(loadButtonLabel()).not.toHaveClass("disabled");
     expect(loadButton()).not.toBeDisabled();
-    expect(saveButton()).not.toBeDisabled();
-    expect(closeButton()).not.toBeDisabled();
+    expect(saveButton()).not.toHaveClass("disabled");
+    expect(closeButton()).not.toHaveClass("disabled");
+    expect(container).not.toHaveTextContent("Open CSV file to begin");
+    expect(container).toHaveTextContent("new file");
   });
 
   it("two channels loaded channel 2", () => {
-    renderComponent(
+    const { container } = renderComponent(
       mockStore({ ...DUAL_CHANNEL_LOADED_STATE, currentChannel: CHANNEL_2 })
     );
 
     expect(loadButtonLabel()).not.toHaveClass("disabled");
     expect(loadButton()).not.toBeDisabled();
-    expect(saveButton()).not.toBeDisabled();
-    expect(closeButton()).not.toBeDisabled();
+    expect(saveButton()).not.toHaveClass("disabled");
+    expect(closeButton()).not.toHaveClass("disabled");
+    expect(container).not.toHaveTextContent("Open CSV file to begin");
+    expect(container).toHaveTextContent("new file2");
   });
 
   describe("loadFile", () => {
@@ -250,6 +264,15 @@ describe("component FileAccessView", () => {
       blobSpy.mockRestore();
     });
 
+    it("attempt to save unopened file", async () => {
+      const store = mockStore(EMPTY_STATE);
+      const { user } = renderComponent(store);
+
+      await user.click(saveButton());
+
+      expect(FileSaver.saveAs).not.toHaveBeenCalled();
+    });
+
     it("save channel 1", async () => {
       const store = mockStore({
         ...LOADED_STATE,
@@ -303,6 +326,16 @@ describe("component FileAccessView", () => {
   });
 
   describe("close channel", () => {
+    it("attempt to close channel 1 when no file opened", async () => {
+      const store = mockStore(EMPTY_STATE);
+      const { user } = renderComponent(store);
+
+      await user.click(closeButton());
+
+      expect(store.getActions()).toStrictEqual([]);
+      expect(mockConfirm).not.toHaveBeenCalled();
+    });
+
     it("close channel 1 with channel 1 loaded", async () => {
       const store = mockStore(LOADED_STATE);
       const { user } = renderComponent(store);

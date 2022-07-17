@@ -6,8 +6,8 @@ import {
   SCANSTATUS_SELECTED,
   SCANSTATUS_UNSCANNED,
   SCANSTATUS_UNSELECTED,
-  Annotation,
-  EditAnnotation,
+  Marker,
+  EditMarker,
   Channel,
   Selection,
 } from "./Types";
@@ -72,12 +72,12 @@ export const setCurrentUnselectedAction = () =>
 export const setCurrentUnscannedAction = () =>
   setCurrentScanStatusAction(SCANSTATUS_UNSCANNED);
 
-export const updateAnnotationsAction = createAction(
-  "updateAnnotations",
-  withPayloadType<Annotation[]>()
+export const updateMarkersAction = createAction(
+  "updateMarkers",
+  withPayloadType<Marker[]>()
 );
 
-export const updateEditAnnotationAction = createAction(
-  "updateEditAnnotation",
-  withPayloadType<EditAnnotation | undefined>()
+export const updateEditMarkerAction = createAction(
+  "updateEditMarker",
+  withPayloadType<EditMarker | undefined>()
 );

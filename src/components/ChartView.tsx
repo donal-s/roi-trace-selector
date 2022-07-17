@@ -1,12 +1,12 @@
 import React, { MutableRefObject, useEffect, useRef } from "react";
 import {
-  Annotation,
+  Marker,
   AXIS_V,
   Channel,
   CHANNEL_1,
   CHANNEL_2,
   CHANNEL_BOTH,
-  EditAnnotation,
+  EditMarker,
   ScanStatus,
   SCANSTATUS_SELECTED,
   SCANSTATUS_UNSELECTED,
@@ -25,7 +25,7 @@ import {
   setCurrentPreviousAction,
 } from "../model/Actions";
 import plot, {
-  LineAnnotationType,
+  LineMarkerType,
   Orientation,
   Plot,
   RangeMarker,
@@ -65,8 +65,8 @@ export default function ChartView() {
   const scanStatus = useAppSelector((state) => state.scanStatus);
   const showSingleTrace = useAppSelector((state) => state.showSingleTrace);
   const chartFrameLabels = useAppSelector((state) => state.chartFrameLabels);
-  const annotations = useAppSelector((state) => state.annotations);
-  const editAnnotation = useAppSelector((state) => state.editAnnotation);
+  const markers = useAppSelector((state) => state.markers);
+  const editMarker = useAppSelector((state) => state.editMarker);
   const outlineChannel = useAppSelector((state) => state.outlineChannel);
 
   const prevChannel1ChartDataRef: MutableRefObject<number[][] | undefined> =
@@ -82,9 +82,9 @@ export default function ChartView() {
   const prevCurrentIndexRef: MutableRefObject<number | undefined> = useRef();
   const prevScanStatusRef: MutableRefObject<ScanStatus[] | undefined> =
     useRef();
-  const prevAnnotationsRef: MutableRefObject<Annotation[] | undefined> =
+  const prevMarkersRef: MutableRefObject<Marker[] | undefined> =
     useRef();
-  const prevEditAnnotationRef: MutableRefObject<EditAnnotation | undefined> =
+  const prevEditMarkerRef: MutableRefObject<EditMarker | undefined> =
     useRef();
 
   useEffect(() => {
@@ -95,38 +95,38 @@ export default function ChartView() {
     const prevShowSingleTrace = prevShowSingleTraceRef.current;
     const prevCurrentIndex = prevCurrentIndexRef.current;
     const prevScanStatus = prevScanStatusRef.current;
-    const prevAnnotations = prevAnnotationsRef.current;
-    const prevEditAnnotation = prevEditAnnotationRef.current;
+    const prevMarkers = prevMarkersRef.current;
+    const prevEditMarker = prevEditMarkerRef.current;
 
-    function getAnnotations(chartChannel: Channel) {
-      const result: LineAnnotationType[] = annotations
+    function getMarkers(chartChannel: Channel) {
+      const result: LineMarkerType[] = markers
         .filter(
           ({ channel }, index) =>
             (channel === chartChannel || channel === CHANNEL_BOTH) &&
             (showSingleTrace ||
-              !editAnnotation ||
-              editAnnotation.index !== index)
+              !editMarker ||
+              editMarker.index !== index)
         )
-        .map((annotation) => ({
+        .map((marker) => ({
           colour: "#00000080",
           lineWidth: 2,
-          ori: annotation.axis === AXIS_V ? 1 : 0,
-          value: annotation.value,
-          label: annotation.name,
+          ori: marker.axis === AXIS_V ? 1 : 0,
+          value: marker.value,
+          label: marker.name,
         }));
 
       if (
-        editAnnotation &&
+        editMarker &&
         !showSingleTrace &&
-        (editAnnotation.annotation.channel === chartChannel ||
-          editAnnotation.annotation.channel === CHANNEL_BOTH)
+        (editMarker.marker.channel === chartChannel ||
+          editMarker.marker.channel === CHANNEL_BOTH)
       ) {
         result.push({
           colour: "red",
           lineWidth: 2,
-          ori: editAnnotation.annotation.axis === AXIS_V ? 1 : 0,
-          value: editAnnotation.annotation.value,
-          label: editAnnotation.annotation.name,
+          ori: editMarker.marker.axis === AXIS_V ? 1 : 0,
+          value: editMarker.marker.value,
+          label: editMarker.marker.name,
         });
       }
 
@@ -190,8 +190,8 @@ export default function ChartView() {
     const showSingleTraceUpdated = showSingleTrace !== prevShowSingleTrace;
     const currentIndexUpdated = currentIndex !== prevCurrentIndex;
     const scanStatusUpdated = scanStatus !== prevScanStatus;
-    const annotationsUpdated =
-      annotations !== prevAnnotations || editAnnotation !== prevEditAnnotation;
+    const markersUpdated =
+      markers !== prevMarkers || editMarker !== prevEditMarker;
 
     function createOrUpdateChart(
       chart: MutableRefObject<Plot | null>,
@@ -215,7 +215,7 @@ export default function ChartView() {
           colours,
           chartXData,
           chartYData,
-          getAnnotations(channel),
+          getMarkers(channel),
           getRangeMarkers(chartSelection)
         );
         if (currentIndex >= 0) {
@@ -236,8 +236,8 @@ export default function ChartView() {
           });
         }
 
-        if (annotationsUpdated) {
-          chart.current!.setAnnotations(getAnnotations(channel));
+        if (markersUpdated) {
+          chart.current!.setMarkers(getMarkers(channel));
         }
 
         if (chartSelectionUpdated) {
@@ -296,8 +296,8 @@ export default function ChartView() {
     prevShowSingleTraceRef.current = showSingleTrace;
     prevCurrentIndexRef.current = currentIndex;
     prevScanStatusRef.current = scanStatus;
-    prevAnnotationsRef.current = annotations;
-    prevEditAnnotationRef.current = editAnnotation;
+    prevMarkersRef.current = markers;
+    prevEditMarkerRef.current = editMarker;
   }, [
     channel1Chart,
     channel2Chart,
@@ -312,8 +312,8 @@ export default function ChartView() {
     scanStatus,
     showSingleTrace,
     chartFrameLabels,
-    annotations,
-    editAnnotation,
+    markers,
+    editMarker,
     dispatch,
   ]);
 

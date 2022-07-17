@@ -9,7 +9,11 @@ import SelectionIconView from "./SelectionIconView";
 import RemainingCountButton from "./RemainingCountButton";
 import version from "../version";
 import { loadTestData } from "../model/CsvHandling";
-import { useAppDispatch, useAppSelector } from "../model/RoiDataModel";
+import {
+  isChannel1Loaded,
+  useAppDispatch,
+  useAppSelector,
+} from "../model/RoiDataModel";
 import {
   setCurrentNextAction,
   setCurrentPreviousAction,
@@ -18,16 +22,15 @@ import {
 import SelectionView from "./SelectionView";
 import ChannelSelectionPanel from "./ChannelSelectionPanel";
 import { InfoIcon } from "./IconSvgs";
+import MarkersView from "./MarkersView";
 
 export default function App() {
   const dispatch = useAppDispatch();
-  const isEditingAnnotation = useAppSelector(
-    (state) => state.editAnnotation !== undefined
+  const isEditingMarker = useAppSelector(
+    (state) => state.editMarker !== undefined
   );
   const showSingleTrace = useAppSelector((state) => state.showSingleTrace);
-  const channel1Filename = useAppSelector(
-    (state) => state.channel1Dataset?.filename
-  );
+  const channel1Loaded = useAppSelector(isChannel1Loaded);
 
   useEffect(() => {
     function handleKeyEvent(event: KeyboardEvent) {
@@ -39,7 +42,7 @@ export default function App() {
         event.preventDefault();
       } else if (
         (event.key === " " || event.key === "Spacebar") &&
-        !isEditingAnnotation
+        !isEditingMarker
       ) {
         dispatch(toggleCurrentItemSelectedAction());
         event.preventDefault();
@@ -59,7 +62,7 @@ export default function App() {
       document.removeEventListener("keydown", handleKeyEvent);
       window.removeEventListener("beforeunload", handleUnloadEvent);
     };
-  }, [dispatch, isEditingAnnotation]);
+  }, [dispatch, isEditingMarker]);
 
   function helpButton() {
     return (
@@ -72,13 +75,12 @@ export default function App() {
       </a>
     );
   }
-  // <AnnotationsView />
+
   return (
     <div className={"App" + (showSingleTrace ? " scan" : "")}>
       <div id="header">
         <div id="appTitle" className="unselectable">
-          ROI Trace Selection v{version} -{" "}
-          {channel1Filename != null ? channel1Filename : "[No file]"}
+          ROI Trace Selection v{version}
         </div>
         {helpButton()}
         <RemainingCountButton />
@@ -86,12 +88,15 @@ export default function App() {
         <FullscreenButton />
       </div>
       <div id="controlPanel">
-        <ChannelSelectionPanel />
-        <FileAccessView />
-        <TraceAlignmentView />
-        <SelectionView />
+        <div id="channelControlPanel">
+          <ChannelSelectionPanel />
+          <FileAccessView />
+          <TraceAlignmentView />
+          <SelectionView />
+        </div>
+        <MarkersView />
       </div>
-      {channel1Filename != null ? (
+      {channel1Loaded ? (
         <ChartView />
       ) : (
         <div id="mainPanel">

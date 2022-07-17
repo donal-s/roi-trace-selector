@@ -65,9 +65,9 @@ import {
   setOutlineChannelAction,
   setSelectionAction,
   toggleCurrentItemSelectedAction,
-  updateAnnotationsAction,
+  updateMarkersAction,
   updateChartAlignmentAction,
-  updateEditAnnotationAction,
+  updateEditMarkerAction,
 } from "./Actions";
 import getStoredState from "redux-persist/lib/getStoredState";
 import storage from "redux-persist/lib/storage"; // defaults to localStorage for web
@@ -87,7 +87,7 @@ describe("roiDataReducer", () => {
       currentChannel: CHANNEL_1,
       chartFrameLabels: [],
       showSingleTrace: false,
-      annotations: [],
+      markers: [],
       initialisingState: false,
     });
 
@@ -1068,16 +1068,16 @@ describe("roiDataReducer", () => {
     );
   });
 
-  it("updateAnnotationsAction", async () => {
+  it("updateMarkersAction", async () => {
     // Valid cases
     await checkReducerAndStore(
-      { ...LOADED_STATE, annotations: [] },
-      updateAnnotationsAction([
+      { ...LOADED_STATE, markers: [] },
+      updateMarkersAction([
         { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_2 },
       ]),
       {
         ...EXPECTED_LOADED_STATE,
-        annotations: [
+        markers: [
           { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_2 },
         ],
       }
@@ -1086,17 +1086,17 @@ describe("roiDataReducer", () => {
     await checkReducerAndStore(
       {
         ...LOADED_STATE,
-        annotations: [
+        markers: [
           { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_1 },
         ],
       },
-      updateAnnotationsAction([
+      updateMarkersAction([
         { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_BOTH },
         { name: "test2", axis: AXIS_V, value: 15, channel: CHANNEL_2 },
       ]),
       {
         ...EXPECTED_LOADED_STATE,
-        annotations: [
+        markers: [
           { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_BOTH },
           { name: "test2", axis: AXIS_V, value: 15, channel: CHANNEL_2 },
         ],
@@ -1106,22 +1106,22 @@ describe("roiDataReducer", () => {
     await checkReducerAndStore(
       {
         ...LOADED_STATE,
-        annotations: [
+        markers: [
           { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_1 },
         ],
       },
-      updateAnnotationsAction([]),
-      { ...EXPECTED_LOADED_STATE, annotations: [] }
+      updateMarkersAction([]),
+      { ...EXPECTED_LOADED_STATE, markers: [] }
     );
   });
 
-  it("updateEditAnnotationAction", async () => {
+  it("updateEditMarkerAction", async () => {
     // Valid cases
     await checkReducerAndStore(
-      { ...LOADED_STATE, editAnnotation: undefined },
-      updateEditAnnotationAction({
+      { ...LOADED_STATE, editMarker: undefined },
+      updateEditMarkerAction({
         index: 3,
-        annotation: {
+        marker: {
           name: "test1",
           axis: AXIS_H,
           value: 5,
@@ -1130,9 +1130,9 @@ describe("roiDataReducer", () => {
       }),
       {
         ...EXPECTED_LOADED_STATE,
-        editAnnotation: {
+        editMarker: {
           index: 3,
-          annotation: {
+          marker: {
             name: "test1",
             axis: AXIS_H,
             value: 5,
@@ -1145,9 +1145,9 @@ describe("roiDataReducer", () => {
     await checkReducerAndStore(
       {
         ...LOADED_STATE,
-        editAnnotation: {
+        editMarker: {
           index: 3,
-          annotation: {
+          marker: {
             name: "test1",
             axis: AXIS_H,
             value: 5,
@@ -1155,10 +1155,10 @@ describe("roiDataReducer", () => {
           },
         },
       },
-      updateEditAnnotationAction(undefined),
+      updateEditMarkerAction(undefined),
       {
         ...EXPECTED_LOADED_STATE,
-        editAnnotation: undefined,
+        editMarker: undefined,
       }
     );
   });
@@ -1705,7 +1705,7 @@ describe("roiDataReducer", () => {
       items: expectedState.items,
       scanStatus: expectedState.scanStatus,
       chartFrameLabels: expectedState.chartFrameLabels,
-      annotations: expectedState.annotations,
+      markers: expectedState.markers,
       ...PERSIST_PARTIAL,
     };
     if (expectedState.channel1Dataset) {

@@ -9,6 +9,7 @@ import {
 import { loadFile, saveFile } from "../model/CsvHandling";
 import { CHANNEL_1, CHANNEL_2 } from "../model/Types";
 import { closeChannelAction } from "../model/Actions";
+import { CloseIcon, FileOpenIcon, SaveAsIcon } from "./IconSvgs";
 
 const CONFIRM_OPEN =
   "Opening a new dataset will clear current selections. Continue?";
@@ -22,67 +23,79 @@ export default function FileAccessView() {
   const channel2Loaded = useAppSelector(isChannel2Loaded);
   const model = useAppSelector((state) => state);
 
+  const channel1Filename = useAppSelector(
+    (state) => state.channel1Dataset?.filename
+  );
+
+  const channel2Filename = useAppSelector(
+    (state) => state.channel2Dataset?.filename
+  );
+
   const currentChannelLoaded =
     currentChannel === CHANNEL_1 ? channel1Loaded : channel2Loaded;
+  const currentChannelFilename =
+    currentChannel === CHANNEL_1 ? channel1Filename : channel2Filename;
 
   return (
     <div className="inputPanel">
       <div className="channelActions">
         <label
           id="loadChannel"
-          className={`fileInput unselectable${
+          htmlFor="csvFileInput"
+          aria-label="open file"
+          className={`fileInput${
             currentChannel === CHANNEL_2 && !channel1Loaded ? " disabled" : ""
           }`}
         >
-          Open...
-          <input
-            type="file"
-            id="csvFileInput"
-            onChange={(event) => {
-              if (
-                currentChannel === CHANNEL_2 ||
-                !channel1Loaded ||
-                window.confirm(CONFIRM_OPEN)
-              ) {
-                dispatch(
-                  loadFile({
-                    file: event.target.files![0],
-                    channel: currentChannel,
-                  })
-                );
-              }
-              event.target.blur();
-            }}
-            disabled={currentChannel === CHANNEL_2 && !channel1Loaded}
-            accept=".csv"
-          />
+          <FileOpenIcon />
         </label>
-        <button
-          type="button"
-          id="saveChannel"
-          onClick={(event) => {
-            saveFile(model as RoiDataModelState, currentChannel);
-            event.currentTarget.blur();
+        <input
+          type="file"
+          id="csvFileInput"
+          onChange={(event) => {
+            if (
+              currentChannel === CHANNEL_2 ||
+              !channel1Loaded ||
+              window.confirm(CONFIRM_OPEN)
+            ) {
+              dispatch(
+                loadFile({
+                  file: event.target.files![0],
+                  channel: currentChannel,
+                })
+              );
+            }
+            event.target.blur();
           }}
-          disabled={!currentChannelLoaded}
-          className="fileInput"
-        >
-          Save As...
-        </button>
-        <button
-          type="button"
+          disabled={currentChannel === CHANNEL_2 && !channel1Loaded}
+          accept=".csv"
+        />
+        <SaveAsIcon
+          id="saveChannel"
+          aria-label="save file"
+          onClick={() =>
+            currentChannelLoaded &&
+            saveFile(model as RoiDataModelState, currentChannel)
+          }
+          className={`fileInput${currentChannelLoaded ? "" : " disabled"}`}
+        />
+
+        <CloseIcon
           id="closeChannel"
-          onClick={(event) => {
-            if (currentChannel === CHANNEL_2 || window.confirm(CONFIRM_CLOSE)) {
+          aria-label="close file"
+          onClick={() => {
+            if (
+              currentChannelLoaded &&
+              (currentChannel === CHANNEL_2 || window.confirm(CONFIRM_CLOSE))
+            ) {
               dispatch(closeChannelAction(currentChannel));
             }
-            event.currentTarget.blur();
           }}
-          disabled={!currentChannelLoaded}
-          className="fileInput"
-        >
-          Close
-        </button>
+          className={`fileInput${currentChannelLoaded ? "" : " disabled"}`}
+        />
+      </div>
+      <div className="fileNameMessage unselectable">
+        {currentChannelFilename || "Open CSV file to begin"}
       </div>
     </div>
   );
