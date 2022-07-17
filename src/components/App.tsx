@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import "../roiTraceSelection.css";
 import RoiSelectionListView from "./RoiSelectionListView";
 import TraceAlignmentView from "./TraceAlignmentView";
@@ -11,6 +11,7 @@ import version from "../version";
 import { loadTestData } from "../model/CsvHandling";
 import {
   isChannel1Loaded,
+  isCurrentChannelLoaded,
   useAppDispatch,
   useAppSelector,
 } from "../model/RoiDataModel";
@@ -24,6 +25,11 @@ import ChannelSelectionPanel from "./ChannelSelectionPanel";
 import { InfoIcon } from "./IconSvgs";
 import MarkersView from "./MarkersView";
 
+const OPTIONS_ALIGNMENT = "alignment";
+const OPTIONS_SELECTION = "trace selection";
+
+type OptionsTab = typeof OPTIONS_ALIGNMENT | typeof OPTIONS_SELECTION;
+
 export default function App() {
   const dispatch = useAppDispatch();
   const isEditingMarker = useAppSelector(
@@ -31,6 +37,8 @@ export default function App() {
   );
   const showSingleTrace = useAppSelector((state) => state.showSingleTrace);
   const channel1Loaded = useAppSelector(isChannel1Loaded);
+  const currentChannelLoaded = useAppSelector(isCurrentChannelLoaded);
+  const [optionsTab, setOptionsTab] = useState<OptionsTab>(OPTIONS_ALIGNMENT);
 
   useEffect(() => {
     function handleKeyEvent(event: KeyboardEvent) {
@@ -79,9 +87,7 @@ export default function App() {
   return (
     <div className={"App" + (showSingleTrace ? " scan" : "")}>
       <div id="header">
-        <div id="appTitle" className="unselectable">
-          ROI Trace Selection v{version}
-        </div>
+        <div id="appTitle">ROI Trace Selection v{version}</div>
         {helpButton()}
         <RemainingCountButton />
         <SelectionIconView />
@@ -91,8 +97,29 @@ export default function App() {
         <div id="channelControlPanel">
           <ChannelSelectionPanel />
           <FileAccessView />
-          <TraceAlignmentView />
-          <SelectionView />
+          {currentChannelLoaded && (
+            <div className="optionsSelectionPanel">
+              <div className="optionsSelectionTabs">
+                <div
+                  className={optionsTab === OPTIONS_ALIGNMENT ? "selected" : ""}
+                  onClick={() => setOptionsTab(OPTIONS_ALIGNMENT)}
+                >
+                  Alignment
+                </div>
+                <div
+                  className={optionsTab === OPTIONS_SELECTION ? "selected" : ""}
+                  onClick={() => setOptionsTab(OPTIONS_SELECTION)}
+                >
+                  Trace Selection
+                </div>
+              </div>
+              {optionsTab === OPTIONS_ALIGNMENT ? (
+                <TraceAlignmentView />
+              ) : (
+                <SelectionView />
+              )}
+            </div>
+          )}
         </div>
         <MarkersView />
       </div>
@@ -116,9 +143,7 @@ export default function App() {
 
       <RoiSelectionListView />
 
-      <div id="footer" className="unselectable">
-        &copy;2021 DemonSoft.org. All Rights Reserved.
-      </div>
+      <div id="footer">&copy;2022 DemonSoft.org. All Rights Reserved.</div>
     </div>
   );
 }

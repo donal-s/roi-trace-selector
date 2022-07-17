@@ -15,9 +15,8 @@ import {
 } from "../model/Actions";
 
 export default function RoiSelectionListView() {
-  const selectionListRef: MutableRefObject<HTMLDivElement | null> = React.useRef(
-    null
-  );
+  const selectionListRef: MutableRefObject<HTMLDivElement | null> =
+    React.useRef(null);
   const dispatch = useAppDispatch();
   const currentIndex = useAppSelector((state) => state.currentIndex);
 
@@ -46,11 +45,11 @@ export default function RoiSelectionListView() {
   function rebuildListItem(item: string, index: number) {
     const itemSelected = isItemSelected(scanStatus, index);
     const itemUnselected = isItemUnselected(scanStatus, index);
-    let className = "unselectable";
+    let className;
     if (itemSelected) {
-      className += " selectedRoi";
+      className = "selectedRoi";
     } else if (itemUnselected) {
-      className += " unselectedRoi";
+      className = "unselectedRoi";
     }
     if (index === currentIndex) {
       className += " current";
@@ -77,7 +76,6 @@ export default function RoiSelectionListView() {
       <button
         type="button"
         id="roiSelectAllButton"
-        className="unselectable"
         onClick={(event) => {
           dispatch(selectAllItemsAction());
           event.currentTarget.blur();
@@ -88,17 +86,13 @@ export default function RoiSelectionListView() {
       </button>
 
       <div className="roiTotals">
-        <span
-          id="unselectedRoiCount"
-          title="Unselected"
-          className="unselectable"
-        >
+        <span id="unselectedRoiCount" title="Unselected">
           {unselectedCount}
         </span>
-        <span id="unscannedRoiCount" title="Unscanned" className="unselectable">
+        <span id="unscannedRoiCount" title="Unscanned">
           {unscannedCount}
         </span>
-        <span id="selectedRoiCount" title="Selected" className="unselectable">
+        <span id="selectedRoiCount" title="Selected">
           {selectedCount}
         </span>
       </div>

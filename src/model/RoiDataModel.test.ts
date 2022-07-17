@@ -14,6 +14,7 @@ import {
   PersistedRoiDataModelState,
   persistor,
   persistedReducer,
+  isCurrentChannelLoaded,
 } from "./RoiDataModel";
 import {
   CSV_DATA,
@@ -1788,6 +1789,15 @@ describe("miscellaneous functions", () => {
     expect(isChannel2Loaded(EMPTY_STATE)).toBe(false);
     expect(isChannel2Loaded(LOADED_STATE)).toBe(false);
     expect(isChannel2Loaded(DUAL_CHANNEL_LOADED_STATE)).toBe(true);
+  });
+
+  it("isCurrentChannelLoaded", () => {
+    expect(isCurrentChannelLoaded({...EMPTY_STATE,  currentChannel: CHANNEL_1,})).toBe(false);
+    expect(isCurrentChannelLoaded({...EMPTY_STATE,  currentChannel: CHANNEL_2,})).toBe(false);
+    expect(isCurrentChannelLoaded({...LOADED_STATE,  currentChannel: CHANNEL_1,})).toBe(true);
+    expect(isCurrentChannelLoaded({...LOADED_STATE,  currentChannel: CHANNEL_2,})).toBe(false);
+    expect(isCurrentChannelLoaded({...DUAL_CHANNEL_LOADED_STATE,  currentChannel: CHANNEL_1,})).toBe(true);
+    expect(isCurrentChannelLoaded({...DUAL_CHANNEL_LOADED_STATE,  currentChannel: CHANNEL_2,})).toBe(true);
   });
 
   it("index out of bounds checking", () => {

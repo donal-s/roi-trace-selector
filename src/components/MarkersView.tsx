@@ -50,7 +50,7 @@ export default function MarkersView() {
       {editMarker && (
         <>
           <div id="markersHeading">
-            <span>Edit Marker</span>
+            <span id="markersTitle" className="unselectable">Edit Marker</span>
           </div>
           <EditMarkerPanel />
         </>

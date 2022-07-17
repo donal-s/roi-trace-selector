@@ -1,5 +1,9 @@
 import React from "react";
-import { getItemCount, useAppDispatch, useAppSelector } from "../model/RoiDataModel";
+import {
+  getItemCount,
+  useAppDispatch,
+  useAppSelector,
+} from "../model/RoiDataModel";
 import { setSelectionAction } from "../model/Actions";
 import {
   CHANNEL_1,
@@ -27,7 +31,6 @@ export default function SelectionView() {
   );
 
   const selection: Selection = channelSelection || DEFAULT_SELECTION;
-  // const currentChannelLoaded = !!channelSelection;
 
   const datasetFrameCount = useAppSelector(
     (state) => state.chartFrameLabels.length || 1
@@ -52,17 +55,13 @@ export default function SelectionView() {
   }: CreateInputParams) {
     return (
       <>
-        <label htmlFor={key} className="unselectable">
-          {title}
-        </label>
+        <label htmlFor={key}>{title}</label>
         <input
           type="number"
           id={key}
           value={(selection as any)[key]}
           onChange={(event) => {
             if (event.target.value !== "") {
-              console.log("setSelectionAction", event.target.value);
-              
               dispatch(
                 setSelectionAction({
                   ...selection,
@@ -86,9 +85,7 @@ export default function SelectionView() {
   }: CreateInputParams) {
     return (
       <>
-        <label htmlFor={key} className="unselectable">
-          {title}
-        </label>
+        <label htmlFor={key}>{title}</label>
         <input
           type="number"
           id={key}
@@ -113,9 +110,7 @@ export default function SelectionView() {
   function createFrameNumberInput({ key, title }: CreateInputParams) {
     return (
       <>
-        <label htmlFor={key} className="unselectable">
-          {title}
-        </label>
+        <label htmlFor={key}>{title}</label>
         <input
           type="number"
           id={key}
@@ -175,94 +170,82 @@ export default function SelectionView() {
   }
 
   return (
-    <div id="selectionPanel" className="optionsPanel">
+    <div id="selectionPanel">
       <select
+        id="selectionMode"
         value={selection.type}
         onChange={(event) =>
           updateSelectionType(event.target.value as SelectionType)
         }
       >
-        <option value={SELECTION_MANUAL}>Manual Selection</option>
-        <option value={SELECTION_PERCENT_CHANGE}>% Change Selection</option>
-        <option value={SELECTION_STDEV}>STDEV Selection</option>
+        <option value={SELECTION_MANUAL}>Manual</option>
+        <option value={SELECTION_PERCENT_CHANGE}>% Change</option>
+        <option value={SELECTION_STDEV}>STDEV</option>
         <option value={SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT}>
-          Minimum STDEV Selection
+          Remove Outliers
         </option>
       </select>
+      <div className="optionsPanel">
+        {selection.type === SELECTION_PERCENT_CHANGE && (
+          <>
+            {createFrameNumberInput({
+              key: "startFrame",
+              title: "Start frame",
+            })}
+            {createFrameNumberInput({
+              key: "endFrame",
+              title: "End frame",
+            })}
+            {createPercentageChangeInput({
+              key: "percentChange",
+              title: "% of total change",
+              min: 1,
+              max: 100,
+            })}
+          </>
+        )}
 
-      {selection.type === SELECTION_PERCENT_CHANGE && (
-        <div id="percentChangePanel">
-          {createFrameNumberInput({
-            key: "startFrame",
-            title: "Start frame",
-          })}
-          {createFrameNumberInput({
-            key: "endFrame",
-            title: "End frame",
-          })}
-          {createPercentageChangeInput({
-            key: "percentChange",
-            title: "% of total change",
-            min: 1,
-            max: 100,
-          })}
-        </div>
-      )}
+        {selection.type === SELECTION_STDEV && (
+          <>
+            {createFrameNumberInput({
+              key: "startBaselineFrame",
+              title: "Start baseline frame",
+            })}
+            {createFrameNumberInput({
+              key: "endBaselineFrame",
+              title: "End baseline frame",
+            })}
+            {createFrameNumberInput({
+              key: "startDetectionFrame",
+              title: "Start detection frame",
+            })}
+            {createFrameNumberInput({
+              key: "endDetectionFrame",
+              title: "End detection frame",
+            })}
+            {createNumberInput({
+              key: "stdevMultiple",
+              title: "x STDEV minimum",
+              min: 0.1,
+              max: 10,
+              step: 0.1,
+            })}
+          </>
+        )}
 
-      {selection.type === SELECTION_STDEV && (
-        <div id="percentChangePanel">
-          {createFrameNumberInput({
-            key: "startBaselineFrame",
-            title: "Start baseline frame",
-          })}
-          {createFrameNumberInput({
-            key: "endBaselineFrame",
-            title: "End baseline frame",
-          })}
-          {createFrameNumberInput({
-            key: "startDetectionFrame",
-            title: "Start detection frame",
-          })}
-          {createFrameNumberInput({
-            key: "endDetectionFrame",
-            title: "End detection frame",
-          })}
-          {createNumberInput({
-            key: "stdevMultiple",
-            title: "STDEV minimum multiple",
-            min: 0.1,
-            max: 10,
-            step: 0.1,
-          })}
-        </div>
-      )}
-
-      {selection.type === SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT && (
-        <div id="percentChangePanel">
-          {createNumberInput({
-            key: "selectedTraceCount",
-            title: "Selected trace count",
-            min: 2,
-            max: datasetItemCount,
-          })}
-          {createNumberInput({
-            key: "selectedStdev",
-            title: "Current selected STDEV",
-          })}
-        </div>
-      )}
+        {selection.type === SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT && (
+          <>
+            {createNumberInput({
+              key: "selectedTraceCount",
+              title: "Selected trace count",
+              min: 2,
+              max: datasetItemCount,
+            })}
+            <label htmlFor="selectedStdev">STDEV of selected</label>
+            <div id="selectedStdev">{selection.selectedStdev.toFixed(2)}</div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
-
-// {createCheckbox({
-//   key: "alignToYMax",
-//   title: "Align to maximum",
-//   disabled: disabledMax,
-// })}
-// {createNumberInput({
-//   key: "yMaxValue",
-//   title: "Maximum value",
-//   disabled: disabledMax,
-//   onBlur: handleFluorescenceMaxBlur,
-// })}

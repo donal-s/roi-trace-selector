@@ -67,10 +67,7 @@ export default function TraceAlignmentView() {
   function createCheckbox({ key, title, disabled }: CreateInputParams) {
     return (
       <>
-        <label
-          htmlFor={key}
-          className={disabled ? "unselectable disabled" : "unselectable"}
-        >
+        <label htmlFor={key} className={disabled ? "disabled" : ""}>
           {title}
         </label>
         <input
@@ -99,10 +96,7 @@ export default function TraceAlignmentView() {
   }: CreateInputParams) {
     return (
       <>
-        <label
-          htmlFor={key}
-          className={disabled ? "unselectable disabled" : "unselectable"}
-        >
+        <label htmlFor={key} className={disabled ? "disabled" : ""}>
           {title}
         </label>
         <input

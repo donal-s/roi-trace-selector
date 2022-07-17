@@ -91,7 +91,7 @@ export default function EditMarkerPanel() {
     <div id="editMarkerPanel">
       <form>
         <div id="editMarkerInputs">
-          <label htmlFor="editMarkerName">Name</label>
+          <label htmlFor="editMarkerName">Label</label>
           <input
             id="editMarkerName"
             type="text"

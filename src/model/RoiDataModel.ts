@@ -764,6 +764,13 @@ export const isChannel1Loaded = ({ channel1Dataset }: RoiDataModelState) =>
 export const isChannel2Loaded = ({ channel2Dataset }: RoiDataModelState) =>
   !!channel2Dataset;
 
+export const isCurrentChannelLoaded = ({
+  channel1Dataset,
+  channel2Dataset,
+  currentChannel,
+}: RoiDataModelState) =>
+  currentChannel === CHANNEL_1 ? !!channel1Dataset : !!channel2Dataset;
+
 function getSelectAllStatus({
   selectedCount,
   unselectedCount,

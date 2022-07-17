@@ -1,7 +1,7 @@
 import React from "react";
 import {
   isChannel1Loaded,
-  isChannel2Loaded,
+  isCurrentChannelLoaded,
   RoiDataModelState,
   useAppDispatch,
   useAppSelector,
@@ -20,7 +20,7 @@ export default function FileAccessView() {
   const dispatch = useAppDispatch();
   const currentChannel = useAppSelector((state) => state.currentChannel);
   const channel1Loaded = useAppSelector(isChannel1Loaded);
-  const channel2Loaded = useAppSelector(isChannel2Loaded);
+  const currentChannelLoaded = useAppSelector(isCurrentChannelLoaded);
   const model = useAppSelector((state) => state);
 
   const channel1Filename = useAppSelector(
@@ -31,8 +31,6 @@ export default function FileAccessView() {
     (state) => state.channel2Dataset?.filename
   );
 
-  const currentChannelLoaded =
-    currentChannel === CHANNEL_1 ? channel1Loaded : channel2Loaded;
   const currentChannelFilename =
     currentChannel === CHANNEL_1 ? channel1Filename : channel2Filename;
 
@@ -94,7 +92,7 @@ export default function FileAccessView() {
           className={`fileInput${currentChannelLoaded ? "" : " disabled"}`}
         />
       </div>
-      <div className="fileNameMessage unselectable">
+      <div className="fileNameMessage">
         {currentChannelFilename || "Open CSV file to begin"}
       </div>
     </div>
