@@ -761,20 +761,14 @@ describe("roiDataReducer", () => {
             ],
             scaledTraceData: [
               [
-                expect.closeTo(0.0),
-                expect.closeTo(0.14),
-                expect.closeTo(0.71),
-                expect.closeTo(0.86),
                 1,
+                expect.closeTo(0.86),
+                expect.closeTo(0.29),
+                expect.closeTo(0.14),
+                expect.closeTo(0.0),
               ],
               [0, 0, 0, 0, 0],
-              [
-                0,
-                expect.closeTo(1.1),
-                expect.closeTo(2.2),
-                expect.closeTo(1.1),
-                0,
-              ],
+              [0, expect.closeTo(0.5), 1, expect.closeTo(0.5), 0],
             ],
             alignment: EXPECTED_CHANNEL1_DATASET.alignment,
             selection: { type: SELECTION_MANUAL },
@@ -1209,7 +1203,7 @@ describe("roiDataReducer", () => {
         type: SELECTION_PERCENT_CHANGE,
         startFrame: 1,
         endFrame: 2,
-        percentChange: 0.5,
+        percentChange: 0.49,
       };
 
       await checkReducerAndStore(
@@ -1233,7 +1227,7 @@ describe("roiDataReducer", () => {
         type: SELECTION_PERCENT_CHANGE,
         startFrame: 2,
         endFrame: 3,
-        percentChange: 0.2,
+        percentChange: 0.49,
       };
 
       await checkReducerAndStore(
@@ -1244,8 +1238,8 @@ describe("roiDataReducer", () => {
           scanStatus: [
             SCANSTATUS_UNSELECTED,
             SCANSTATUS_UNSELECTED,
-            SCANSTATUS_UNSELECTED,
             SCANSTATUS_SELECTED,
+            SCANSTATUS_UNSELECTED,
           ],
           channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
         }
@@ -1792,12 +1786,30 @@ describe("miscellaneous functions", () => {
   });
 
   it("isCurrentChannelLoaded", () => {
-    expect(isCurrentChannelLoaded({...EMPTY_STATE,  currentChannel: CHANNEL_1,})).toBe(false);
-    expect(isCurrentChannelLoaded({...EMPTY_STATE,  currentChannel: CHANNEL_2,})).toBe(false);
-    expect(isCurrentChannelLoaded({...LOADED_STATE,  currentChannel: CHANNEL_1,})).toBe(true);
-    expect(isCurrentChannelLoaded({...LOADED_STATE,  currentChannel: CHANNEL_2,})).toBe(false);
-    expect(isCurrentChannelLoaded({...DUAL_CHANNEL_LOADED_STATE,  currentChannel: CHANNEL_1,})).toBe(true);
-    expect(isCurrentChannelLoaded({...DUAL_CHANNEL_LOADED_STATE,  currentChannel: CHANNEL_2,})).toBe(true);
+    expect(
+      isCurrentChannelLoaded({ ...EMPTY_STATE, currentChannel: CHANNEL_1 })
+    ).toBe(false);
+    expect(
+      isCurrentChannelLoaded({ ...EMPTY_STATE, currentChannel: CHANNEL_2 })
+    ).toBe(false);
+    expect(
+      isCurrentChannelLoaded({ ...LOADED_STATE, currentChannel: CHANNEL_1 })
+    ).toBe(true);
+    expect(
+      isCurrentChannelLoaded({ ...LOADED_STATE, currentChannel: CHANNEL_2 })
+    ).toBe(false);
+    expect(
+      isCurrentChannelLoaded({
+        ...DUAL_CHANNEL_LOADED_STATE,
+        currentChannel: CHANNEL_1,
+      })
+    ).toBe(true);
+    expect(
+      isCurrentChannelLoaded({
+        ...DUAL_CHANNEL_LOADED_STATE,
+        currentChannel: CHANNEL_2,
+      })
+    ).toBe(true);
   });
 
   it("index out of bounds checking", () => {

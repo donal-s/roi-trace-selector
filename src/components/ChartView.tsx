@@ -82,10 +82,8 @@ export default function ChartView() {
   const prevCurrentIndexRef: MutableRefObject<number | undefined> = useRef();
   const prevScanStatusRef: MutableRefObject<ScanStatus[] | undefined> =
     useRef();
-  const prevMarkersRef: MutableRefObject<Marker[] | undefined> =
-    useRef();
-  const prevEditMarkerRef: MutableRefObject<EditMarker | undefined> =
-    useRef();
+  const prevMarkersRef: MutableRefObject<Marker[] | undefined> = useRef();
+  const prevEditMarkerRef: MutableRefObject<EditMarker | undefined> = useRef();
 
   useEffect(() => {
     const prevChannel1ChartData = prevChannel1ChartDataRef.current;
@@ -103,9 +101,7 @@ export default function ChartView() {
         .filter(
           ({ channel }, index) =>
             (channel === chartChannel || channel === CHANNEL_BOTH) &&
-            (showSingleTrace ||
-              !editMarker ||
-              editMarker.index !== index)
+            (showSingleTrace || !editMarker || editMarker.index !== index)
         )
         .map((marker) => ({
           colour: "#00000080",
@@ -133,10 +129,6 @@ export default function ChartView() {
       return result;
     }
 
-    function calculateStdevRange() {
-      return [100, 200];
-    }
-
     function getRangeMarkers(selection?: Selection): RangeMarker[] {
       switch (selection?.type) {
         case SELECTION_PERCENT_CHANGE:
@@ -150,7 +142,6 @@ export default function ChartView() {
             },
           ];
         case SELECTION_STDEV:
-          const [stdevStart, stdevEnd] = calculateStdevRange();
           return [
             {
               borderColour: "#00FF0080",
@@ -165,13 +156,6 @@ export default function ChartView() {
               startValue: chartFrameLabels[selection.startDetectionFrame],
               endValue: chartFrameLabels[selection.endDetectionFrame],
               ori: Orientation.Horizontal,
-            },
-            {
-              borderColour: "#FF000040",
-              fillColour: "#FF000020",
-              startValue: stdevStart,
-              endValue: stdevEnd,
-              ori: Orientation.Vertical,
             },
           ];
         default:

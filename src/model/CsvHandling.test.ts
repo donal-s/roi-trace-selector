@@ -160,14 +160,14 @@ describe("parseCsvData", () => {
       ],
       scaledTraceData: [
         [
-          expect.closeTo(0.0),
-          expect.closeTo(0.14),
-          expect.closeTo(0.71),
-          expect.closeTo(0.86),
           1,
+          expect.closeTo(0.86),
+          expect.closeTo(0.29),
+          expect.closeTo(0.14),
+          0,
         ],
         [0, 0, 0, 0, 0],
-        [0, expect.closeTo(1.1), expect.closeTo(2.2), expect.closeTo(1.1), 0],
+        [0, expect.closeTo(0.5), 1, expect.closeTo(0.5), 0],
         [0, 0.25, 0.5, 0.75, 1],
       ],
       scanStatus: ["?", "?", "?", "?"],
@@ -208,7 +208,7 @@ describe("parseCsvData", () => {
         [1, 2],
       ],
       scaledTraceData: [
-        [-0, 1],
+        [1, 0],
         [0, 0],
         [0, 1],
         [0, 1],

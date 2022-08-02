@@ -288,65 +288,36 @@ function updateChartAlignment(
     throw new Error("Invalid frame index: " + yMinFrame + ", " + yMaxFrame);
   }
 
-  let roiCount = getItemCount(state);
-  let frameCount = getFrameCount(state);
-
-  let newChartData = [];
-
   const dataset =
     channel === CHANNEL_1 ? state.channel1Dataset : state.channel2Dataset;
   if (!dataset) {
     return state;
   }
 
-  for (let roiIndex = 0; roiIndex < roiCount; roiIndex++) {
-    let inputRoi = dataset.originalTraceData[roiIndex];
-
-    let outputRoi = [...dataset.chartData[roiIndex]];
-
-    if (enableYMaxAlignment) {
-      let rawYMaxValue;
-      if (alignToYMax) {
-        rawYMaxValue = dataset.originalTraceData[roiIndex][0];
-        for (let frameIndex = 1; frameIndex < frameCount; frameIndex++) {
-          rawYMaxValue = Math.max(rawYMaxValue, inputRoi[frameIndex]);
-        }
-      } else {
-        rawYMaxValue = inputRoi[yMaxFrame - 1];
-      }
-
-      if (enableYMinAlignment) {
-        let yScale = 1;
-        let rawYMinValue;
-        if (alignToYMin) {
-          rawYMinValue = dataset.originalTraceData[roiIndex][0];
-          for (let frameIndex = 1; frameIndex < frameCount; frameIndex++) {
-            rawYMinValue = Math.min(rawYMinValue, inputRoi[frameIndex]);
-          }
-        } else {
-          rawYMinValue = dataset.originalTraceData[roiIndex][yMinFrame - 1];
-        }
-        if (rawYMaxValue === rawYMinValue) {
-          yScale = 1;
-        } else {
-          yScale = (yMaxValue - yMinValue) / (rawYMaxValue - rawYMinValue);
-        }
-
-        for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
-          outputRoi[frameIndex] =
-            (inputRoi[frameIndex] - rawYMaxValue) * yScale + +yMaxValue;
-        }
-      } else {
-        for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
-          outputRoi[frameIndex] =
-            inputRoi[frameIndex] - rawYMaxValue + +yMaxValue;
-        }
-      }
-    } else {
-      outputRoi = [...inputRoi];
+  const newChartData = dataset.originalTraceData.map((inputRoi) => {
+    if (!enableYMaxAlignment) {
+      return [...inputRoi];
     }
-    newChartData.push(outputRoi);
-  }
+
+    const rawYMaxValue = alignToYMax
+      ? Math.max(...inputRoi)
+      : inputRoi[yMaxFrame - 1];
+
+    if (!enableYMinAlignment) {
+      return inputRoi.map((input) => input - rawYMaxValue + yMaxValue);
+    }
+
+    const rawYMinValue = alignToYMin
+      ? Math.min(...inputRoi)
+      : inputRoi[yMinFrame - 1];
+
+    const yScale =
+      rawYMaxValue === rawYMinValue
+        ? 1
+        : (yMaxValue - yMinValue) / (rawYMaxValue - rawYMinValue);
+
+    return inputRoi.map((input) => (input - rawYMaxValue) * yScale + yMaxValue);
+  });
 
   dataset.chartData = newChartData;
   dataset.alignment = { ...alignment };
@@ -436,11 +407,8 @@ function getPercentChangeStatus(dataset: RoiDataset): ScanStatus[] {
     dataset.selection as SelectionPercentChange;
 
   return dataset.scaledTraceData.map((series) => {
-    const scaledChange = series[endFrame] - series[startFrame];
-    const selected =
-      percentChange >= 0
-        ? scaledChange >= percentChange
-        : scaledChange <= percentChange;
+    const scaledChange = Math.abs(series[endFrame] - series[startFrame]);
+    const selected = scaledChange >= percentChange;
     return selected ? SCANSTATUS_SELECTED : SCANSTATUS_UNSELECTED;
   });
 }

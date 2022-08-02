@@ -111,10 +111,8 @@ export function parseCsvData(csv: string) {
   });
 
   let scaledTraceData: number[][] = originalTraceData.map((series, i) => {
-    let rawYStartValue = series[0];
-    let rawYEndValue = series[series.length - 1];
-    let yOffset = rawYStartValue;
-    let yScale = 1 / (rawYEndValue - rawYStartValue);
+    let yOffset =  Math.min(...series);
+    let yScale = 1 / (Math.max(...series) - yOffset);
     if (!Number.isFinite(yScale)) {
       yScale = 1;
     }
