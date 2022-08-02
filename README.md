@@ -39,4 +39,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
+The chart view uses a customised and cut down version of [uPlot](https://github.com/leeoniya/uPlot) by Leon Sorokin under the MIT licence
+
 Copyright 2020-22 DemonSoft.org - the code is Apache licenced, the branding isn't. If you fork the repository, get your own :)
