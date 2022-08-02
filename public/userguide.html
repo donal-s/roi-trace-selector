@@ -1,17 +1,475 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="ROI Trace Selection"
-    />
-    <title>ROI Trace Selection</title>
-  </head>
-  <body>
-    <div id="root"></div>userguide
-  </body>
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="favicon.ico" />
+  <link rel="stylesheet" href="userguide.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="ROI Trace Selection" />
+  <title>ROI Trace Selection</title>
+</head>
+
+<body>
+  <h1>ROI Trace Selection v0.21.0<br />User Guide</h1>
+
+  <div class="date">2nd August, 2022</div>
+
+  <h2>Introduction</h2>
+
+  <p>Common imaging protocols using fluorescent dyes, such as that described in
+    <a href="#ref:cousin2008use">Cousin (2008)</a> require the selection of
+    numerical fluorescence traces during the data analysis stage. This web tool
+    is designed to assist in selection of Regions of Interest (ROIs) which
+    conform to expected behaviour. It should make the trace selection data
+    preprocessing stage of ROI analysis slightly less painful. The tool provides
+    a simple graph visualisation of a full set of time series traces. The
+    user may then select or deselect individual traces, scale and offset the
+    traces, and then output the results in CSV format. Additionally, as traces
+    tend to follow an expected pattern for a given dataset, traces which do not
+    follow this behaviour can be automatically excluded. These patterns are
+    specified as percentage drops or increases in value within a given
+    frame interval, the percentage being of the total value drop or
+    increase. For example, select those traces which exhibit a 20% drop in
+    value between frames 18 and 20, which corresponds with the time a
+    large stimulus was applied during the assay.
+  </p>
+
+  <h2>Running the tool</h2>
+
+  <p>Simply go to
+    <a href="https://demonsoft.org/neuroscience/trace-selector"
+      target="_blank">https://demonsoft.org/neuroscience/trace-selector</a>. You should see the tool running as in
+    <a href="#fig:initialView">Figure 1</a>. The tool runs entirely in your browser, and no CSV data is transferred from
+    your device.
+
+  </p>
+
+  <div class="figure">
+    <a id="fig:initialView"></a>
+    <img src="./images/initialView.png" />
+    <div class="caption">Figure 1: Initial application</div>
+  </div>
+
+  <h2>Opening a data file</h2>
+
+  <div class="describe-image">
+    <img class="inline-image" src="./images/loadChannel1.png" />
+    <p>Clicking on the <span class="command">Open</span> button will show a file
+      select window. Pick your input data file in CSV format. Currently the tool
+      expects the data to be in structure shown in Table
+      <a href="#table:inputFormat">Table 1</a>.
+    </p>
+  </div>
+
+  <table class="csvdata">
+    <a id="table:inputFormat"></a>
+    <thead>
+      <tr>
+        <th></th>
+        <th>ROI-1</th>
+        <th>ROI-2</th>
+        <th>ROI-3</th>
+        <th>ROI-4</th>
+        <th>...</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>1</th>
+        <td>561612.0</td>
+        <td>499296.0</td>
+        <td>523813.0</td>
+        <td>610188.0</td>
+        <td>...</td>
+      </tr>
+      <tr>
+        <th>2</th>
+        <td>554029.0</td>
+        <td>500638.0</td>
+        <td>520757.0</td>
+        <td>602651.0</td>
+        <td>...</td>
+      </tr>
+      <tr>
+        <th>3</th>
+        <td>549002.0</td>
+        <td>493967.0</td>
+        <td>513093.0</td>
+        <td>593114.0</td>
+        <td>...</td>
+      </tr>
+      <tr>
+        <th>4</th>
+        <td>542056.0</td>
+        <td>492127.0</td>
+        <td>511445.0</td>
+        <td>586488.0</td>
+        <td>...</td>
+      </tr>
+      <tr>
+        <th>5</th>
+        <td>539111.0</td>
+        <td>482971.0</td>
+        <td>505396.0</td>
+        <td>580424.0</td>
+        <td>...</td>
+      </tr>
+      <tr>
+        <td>...</td>
+        <td>...</td>
+        <td>...</td>
+        <td>...</td>
+        <td>...</td>
+        <td>...</td>
+      </tr>
+    </tbody>
+    <caption>
+      Table 1: Expected input data structure
+    </caption>
+  </table>
+
+  <p> The values are expected to be in order of individual traces in columns,
+    and frames in rows. The first row contains the trace names, and the first
+    column contains the frame indices (although these are always expected to be
+    1,2,3,4...). There are no other rows or columns apart from the trace values
+    expected, although any mean or total value columns may be deselected later.
+    If there are problems with parsing the data file, the tool will attempt to
+    display as much of the data as possible, and give a warning. Users are
+    recommended to fix problems with the input data file and reload before
+    continuing. Once the file is selected, the tool will plot all traces in the
+    chart.</p>
+
+  <div class="describe-image">
+    <img class="inline-image" src="./images/openExampleData.png" />
+    <p>To see the tool in action with some example data, click the <span class="command">Open Example Data</span>
+      button.</p>
+  </div>
+
+  <h2>Dual channel mode</h2>
+
+  <div class="describe-image">
+    <img class="inline-image" src="./images/loadChannel2.png" />
+    <p> Some datasets have two channels, each with a CSV file. This tool allows
+      traces from both channels to be viewed simultaneously, and trace selections
+      will apply to both channels. To use two channel mode, open the first channel
+      CSV file with <span class="command">Open</span>, then click on the
+      <span class="command">Channel 2</span> tab and open the second channel CSV
+      file with <span class="command">Open</span>. The
+      CSV files must have matching trace names, trace counts and frame counts.
+    </p>
+  </div>
+
+  <h2>Frame Markers</h2>
+
+  <p> The user can add markers to guide interpretation of the results, for example
+    drug addition at frame number <i>x</i>, stimulation at frame number <i>y</i>. The
+    currently created frame markers are listed, and can be added to or removed
+    (see <a href="#fig:frameMarkerControls">Figure 2</a>). Example frame markers are shown on the chart in <a
+      href="#fig:markersOnChart">Figure 3</a> </p>
+
+  <div class="figure">
+    <a id="fig:frameMarkerControls"></a>
+    <div class="subfigures">
+      <div class="subfigure">
+        <img src="./images/markerList.png" />
+        <div class="caption">Marker list</div>
+      </div>
+      <div class="subfigure">
+        <img src="./images/markerEdit.png" />
+        <div class="caption">Edit Marker options</div>
+      </div>
+    </div>
+    <div class="caption">
+      Figure 2: Frame marker controls
+    </div>
+  </div>
+
+  <div class="figure">
+    <a id="fig:markersOnChart"></a>
+    <img src="./images/markersOnChart.png" />
+    <div class="caption">Figure 3: Example frame markers</div>
+  </div>
+
+  <h2>Aligning the traces</h2>
+
+  <p> The <span class="command">Alignment</span> section of the tool can
+    offset the values to a common start value, and additionally
+    scale all the traces to a common end value. Selecting
+    <span class="command">Align trace maxima</span>
+    enables the offset to start value. The user can either pick a start frame to
+    align to, or align all traces on each of their maximum values (see
+    <a href="#fig:alignMaxima">Figure 4</a>).
+  </p>
+
+  <div class="figure">
+    <a id="fig:alignMaxima"></a>
+    <img src="./images/alignMaxima.png" />
+    <div class="caption">Figure 4: Aligned trace maxima</div>
+  </div>
+
+  <p> Selecting
+    <span class="command">Align trace minima</span> enables the
+    scale to end value. Again, the user can either pick an end frame to align
+    to, or align all traces on each of their minimum values (see
+    <a href="#fig:alignMinima">Figure 5</a>).
+  </p>
+
+  <div class="figure">
+    <a id="fig:alignMinima"></a>
+    <img src="./images/alignMinima.png" />
+    <div class="caption">Figure 5: Aligned trace maxima and minima</div>
+  </div>
+
+  In both cases, the user may pick the value to align
+  to.</p>
+
+  <h2>Trace selection</h2>
+
+  <p> The main purpose of the tool is to allow easy removal of outlier traces.
+    To do this, the user may either select traces manually, or filter them
+    automatically with a threshold filter. To start, select the
+    <span class="command">Trace Selection</span> panel on the left. The user can
+    manually select traces based on simple inspection. As in many cases, traces are
+    manually identified by sharing common behaviour such as a sharp change in
+    value at a particular frame interval (corresponding with a particular
+    event occurring during data recording), the tool also allows for auto
+    selection of traces on this basis. In dual channel mode, the user can choose
+    which of the channels to use for automatic trace selection.
+  </p>
+
+  <h3>Manual selection</h3>
+
+  <p> The traces selection list on the right of the
+    charts shows which traces are currently selected or deselected (see
+    <a href="#fig:selectTrace">Figure 6</a>). Clicking on a
+    particular trace will cycle through marking the trace as selected, deselected or undecided.
+  </p>
+
+  <p>The trace selection list can also be navigated using
+    the keyboard. The user can
+    move up or down with the arrow keys and select or deselect the currently
+    highlighted trace with the spacebar.</p>
+
+  <div class="figure">
+    <a id="fig:selectTrace"></a>
+    <img src="./images/selectTrace.png" />
+    <div class="caption">Figure 6: Manual trace selection</div>
+  </div>
+
+
+  <p> The traces on the charts will change colour
+    depending on their selection status (see <a href="#table:traceColours">Table 2</a>).</p>
+
+  <table class="trace-colours">
+    <a id="table:traceColours"></a>
+    <thead>
+      <tr>
+        <th>Trace colour</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th><span style="color:#a40000">Red</span></th>
+        <td>Trace deselected</td>
+      </tr>
+      <tr>
+        <th>Black</th>
+        <td>Trace selection not decided</td>
+      </tr>
+      <tr>
+        <th><span style="color:navy">Blue</span></th>
+        <td>Trace selected</td>
+      </tr>
+    </tbody>
+    <caption>
+      Table 2: Trace colours in trace chart
+    </caption>
+  </table>
+
+
+  <div class="describe-image">
+    <img class="inline-image" src="./images/selectionCounts.png" />
+    <p>Above the list the number of
+      currently selected traces is shown, here for example 25 deselected, 68 selected and 3 undecided.</p>
+  </div>
+
+
+
+
+  <div class="describe-image">
+    <img class="inline-image" src="./images/currentSelectionIcons.png" />
+    <p>These icons show the selection state of the current trace; unselected, undecided, or selected. Clicking on these
+      icons will also change the selection.</p>
+  </div>
+
+  <div class="describe-image">
+    <img class="inline-image" src="./images/selectAll.png" />
+    <p>The button at the top of the list allows the user to select, unselect or clear all selections.</p>
+  </div>
+
+  <div class="describe-image">
+    <img class="inline-image" src="./images/traceCountRemaining.png" />
+    <p>This button shows the number of traces that have not yet been decided. Clicking on it will choose the next
+      undecided trace in the list.</p>
+  </div>
+
+
+
+
+
+
+  <h3>Percentage Change Selection</h3>
+
+  <p> Selecting <span class="command">% Change</span> will
+    cause the chart to show a blue marker signifying the frame interval
+    over which the value change will take place. Use the
+    <span class="command">Start frame</span> and
+    <span class="command">End frame</span> entries to adjust this frame
+    interval. Then, one can set the
+    <span class="command">% of total change</span> to filter the traces. For
+    example, if a trace had a total value range of 1000 units, and the
+    <span class="command">% of total change</span> was set to 20%, then the trace
+    would need to have changed in value at least 200 units between the
+    start and end of the chosen frame interval to be selected (see
+    <a href="#fig:percentChangeSelection">Figure 7</a>).
+  </p>
+
+  <div class="figure">
+    <a id="fig:percentChangeSelection"></a>
+    <img src="./images/percentChangeSelection.png" />
+    <div class="caption">
+      Figure 7: Percentage change selection
+    </div>
+  </div>
+
+  <p> After doing this auto selection, the final selection can still be adjusted
+    by selecting or deselecting traces manually as
+    described above.</p>
+
+  <h3>Standard Deviation Threshold Selection</h3>
+
+  <p> In some cases traces are only of interest if their trace values vary a given
+    amount from their mean. The standard deviation threshold selection option
+    allows this. Selecting
+    <span class="command">STDEV</span> allows the user to
+    specify two frame regions in the chart (see
+    <a href="#fig:stdevSelection">Figure 8</a>). The
+    <span class="command">baseline</span> region (highlighted in green on the
+    chart) defines the region of each trace to use to calculate the mean and
+    standard deviation. All trace measurements and selection are done
+    individually, with each trace being independent of the rest. The
+    <span class="command">detection</span> region (highlighted in blue on the
+    chart) defines the region to check for distance from the mean. Finally
+    <span class="command">STDEV minimum multiple</span> allows the user to
+    define how much variance from the mean is required for trace selection.
+  </p>
+
+  <div class="figure">
+    <a id="fig:stdevSelection"></a>
+    <img src="./images/stdevSelection.png" />
+    <div class="caption">
+      Figure 8: Standard deviation selection
+    </div>
+  </div>
+
+  <p> For example, if the mean and standard deviation of a particular trace
+    was 4.0 and 2.0 in the baseline region, and the
+    <span class="command">STDEV minimum multiple</span> was set to 1.5, then the
+    selection threshold would be set at 2.0 x 1.5 = 3.0 from the mean. The trace
+    will be selected only if at least one of its values in the detection region
+    is either &gt; 7.0 or &lt; 1.0.
+  </p>
+
+  <p> Again, after doing this auto selection, the final selection can still be
+    adjusted manually.</p>
+
+  <h3>Outlier Removal Selection</h3>
+
+  <p> Selecting <span class="command">Remove Outliers</span> allows
+    the user to specify how many traces to select, and the tool will pick the
+    subset of the available traces which produces the minimum standard deviation (see
+    <a href="#fig:removeOutliersSelection">Figure 9</a>).
+  </p>
+
+  <p>Note this option is computationally intensive, so may take some time to respond to changes in the trace count.</p>
+
+  <div class="figure">
+    <a id="fig:removeOutliersSelection"></a>
+    <img src="./images/removeOutliersSelection.png" />
+    <div class="caption">
+      Figure 9: Remove outliers selection
+    </div>
+  </div>
+
+
+  <h2>Single trace selection mode</h2>
+
+  <div class="describe-image">
+    <img class="inline-image" src="./images/fullscreenIcon.png" />
+    <p>To minimise user bias during manual selection, single trace selection mode
+      displays only a single trace at a time. The user can select or deselect that
+      trace without any visual comparison with the other traces in the dataset (see
+      <a href="#fig:fullscreenMode">Figure 10</a>). To
+      choose this mode, click on the <span class="command">Fullscreen</span> button. Clicking on the button again will
+      return to normal mode.
+    </p>
+  </div>
+
+  <div class="figure">
+    <a id="fig:fullscreenMode"></a>
+    <img src="./images/fullscreenMode.png" />
+    <div class="caption">
+      Figure 10: Single trace selection
+    </div>
+  </div>
+
+  <h2>Saving data files</h2>
+
+  <div class="describe-image">
+    <img class="inline-image" src="./images/saveAsIcon.png" />
+    <p> Clicking on the <span class="command">Save as</span> button save the
+      currently selected traces in CSV format. The data
+      will be saved using the displayed alignment and scaling values. Note that it
+      is possible to perform the trace selection, then uncheck the alignment and
+      scaling options, to allow saving of the original data values of only
+      the selected traces. In dual channel mode, the channels may be saved
+      separately.</p>
+  </div>
+
+
+  <h2>Comments, requests and bug reports</h2>
+
+  <p> Currently there is no issue tracker for the tool, so please email me at
+    <a href="mailto:neuro@demonsoft.org">neuro@demonsoft.org</a> if you have any
+    comments or issues.
+  </p>
+
+  <h2>Acknowledgements and thanks</h2>
+
+  <p>
+    The original Java version of this tool was supported in part by grants
+    EP/F500385/1 and BB/F529254/1 for the University of Edinburgh School of
+    Informatics Doctoral Training Centre in Neuroinformatics and Computational
+    Neuroscience (<a href="https://web.inf.ed.ac.uk/anc" target="_blank">https://web.inf.ed.ac.uk/anc</a>) from the UK
+    Engineering and Physical Sciences Research Council (EPSRC),
+    UK Biotechnology and Biological Sciences Research Council (BBSRC), and the
+    UK Medical Research Council (MRC). Thanks to the members of the Cousin lab
+    at the Centre for Integrative Biology at the University of Edinburgh for
+    their many excellent suggestions, and for beta testing the original tool.
+  </p>
+  <p>
+    The web version of the tool was rewritten some time later (several times).
+  </p>
+
+  <h2>References</h2>
+  <p>
+    <a id="ref:cousin2008use">
+      Cousin, M. (2008). Use of FM1-43 and other derivatives to investigate
+      neuronal function. Current Protocols in Neuroscience, pages 2–6.</a>
+  </p>
+</body>
+
 </html>
