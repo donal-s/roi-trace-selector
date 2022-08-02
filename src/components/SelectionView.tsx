@@ -41,7 +41,6 @@ export default function SelectionView() {
   type CreateInputParams = {
     key: string;
     title: string;
-    onBlur?: any;
     min?: number;
     max?: number;
     step?: number;
@@ -136,13 +135,14 @@ export default function SelectionView() {
     if (value === selection.type) {
       return;
     }
+
     let newSelection: Selection;
     switch (value) {
       case SELECTION_PERCENT_CHANGE:
         newSelection = {
           type: value,
           startFrame: 0,
-          endFrame: datasetFrameCount - 1,
+          endFrame: Math.max(0, Math.floor(datasetFrameCount * 0.4)),
           percentChange: 0.1,
         };
         break;
@@ -150,8 +150,8 @@ export default function SelectionView() {
         newSelection = {
           type: value,
           startBaselineFrame: 0,
-          endBaselineFrame: datasetFrameCount - 1,
-          startDetectionFrame: 0,
+          endBaselineFrame: Math.max(0, Math.floor(datasetFrameCount * 0.4)),
+          startDetectionFrame: Math.max(0, Math.floor(datasetFrameCount * 0.6)),
           endDetectionFrame: datasetFrameCount - 1,
           stdevMultiple: 1,
         };
@@ -241,8 +241,10 @@ export default function SelectionView() {
               min: 2,
               max: datasetItemCount,
             })}
-            <label htmlFor="selectedStdev">STDEV of selected</label>
-            <div id="selectedStdev">{selection.selectedStdev.toFixed(2)}</div>
+            <label id="selectedStdevLabel">STDEV of selected</label>
+            <div id="selectedStdev" aria-labelledby="selectedStdevLabel">
+              {selection.selectedStdev.toFixed(2)}
+            </div>
           </>
         )}
       </div>

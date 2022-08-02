@@ -2,80 +2,73 @@
 
 import { loadTestData, loadFile, saveFile, parseCsvData } from "./CsvHandling";
 //@ts-ignore
-import sampleRoiTraces from "./sampleRoiTraces.csv";
 import FileSaver from "file-saver";
 import {
-  configureAppMockStore,
   CSV_DATA,
   CSV_DATA_2,
   EMPTY_STATE,
+  EXPECTED_DUAL_CHANNEL_LOADED_STATE,
+  EXPECTED_LOADED_STATE,
   LOADED_STATE,
 } from "../TestUtils";
-import { loadChannelAction } from "./Actions";
 import { CHANNEL_1, CHANNEL_2 } from "./Types";
-import { unwrapResult } from "@reduxjs/toolkit";
+import { configureStore, unwrapResult } from "@reduxjs/toolkit";
+import { roiDataReducer } from "./RoiDataModel";
 
 describe("loadTestData", () => {
-  const mockStore = configureAppMockStore();
-
   it("loadTestData", () => {
-    const expectedActions = [
-      loadChannelAction({
-        channel: CHANNEL_1,
-        filename: "Example data",
-        csvData: sampleRoiTraces,
-      }),
-    ];
-    const store = mockStore(EMPTY_STATE);
+    const store = configureStore({
+      reducer: roiDataReducer,
+      preloadedState: EMPTY_STATE,
+    });
 
     store.dispatch(loadTestData());
-    expect(store.getActions()).toStrictEqual(expectedActions);
+    const state = store.getState();
+    expect(state).toEqual(
+      expect.objectContaining({
+        currentChannel: "1",
+        currentIndex: 0,
+      })
+    );
+    expect(state.chartFrameLabels).toHaveLength(50);
+    expect(state.items).toHaveLength(65);
+    expect(state.scanStatus).toHaveLength(65);
+
+    expect(state.channel1Dataset).toEqual(
+      expect.objectContaining({ filename: "Example data" })
+    );
+    expect(state.channel1Dataset!.chartData).toHaveLength(65);
+    expect(state.channel1Dataset!.originalTraceData).toHaveLength(65);
+    expect(state.channel1Dataset!.scaledTraceData).toHaveLength(65);
   });
 });
 
 describe("loadFile", () => {
-  const mockStore = configureAppMockStore();
-
   it("load channel 1", async () => {
     expect.assertions(1);
-    const store = mockStore(EMPTY_STATE);
-    const file: File = new File([CSV_DATA], "testFile.csv", {
+    const store = configureStore({
+      reducer: roiDataReducer,
+      preloadedState: EMPTY_STATE,
+    });
+    const file: File = new File([CSV_DATA], "new file", {
       type: "mimeType",
     });
     await store.dispatch(loadFile({ file, channel: CHANNEL_1 }) as any);
-    expect(store.getActions()).toStrictEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          payload: {
-            channel: CHANNEL_1,
-            csvData: CSV_DATA,
-            filename: "testFile.csv",
-          },
-          type: "loadFile/fulfilled",
-        }),
-      ])
-    );
+
+    expect(store.getState()).toEqual(EXPECTED_LOADED_STATE);
   });
 
   it("load channel 2", async () => {
     expect.assertions(1);
-    const store = mockStore(LOADED_STATE);
-    const file: File = new File([CSV_DATA_2], "testFile2.csv", {
+    const store = configureStore({
+      reducer: roiDataReducer,
+      preloadedState: LOADED_STATE,
+    });
+    const file: File = new File([CSV_DATA_2], "new file2", {
       type: "mimeType",
     });
     await store.dispatch(loadFile({ file, channel: CHANNEL_2 }) as any);
-    expect(store.getActions()).toStrictEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          payload: {
-            channel: CHANNEL_2,
-            csvData: CSV_DATA_2,
-            filename: "testFile2.csv",
-          },
-          type: "loadFile/fulfilled",
-        }),
-      ])
-    );
+    expect(store.getState()).toEqual(EXPECTED_DUAL_CHANNEL_LOADED_STATE);
   });
 
   it("platform without FileReader", async () => {
@@ -83,7 +76,10 @@ describe("loadFile", () => {
     try {
       // @ts-ignore
       window.FileReader = undefined;
-      const store = mockStore(EMPTY_STATE);
+      const store = configureStore({
+        reducer: roiDataReducer,
+        preloadedState: EMPTY_STATE,
+      });
       const file: File = new File([CSV_DATA], "testFile.csv", {
         type: "mimeType",
       });
@@ -99,24 +95,21 @@ describe("loadFile", () => {
   });
 
   it("empty file", async () => {
-    expect.assertions(1);
-    const store = mockStore(EMPTY_STATE);
+    const store = configureStore({
+      reducer: roiDataReducer,
+      preloadedState: EMPTY_STATE,
+    });
     const file: File = new File([""], "testFile.csv", {
       type: "mimeType",
     });
-    await store.dispatch(loadFile({ file, channel: CHANNEL_1 }) as any);
-    expect(store.getActions()).toStrictEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          payload: {
-            channel: CHANNEL_1,
-            csvData: "",
-            filename: "testFile.csv",
-          },
-          type: "loadFile/fulfilled",
-        }),
-      ])
-    );
+    await expect(
+      async () =>
+        await store
+          .dispatch(loadFile({ file, channel: CHANNEL_1 }) as any)
+          .then(unwrapResult)
+    ).rejects.toEqual(new Error("Data file is empty"));
+
+    expect(store.getState()).toEqual(EMPTY_STATE);
   });
 
   it("unreadable file", async () => {
@@ -127,7 +120,10 @@ describe("loadFile", () => {
         throw new Error("file load failed");
       });
     try {
-      const store = mockStore(EMPTY_STATE);
+      const store = configureStore({
+        reducer: roiDataReducer,
+        preloadedState: EMPTY_STATE,
+      });
       const file: File = new File([CSV_DATA], "testFile.csv", {
         type: "mimeType",
       });

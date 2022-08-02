@@ -2,8 +2,12 @@
 
 import React from "react";
 import SelectionIconView from "./SelectionIconView";
-import roiDataStore from "../model/RoiDataModel";
-import { CSV_DATA, setCsvData, renderWithProvider } from "../TestUtils";
+import {
+  CSV_DATA,
+  setCsvData,
+  renderWithProvider,
+  LOADED_STATE,
+} from "../TestUtils";
 import {
   setCurrentIndexAction,
   setCurrentSelectedAction,
@@ -14,13 +18,13 @@ import { act } from "@testing-library/react";
 
 describe("component SelectionIconView", () => {
   it("disabled initially", () => {
-    renderWithProvider(<SelectionIconView />);
+    const { store } = renderWithProvider(<SelectionIconView />);
     expect(selectionIconPanel()).toHaveClass("disabled");
     expect(unselectButton()).not.toHaveClass("selected");
     expect(clearButton()).not.toHaveClass("selected");
     expect(selectButton()).not.toHaveClass("selected");
 
-    setCsvData(CSV_DATA);
+    setCsvData(store, CSV_DATA);
     expect(selectionIconPanel()).not.toHaveClass("disabled");
     expect(unselectButton()).not.toHaveClass("selected");
     expect(clearButton()).toHaveClass("selected");
@@ -28,18 +32,21 @@ describe("component SelectionIconView", () => {
   });
 
   it("change on item selection", () => {
-    setCsvData(CSV_DATA);
-    roiDataStore.dispatch(setCurrentIndexAction(1));
+    const { store } = renderWithProvider(<SelectionIconView />, {
+      preloadedState: LOADED_STATE,
+    });
+    act(() => {
+      store.dispatch(setCurrentIndexAction(1));
+      store.dispatch(setCurrentSelectedAction());
+    });
 
-    roiDataStore.dispatch(setCurrentSelectedAction());
-    renderWithProvider(<SelectionIconView />);
     expect(selectionIconPanel()).not.toHaveClass("disabled");
     expect(unselectButton()).not.toHaveClass("selected");
     expect(clearButton()).not.toHaveClass("selected");
     expect(selectButton()).toHaveClass("selected");
 
     act(() => {
-      roiDataStore.dispatch(setCurrentUnselectedAction());
+      store.dispatch(setCurrentUnselectedAction());
     });
     expect(selectionIconPanel()).not.toHaveClass("disabled");
     expect(unselectButton()).toHaveClass("selected");
@@ -47,7 +54,7 @@ describe("component SelectionIconView", () => {
     expect(selectButton()).not.toHaveClass("selected");
 
     act(() => {
-      roiDataStore.dispatch(setCurrentUnscannedAction());
+      store.dispatch(setCurrentUnscannedAction());
     });
     expect(selectionIconPanel()).not.toHaveClass("disabled");
     expect(unselectButton()).not.toHaveClass("selected");
@@ -56,9 +63,13 @@ describe("component SelectionIconView", () => {
   });
 
   it("change state on click", async () => {
-    setCsvData(CSV_DATA);
-    roiDataStore.dispatch(setCurrentIndexAction(1));
-    const { user } = renderWithProvider(<SelectionIconView />);
+    const { store, user } = renderWithProvider(<SelectionIconView />, {
+      preloadedState: LOADED_STATE,
+    });
+    act(() => {
+      store.dispatch(setCurrentIndexAction(1));
+    });
+
     expect(selectionIconPanel()).not.toHaveClass("disabled");
     expect(unselectButton()).not.toHaveClass("selected");
     expect(clearButton()).toHaveClass("selected");

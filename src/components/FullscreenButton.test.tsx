@@ -1,7 +1,6 @@
 import React from "react";
 import FullscreenButton from "./FullscreenButton";
-import roiDataStore from "../model/RoiDataModel";
-import { CSV_DATA, setCsvData, renderWithProvider } from "../TestUtils";
+import { CSV_DATA, setCsvData, renderWithProvider, LOADED_STATE } from "../TestUtils";
 
 describe("component FullscreenButton", () => {
   let fullscreenContainer: HTMLElement;
@@ -36,11 +35,11 @@ describe("component FullscreenButton", () => {
   });
 
   it("disabled", async () => {
-    const { user } = renderWithProvider(<FullscreenButton />);
+    const { store, user } = renderWithProvider(<FullscreenButton />);
 
     expect(fullscreenButton()).toHaveClass("disabled");
 
-    expect(roiDataStore.getState().showSingleTrace).toBe(false);
+    expect(store.getState().showSingleTrace).toBe(false);
 
     // Click while disabled has no effect
     await user.click(fullscreenButton());
@@ -58,19 +57,18 @@ describe("component FullscreenButton", () => {
   });
 
   it("load data", () => {
-    renderWithProvider(<FullscreenButton />);
+    const {store} = renderWithProvider(<FullscreenButton />);
 
     expect(fullscreenButton()).toHaveClass("disabled");
-    expect(roiDataStore.getState().showSingleTrace).toBe(false);
+    expect(store.getState().showSingleTrace).toBe(false);
 
-    setCsvData(CSV_DATA);
+    setCsvData(store, CSV_DATA);
     expect(fullscreenButton()).not.toHaveClass("disabled");
-    expect(roiDataStore.getState().showSingleTrace).toBe(false);
+    expect(store.getState().showSingleTrace).toBe(false);
   });
 
   it("enter fullscreen", async () => {
-    setCsvData(CSV_DATA);
-    const { user } = renderWithProvider(<FullscreenButton />);
+    const { user } = renderWithProvider(<FullscreenButton />, {preloadedState: LOADED_STATE});
 
     expect(fullscreenButton()).not.toHaveClass("disabled");
     expect(document.fullscreenElement).toBeNull();
@@ -81,9 +79,8 @@ describe("component FullscreenButton", () => {
   });
 
   it("leave fullscreen", async () => {
-    setCsvData(CSV_DATA);
     (document as any).fullscreenElement = fullscreenContainer;
-    const { user } = renderWithProvider(<FullscreenButton />);
+    const { user } = renderWithProvider(<FullscreenButton />, {preloadedState: LOADED_STATE});
 
     expect(fullscreenButton()).not.toHaveClass("disabled");
 
@@ -93,22 +90,21 @@ describe("component FullscreenButton", () => {
   });
 
   it("document fullscreen listener", () => {
-    setCsvData(CSV_DATA);
-    renderWithProvider(<FullscreenButton />);
+    const {store} = renderWithProvider(<FullscreenButton />, {preloadedState: LOADED_STATE});
 
     expect(fullscreenButton()).not.toHaveClass("disabled");
     expect(document.fullscreenElement).toBeNull();
-    expect(roiDataStore.getState().showSingleTrace).toBe(false);
+    expect(store.getState().showSingleTrace).toBe(false);
 
     // Enter fullscreen
     (document as any).fullscreenElement = fullscreenContainer;
     triggerFullscreenChange();
-    expect(roiDataStore.getState().showSingleTrace).toBe(true);
+    expect(store.getState().showSingleTrace).toBe(true);
 
     // Leave fullscreen
     (document as any).fullscreenElement = null;
     triggerFullscreenChange();
-    expect(roiDataStore.getState().showSingleTrace).toBe(false);
+    expect(store.getState().showSingleTrace).toBe(false);
   });
 
   function triggerFullscreenChange() {

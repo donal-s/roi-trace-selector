@@ -10,12 +10,9 @@ import {
   CHANNEL_2,
   CHANNEL_BOTH,
 } from "../model/Types";
-import roiDataStore from "../model/RoiDataModel";
-import {
-  updateMarkersAction,
-  updateEditMarkerAction,
-} from "../model/Actions";
+import { updateMarkersAction, updateEditMarkerAction } from "../model/Actions";
 import { renderWithProvider } from "../TestUtils";
+import { act } from "react-dom/test-utils";
 
 describe("component EditMarkerPanel", () => {
   const TEST_MARKER: Marker = {
@@ -26,17 +23,20 @@ describe("component EditMarkerPanel", () => {
   };
 
   it("initial state", () => {
-    roiDataStore.dispatch(
-      updateEditMarkerAction({ index: 0, marker: TEST_MARKER })
-    );
+    const { store } = renderWithProvider(<EditMarkerPanel />);
+    act(() => {
+      store.dispatch(updateEditMarkerAction({ index: 0, marker: TEST_MARKER }));
+    });
     checkPanelRender(TEST_MARKER);
   });
 
   it("validate name", async () => {
-    roiDataStore.dispatch(
-      updateEditMarkerAction({ index: 0, marker: TEST_MARKER })
-    );
-    const { user } = checkPanelRender(TEST_MARKER);
+    const { store, user } = renderWithProvider(<EditMarkerPanel />);
+    act(() => {
+      store.dispatch(updateEditMarkerAction({ index: 0, marker: TEST_MARKER }));
+    });
+
+    checkPanelRender(TEST_MARKER);
     await user.clear(nameField());
 
     expect(saveMarkerButton()).toBeDisabled();
@@ -52,10 +52,12 @@ describe("component EditMarkerPanel", () => {
   });
 
   it("save marker vertical axis", async () => {
-    roiDataStore.dispatch(
-      updateEditMarkerAction({ index: 0, marker: TEST_MARKER })
-    );
-    const { user } = checkPanelRender(TEST_MARKER);
+    const { store, user } = renderWithProvider(<EditMarkerPanel />);
+    act(() => {
+      store.dispatch(updateEditMarkerAction({ index: 0, marker: TEST_MARKER }));
+    });
+
+    checkPanelRender(TEST_MARKER);
     await user.clear(nameField());
     await user.type(nameField(), "   new value   ");
     await user.click(verticalAxisField());
@@ -67,25 +69,29 @@ describe("component EditMarkerPanel", () => {
 
     await user.click(saveMarkerButton());
 
-    expect(roiDataStore.getState().editMarker).toBeUndefined();
-    expect(roiDataStore.getState().markers).toStrictEqual([
+    expect(store.getState().editMarker).toBeUndefined();
+    expect(store.getState().markers).toStrictEqual([
       { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_BOTH },
     ]);
   });
 
   it("save marker horizontal axis - for test coverage", async () => {
-    roiDataStore.dispatch(
-      updateEditMarkerAction({
-        index: 0,
-        marker: {
-          name: "test marker",
-          axis: AXIS_V,
-          value: 17,
-          channel: CHANNEL_1,
-        },
-      })
-    );
-    const { user } = checkPanelRender({
+    const { store, user } = renderWithProvider(<EditMarkerPanel />);
+    act(() => {
+      store.dispatch(
+        updateEditMarkerAction({
+          index: 0,
+          marker: {
+            name: "test marker",
+            axis: AXIS_V,
+            value: 17,
+            channel: CHANNEL_1,
+          },
+        })
+      );
+    });
+
+    checkPanelRender({
       name: "test marker",
       axis: AXIS_V,
       value: 17,
@@ -96,39 +102,47 @@ describe("component EditMarkerPanel", () => {
 
     await user.click(saveMarkerButton());
 
-    expect(roiDataStore.getState().editMarker).toBeUndefined();
-    expect(roiDataStore.getState().markers).toStrictEqual([
+    expect(store.getState().editMarker).toBeUndefined();
+    expect(store.getState().markers).toStrictEqual([
       { name: "test marker", axis: AXIS_H, value: 17, channel: CHANNEL_1 },
     ]);
   });
 
   it("save marker channel 2 - for test coverage", async () => {
-    roiDataStore.dispatch(
-      updateEditMarkerAction({
-        index: 0,
-        marker: TEST_MARKER,
-      })
-    );
-    const { user } = checkPanelRender(TEST_MARKER);
+    const { store, user } = renderWithProvider(<EditMarkerPanel />);
+    act(() => {
+      store.dispatch(
+        updateEditMarkerAction({
+          index: 0,
+          marker: TEST_MARKER,
+        })
+      );
+    });
+
+    checkPanelRender(TEST_MARKER);
     await user.click(channel2Field());
     expect(saveMarkerButton()).not.toBeDisabled();
 
     await user.click(saveMarkerButton());
 
-    expect(roiDataStore.getState().editMarker).toBeUndefined();
-    expect(roiDataStore.getState().markers).toStrictEqual([
+    expect(store.getState().editMarker).toBeUndefined();
+    expect(store.getState().markers).toStrictEqual([
       { ...TEST_MARKER, channel: CHANNEL_2 },
     ]);
   });
 
   it("save marker channel 1 - for test coverage", async () => {
-    roiDataStore.dispatch(
-      updateEditMarkerAction({
-        index: 0,
-        marker: { ...TEST_MARKER, channel: CHANNEL_2 },
-      })
-    );
-    const { user } = checkPanelRender({
+    const { store, user } = renderWithProvider(<EditMarkerPanel />);
+    act(() => {
+      store.dispatch(
+        updateEditMarkerAction({
+          index: 0,
+          marker: { ...TEST_MARKER, channel: CHANNEL_2 },
+        })
+      );
+    });
+
+    checkPanelRender({
       ...TEST_MARKER,
       channel: CHANNEL_2,
     });
@@ -137,64 +151,70 @@ describe("component EditMarkerPanel", () => {
 
     await user.click(saveMarkerButton());
 
-    expect(roiDataStore.getState().editMarker).toBeUndefined();
-    expect(roiDataStore.getState().markers).toStrictEqual([
+    expect(store.getState().editMarker).toBeUndefined();
+    expect(store.getState().markers).toStrictEqual([
       { ...TEST_MARKER, channel: CHANNEL_1 },
     ]);
   });
 
   it("delete marker", async () => {
-    roiDataStore.dispatch(
-      updateMarkersAction([
-        TEST_MARKER,
-        { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_BOTH },
-      ])
-    );
-    roiDataStore.dispatch(
-      updateEditMarkerAction({ index: 0, marker: TEST_MARKER })
-    );
-    const { user } = checkPanelRender(TEST_MARKER);
+    const { store, user } = renderWithProvider(<EditMarkerPanel />);
+    act(() => {
+      store.dispatch(
+        updateMarkersAction([
+          TEST_MARKER,
+          { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_BOTH },
+        ])
+      );
+      store.dispatch(updateEditMarkerAction({ index: 0, marker: TEST_MARKER }));
+    });
+
+    checkPanelRender(TEST_MARKER);
     expect(deleteMarkerButton()).not.toBeDisabled();
 
     await user.click(deleteMarkerButton());
-    expect(roiDataStore.getState().markers).toStrictEqual([
+    expect(store.getState().markers).toStrictEqual([
       { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_BOTH },
     ]);
-    expect(roiDataStore.getState().editMarker).toBeUndefined();
+    expect(store.getState().editMarker).toBeUndefined();
   });
 
   it("delete marker disabled for new markers", () => {
-    roiDataStore.dispatch(
-      updateMarkersAction([
-        TEST_MARKER,
-        { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_2 },
-      ])
-    );
-    roiDataStore.dispatch(
-      updateEditMarkerAction({ index: 2, marker: TEST_MARKER })
-    );
+    const { store } = renderWithProvider(<EditMarkerPanel />);
+    act(() => {
+      store.dispatch(
+        updateMarkersAction([
+          TEST_MARKER,
+          { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_2 },
+        ])
+      );
+      store.dispatch(updateEditMarkerAction({ index: 2, marker: TEST_MARKER }));
+    });
+
     checkPanelRender(TEST_MARKER);
     expect(deleteMarkerButton()).toBeDisabled();
   });
 
   it("close", async () => {
-    roiDataStore.dispatch(
-      updateMarkersAction([
-        TEST_MARKER,
-        { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_2 },
-      ])
-    );
-    roiDataStore.dispatch(
-      updateEditMarkerAction({ index: 0, marker: TEST_MARKER })
-    );
-    const { user } = checkPanelRender(TEST_MARKER);
+    const { store, user } = renderWithProvider(<EditMarkerPanel />);
+    act(() => {
+      store.dispatch(
+        updateMarkersAction([
+          TEST_MARKER,
+          { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_2 },
+        ])
+      );
+      store.dispatch(updateEditMarkerAction({ index: 0, marker: TEST_MARKER }));
+    });
+
+    checkPanelRender(TEST_MARKER);
 
     await user.click(cancelButton());
-    expect(roiDataStore.getState().markers).toStrictEqual([
+    expect(store.getState().markers).toStrictEqual([
       TEST_MARKER,
       { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_2 },
     ]);
-    expect(roiDataStore.getState().editMarker).toBeUndefined();
+    expect(store.getState().editMarker).toBeUndefined();
   });
 
   const nameField = (): HTMLInputElement =>
@@ -220,17 +240,9 @@ describe("component EditMarkerPanel", () => {
     document.querySelector("#editMarkerCancelButton")!;
 
   function checkPanelRender(marker: Marker) {
-    const result = renderWithProvider(<EditMarkerPanel />);
-
     expect(nameField()).toHaveValue(marker.name);
-    expect(horizontalAxisField().checked).toStrictEqual(
-      marker.axis === AXIS_H
-    );
-    expect(verticalAxisField().checked).toStrictEqual(
-      marker.axis === AXIS_V
-    );
+    expect(horizontalAxisField().checked).toStrictEqual(marker.axis === AXIS_H);
+    expect(verticalAxisField().checked).toStrictEqual(marker.axis === AXIS_V);
     expect(valueField()).toHaveValue(marker.value);
-
-    return result;
   }
 });

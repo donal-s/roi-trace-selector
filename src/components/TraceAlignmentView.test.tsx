@@ -2,40 +2,38 @@
 
 import React from "react";
 import TraceAlignmentView from "./TraceAlignmentView";
-import roiDataStore from "../model/RoiDataModel";
 import {
-  CSV_DATA,
-  CSV_DATA_2,
+  DUAL_CHANNEL_LOADED_STATE,
+  LOADED_STATE,
   renderWithProvider,
-  setCsvData,
 } from "../TestUtils";
 import { Channel, CHANNEL_1, CHANNEL_2 } from "../model/Types";
-import { resetStateAction, setCurrentChannelAction } from "../model/Actions";
+import { setCurrentChannelAction } from "../model/Actions";
 import { fireEvent } from "@testing-library/react";
+import { RoiDataModelStore } from "../model/RoiDataModel";
+import { act } from "react-dom/test-utils";
 
 // User event typing on number fields is difficult
 const REPLACE_NUMBER = { initialSelectionStart: 0, initialSelectionEnd: 10 };
 
 describe("component TraceAlignmentView", () => {
-  beforeEach(() => {
-    roiDataStore.dispatch(resetStateAction());
-  });
-
   it("initial empty state channel 1 disabled", () => {
-    renderWithProvider(<TraceAlignmentView />);
+    const { store } = renderWithProvider(<TraceAlignmentView />);
 
     checkEnabled(false, false, false, false, false, false, false, false);
     checkValues(false, false, 200, 1, false, false, 0, 1);
-    checkAlignedChartData(undefined, CHANNEL_1);
+    checkAlignedChartData(store, undefined, CHANNEL_1);
   });
 
   it("loaded state channel 1", () => {
-    setCsvData(CSV_DATA);
-    renderWithProvider(<TraceAlignmentView />);
+    const { store } = renderWithProvider(<TraceAlignmentView />, {
+      preloadedState: LOADED_STATE,
+    });
 
     checkEnabled(true, false, false, false, false, false, false, false);
     checkValues(false, false, 200, 1, false, false, 0, 5);
     checkAlignedChartData(
+      store,
       [
         [10, 9, 5, 4, 3],
         [1.5, 1.5, 1.5, 1.5, 1.5],
@@ -47,22 +45,27 @@ describe("component TraceAlignmentView", () => {
   });
 
   it("channel 1 loaded state channel 2 disabled", () => {
-    setCsvData(CSV_DATA);
-    roiDataStore.dispatch(setCurrentChannelAction(CHANNEL_2));
-    renderWithProvider(<TraceAlignmentView />);
+    const { store } = renderWithProvider(<TraceAlignmentView />, {
+      preloadedState: LOADED_STATE,
+    });
+    act(() => {
+      store.dispatch(setCurrentChannelAction(CHANNEL_2));
+    });
 
     checkEnabled(false, false, false, false, false, false, false, false);
     checkValues(false, false, 200, 1, false, false, 0, 1);
-    checkAlignedChartData(undefined, CHANNEL_2);
+    checkAlignedChartData(store, undefined, CHANNEL_2);
   });
 
   it("modify settings channel 1", async () => {
-    setCsvData(CSV_DATA);
-    const { user } = renderWithProvider(<TraceAlignmentView />);
+    const { store, user } = renderWithProvider(<TraceAlignmentView />, {
+      preloadedState: LOADED_STATE,
+    });
 
     checkEnabled(true, false, false, false, false, false, false, false);
     checkValues(false, false, 200, 1, false, false, 0, 5);
     checkAlignedChartData(
+      store,
       [
         [10, 9, 5, 4, 3],
         [1.5, 1.5, 1.5, 1.5, 1.5],
@@ -83,6 +86,7 @@ describe("component TraceAlignmentView", () => {
     checkEnabled(true, true, true, true, true, false, false, false);
     checkValues(true, false, 5, 1, false, false, 0, 5);
     checkAlignedChartData(
+      store,
       [
         [5, 4, 0, -1, -2],
         [5, 5, 5, 5, 5],
@@ -98,6 +102,7 @@ describe("component TraceAlignmentView", () => {
     checkEnabled(true, true, true, true, true, false, false, false);
     checkValues(true, false, 5, 2, false, false, 0, 5);
     checkAlignedChartData(
+      store,
       [
         [6, 5, 1, 0, -1],
         [5, 5, 5, 5, 5],
@@ -113,6 +118,7 @@ describe("component TraceAlignmentView", () => {
     checkEnabled(true, true, true, false, true, false, false, false);
     checkValues(true, true, 5, 2, false, false, 0, 5);
     checkAlignedChartData(
+      store,
       [
         [5, 4, 0, -1, -2],
         [5, 5, 5, 5, 5],
@@ -134,6 +140,7 @@ describe("component TraceAlignmentView", () => {
     checkEnabled(true, true, true, true, true, true, true, true);
     checkValues(true, false, 5, 1, true, false, 1, 5);
     checkAlignedChartData(
+      store,
       [
         [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
         [5, 5, 5, 5, 5],
@@ -150,6 +157,7 @@ describe("component TraceAlignmentView", () => {
     checkEnabled(true, true, true, false, true, true, true, false);
     checkValues(true, true, 5, 1, true, true, 1, 5);
     checkAlignedChartData(
+      store,
       [
         [5, 4.428571428571429, 2.1428571428571432, 1.5714285714285716, 1],
         [5, 5, 5, 5, 5],
@@ -161,14 +169,17 @@ describe("component TraceAlignmentView", () => {
   });
 
   it("modify settings channel 2", async () => {
-    setCsvData(CSV_DATA);
-    setCsvData(CSV_DATA_2, CHANNEL_2);
-    roiDataStore.dispatch(setCurrentChannelAction(CHANNEL_2));
-    const { user } = renderWithProvider(<TraceAlignmentView />);
+    const { store, user } = renderWithProvider(<TraceAlignmentView />, {
+      preloadedState: DUAL_CHANNEL_LOADED_STATE,
+    });
+    act(() => {
+      store.dispatch(setCurrentChannelAction(CHANNEL_2));
+    });
 
     checkEnabled(true, false, false, false, false, false, false, false);
     checkValues(false, false, 200, 1, false, false, 0, 5);
     checkAlignedChartData(
+      store,
       [
         [30, 29, 25, 24, 23],
         [21.5, 21.5, 21.5, 21.5, 21.5],
@@ -189,6 +200,7 @@ describe("component TraceAlignmentView", () => {
     checkEnabled(true, true, true, true, true, false, false, false);
     checkValues(true, false, 5, 1, false, false, 0, 5);
     checkAlignedChartData(
+      store,
       [
         [5, 4, 0, -1, -2],
         [5, 5, 5, 5, 5],
@@ -200,8 +212,9 @@ describe("component TraceAlignmentView", () => {
   });
 
   it("input blur", async () => {
-    setCsvData(CSV_DATA);
-    const { user } = renderWithProvider(<TraceAlignmentView />);
+    const { user } = renderWithProvider(<TraceAlignmentView />, {
+      preloadedState: LOADED_STATE,
+    });
     await user.click(enableYMaxAlignmentField());
     await user.click(enableYMinAlignmentField());
 
@@ -238,8 +251,9 @@ describe("component TraceAlignmentView", () => {
   });
 
   it("input empty", async () => {
-    setCsvData(CSV_DATA);
-    const { user } = renderWithProvider(<TraceAlignmentView />);
+    const { user } = renderWithProvider(<TraceAlignmentView />, {
+      preloadedState: LOADED_STATE,
+    });
     await user.click(enableYMaxAlignmentField());
     await user.click(enableYMinAlignmentField());
 
@@ -312,13 +326,14 @@ describe("component TraceAlignmentView", () => {
   }
 
   function checkAlignedChartData(
+    store: RoiDataModelStore,
     expectedData: number[][] | undefined,
     channel: Channel
   ) {
     const dataset =
       channel === CHANNEL_1
-        ? roiDataStore.getState().channel1Dataset
-        : roiDataStore.getState().channel2Dataset;
+        ? store.getState().channel1Dataset
+        : store.getState().channel2Dataset;
     expect(dataset?.chartData).toStrictEqual(expectedData);
   }
 });

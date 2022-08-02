@@ -2,15 +2,15 @@ import React from "react";
 import FileAccessView from "./FileAccessView";
 import FileSaver from "file-saver";
 import {
-  configureAppMockStore,
+  CSV_DATA_2,
   DUAL_CHANNEL_LOADED_STATE,
   EMPTY_STATE,
   LOADED_STATE,
   renderWithProvider,
 } from "../TestUtils";
-import { Store } from "redux";
-import { CHANNEL_1, CHANNEL_2 } from "../model/Types";
+import { CHANNEL_2 } from "../model/Types";
 import { fireEvent, waitFor } from "@testing-library/react";
+import { RoiDataModelState } from "../model/RoiDataModel";
 
 const SMALL_CSV_DATA =
   " , ROI-1, ROI-2\n" +
@@ -18,8 +18,14 @@ const SMALL_CSV_DATA =
   "2, 9.000,     1.5\n" +
   "3, 5.000,     1.5";
 
+const CHART_DATA = [
+  [10, 9, 5],
+  [1.5, 1.5, 1.5],
+];
+
+const CHART_ITEMS = ["ROI-1", "ROI-2"];
+
 describe("component FileAccessView", () => {
-  const mockStore = configureAppMockStore();
   const mockConfirm = jest.fn();
 
   beforeAll(() => {
@@ -45,9 +51,10 @@ describe("component FileAccessView", () => {
   });
 
   it("initial empty state channel 2 - shouldn't be possible - for test coverage", () => {
-    const { container } = renderComponent(
-      mockStore({ ...EMPTY_STATE, currentChannel: CHANNEL_2 })
-    );
+    const { container } = renderComponent({
+      ...EMPTY_STATE,
+      currentChannel: CHANNEL_2,
+    });
 
     expect(loadButtonLabel()).toHaveClass("disabled");
     expect(loadButton()).toBeDisabled();
@@ -57,7 +64,7 @@ describe("component FileAccessView", () => {
   });
 
   it("one channel loaded channel 1", () => {
-    const { container } = renderComponent(mockStore(LOADED_STATE));
+    const { container } = renderComponent(LOADED_STATE);
 
     expect(loadButtonLabel()).not.toHaveClass("disabled");
     expect(loadButton()).not.toBeDisabled();
@@ -68,9 +75,10 @@ describe("component FileAccessView", () => {
   });
 
   it("one channel loaded channel 2", () => {
-    const { container } = renderComponent(
-      mockStore({ ...LOADED_STATE, currentChannel: CHANNEL_2 })
-    );
+    const { container } = renderComponent({
+      ...LOADED_STATE,
+      currentChannel: CHANNEL_2,
+    });
 
     expect(loadButtonLabel()).not.toHaveClass("disabled");
     expect(loadButton()).not.toBeDisabled();
@@ -81,7 +89,7 @@ describe("component FileAccessView", () => {
   });
 
   it("two channels loaded channel 1", () => {
-    const { container } = renderComponent(mockStore(DUAL_CHANNEL_LOADED_STATE));
+    const { container } = renderComponent(DUAL_CHANNEL_LOADED_STATE);
 
     expect(loadButtonLabel()).not.toHaveClass("disabled");
     expect(loadButton()).not.toBeDisabled();
@@ -92,9 +100,10 @@ describe("component FileAccessView", () => {
   });
 
   it("two channels loaded channel 2", () => {
-    const { container } = renderComponent(
-      mockStore({ ...DUAL_CHANNEL_LOADED_STATE, currentChannel: CHANNEL_2 })
-    );
+    const { container } = renderComponent({
+      ...DUAL_CHANNEL_LOADED_STATE,
+      currentChannel: CHANNEL_2,
+    });
 
     expect(loadButtonLabel()).not.toHaveClass("disabled");
     expect(loadButton()).not.toBeDisabled();
@@ -106,46 +115,40 @@ describe("component FileAccessView", () => {
 
   describe("loadFile", () => {
     it("load channel 1 from empty state", async () => {
-      const inputStore = mockStore(EMPTY_STATE);
-      renderComponent(inputStore);
+      const { store } = renderComponent(EMPTY_STATE);
 
       triggerFileLoad();
 
       await waitFor(() =>
-        expect(inputStore.getActions()).toStrictEqual(
-          expect.arrayContaining([
-            expect.objectContaining({
-              payload: {
-                channel: CHANNEL_1,
-                csvData: SMALL_CSV_DATA,
-                filename: "newTestFile.csv",
-              },
-              type: "loadFile/fulfilled",
+        expect(store.getState()).toStrictEqual(
+          expect.objectContaining({
+            channel1Dataset: expect.objectContaining({
+              chartData: CHART_DATA,
+              filename: "newTestFile.csv",
             }),
-          ])
+            chartFrameLabels: [1, 2, 3],
+            items: CHART_ITEMS,
+          })
         )
       );
       expect(mockConfirm).not.toHaveBeenCalled();
     });
 
     it("load channel 1 with channel 1 already loaded", async () => {
-      const store = mockStore(LOADED_STATE);
-      renderComponent(store);
+      const { store } = renderComponent(LOADED_STATE);
 
       triggerFileLoad();
 
       await waitFor(() =>
-        expect(store.getActions()).toStrictEqual(
-          expect.arrayContaining([
-            expect.objectContaining({
-              payload: {
-                channel: CHANNEL_1,
-                csvData: SMALL_CSV_DATA,
-                filename: "newTestFile.csv",
-              },
-              type: "loadFile/fulfilled",
+        expect(store.getState()).toStrictEqual(
+          expect.objectContaining({
+            channel1Dataset: expect.objectContaining({
+              chartData: CHART_DATA,
+              filename: "newTestFile.csv",
             }),
-          ])
+            chartFrameLabels: [1, 2, 3],
+            items: CHART_ITEMS,
+          })
         )
       );
       expect(mockConfirm).toHaveBeenCalledTimes(1);
@@ -153,33 +156,30 @@ describe("component FileAccessView", () => {
 
     it("load channel 1 with channel 1 already loaded then cancel on confirm", async () => {
       mockConfirm.mockReturnValue(false);
-      const store = mockStore(LOADED_STATE);
-      renderComponent(store);
+      const { store } = renderComponent(LOADED_STATE);
 
       triggerFileLoad();
 
       await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
-      expect(store.getActions()).toHaveLength(0);
+      await waitFor(() => expect(store.getState()).toStrictEqual(LOADED_STATE));
     });
 
     it("load channel 1 with both channels already loaded", async () => {
-      const store = mockStore(DUAL_CHANNEL_LOADED_STATE);
-      renderComponent(store);
+      const { store } = renderComponent(DUAL_CHANNEL_LOADED_STATE);
 
       triggerFileLoad();
 
       await waitFor(() =>
-        expect(store.getActions()).toStrictEqual(
-          expect.arrayContaining([
-            expect.objectContaining({
-              payload: {
-                channel: CHANNEL_1,
-                csvData: SMALL_CSV_DATA,
-                filename: "newTestFile.csv",
-              },
-              type: "loadFile/fulfilled",
+        expect(store.getState()).toStrictEqual(
+          expect.objectContaining({
+            channel1Dataset: expect.objectContaining({
+              chartData: CHART_DATA,
+              filename: "newTestFile.csv",
             }),
-          ])
+            chartFrameLabels: [1, 2, 3],
+            items: CHART_ITEMS,
+            channel2Dataset: undefined,
+          })
         )
       );
       expect(mockConfirm).toHaveBeenCalledTimes(1);
@@ -187,59 +187,64 @@ describe("component FileAccessView", () => {
 
     it("load channel 1 with both channels already loaded then cancel on confirm", async () => {
       mockConfirm.mockReturnValue(false);
-      const store = mockStore(DUAL_CHANNEL_LOADED_STATE);
-      renderComponent(store);
+      const { store } = renderComponent(DUAL_CHANNEL_LOADED_STATE);
 
       triggerFileLoad();
 
       await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
-      expect(store.getActions()).toHaveLength(0);
+      await waitFor(() =>
+        expect(store.getState()).toStrictEqual(DUAL_CHANNEL_LOADED_STATE)
+      );
     });
 
     it("load channel 2 with channel 1 already loaded", async () => {
-      const store = mockStore({ ...LOADED_STATE, currentChannel: CHANNEL_2 });
-      renderComponent(store);
+      const { store } = renderComponent({
+        ...LOADED_STATE,
+        currentChannel: CHANNEL_2,
+      });
 
-      triggerFileLoad();
+      fireEvent.change(loadButton(), {
+        target: {
+          files: [
+            // Need same shape of data as channel 1
+            new File([CSV_DATA_2], "newTestFile.csv", { type: "mimeType" }),
+          ],
+        },
+      });
 
       await waitFor(() =>
-        expect(store.getActions()).toStrictEqual(
-          expect.arrayContaining([
-            expect.objectContaining({
-              payload: {
-                channel: CHANNEL_2,
-                csvData: SMALL_CSV_DATA,
-                filename: "newTestFile.csv",
-              },
-              type: "loadFile/fulfilled",
+        expect(store.getState()).toStrictEqual(
+          expect.objectContaining({
+            channel2Dataset: expect.objectContaining({
+              filename: "newTestFile.csv",
             }),
-          ])
+          })
         )
       );
       expect(mockConfirm).not.toHaveBeenCalled();
     });
 
     it("load channel 2 with both channels already loaded", async () => {
-      const store = mockStore({
+      const { store } = renderComponent({
         ...DUAL_CHANNEL_LOADED_STATE,
         currentChannel: CHANNEL_2,
       });
-      renderComponent(store);
 
-      triggerFileLoad();
-
+      fireEvent.change(loadButton(), {
+        target: {
+          files: [
+            // Need same shape of data as channel 1
+            new File([CSV_DATA_2], "newTestFile.csv", { type: "mimeType" }),
+          ],
+        },
+      });
       await waitFor(() =>
-        expect(store.getActions()).toStrictEqual(
-          expect.arrayContaining([
-            expect.objectContaining({
-              payload: {
-                channel: CHANNEL_2,
-                csvData: SMALL_CSV_DATA,
-                filename: "newTestFile.csv",
-              },
-              type: "loadFile/fulfilled",
+        expect(store.getState()).toStrictEqual(
+          expect.objectContaining({
+            channel2Dataset: expect.objectContaining({
+              filename: "newTestFile.csv",
             }),
-          ])
+          })
         )
       );
       expect(mockConfirm).not.toHaveBeenCalled();
@@ -265,8 +270,10 @@ describe("component FileAccessView", () => {
     });
 
     it("attempt to save unopened file", async () => {
-      const store = mockStore(EMPTY_STATE);
-      const { user } = renderComponent(store);
+      const { user } = renderComponent({
+        ...LOADED_STATE,
+        currentChannel: CHANNEL_2,
+      });
 
       await user.click(saveButton());
 
@@ -274,11 +281,10 @@ describe("component FileAccessView", () => {
     });
 
     it("save channel 1", async () => {
-      const store = mockStore({
+      const { user } = renderComponent({
         ...LOADED_STATE,
         scanStatus: ["y", "y", "y", "y"],
       });
-      const { user } = renderComponent(store);
 
       await user.click(saveButton());
 
@@ -299,12 +305,11 @@ describe("component FileAccessView", () => {
     });
 
     it("save channel 2", async () => {
-      const store = mockStore({
+      const { user } = renderComponent({
         ...DUAL_CHANNEL_LOADED_STATE,
         currentChannel: CHANNEL_2,
         scanStatus: ["y", "y", "y", "y"],
       });
-      const { user } = renderComponent(store);
 
       await user.click(saveButton());
 
@@ -327,73 +332,63 @@ describe("component FileAccessView", () => {
 
   describe("close channel", () => {
     it("attempt to close channel 1 when no file opened", async () => {
-      const store = mockStore(EMPTY_STATE);
-      const { user } = renderComponent(store);
+      const { store, user } = renderComponent(EMPTY_STATE);
 
       await user.click(closeButton());
 
-      expect(store.getActions()).toStrictEqual([]);
+      expect(store.getState()).toStrictEqual(EMPTY_STATE);
       expect(mockConfirm).not.toHaveBeenCalled();
     });
 
     it("close channel 1 with channel 1 loaded", async () => {
-      const store = mockStore(LOADED_STATE);
-      const { user } = renderComponent(store);
+      const { store, user } = renderComponent(LOADED_STATE);
 
       await user.click(closeButton());
 
-      expect(store.getActions()).toStrictEqual([
-        { payload: CHANNEL_1, type: "closeChannel" },
-      ]);
+      expect(store.getState()).toStrictEqual(EMPTY_STATE);
       expect(mockConfirm).toHaveBeenCalledTimes(1);
     });
 
     it("close channel 1 with channel 1 loaded then cancel on confirm", async () => {
       mockConfirm.mockReturnValue(false);
-      const store = mockStore(LOADED_STATE);
-      const { user } = renderComponent(store);
+      const { store, user } = renderComponent(LOADED_STATE);
 
       await user.click(closeButton());
 
-      expect(store.getActions()).toHaveLength(0);
+      await waitFor(() => expect(store.getState()).toStrictEqual(LOADED_STATE));
       expect(mockConfirm).toHaveBeenCalledTimes(1);
     });
 
     it("close channel 1 with both channels loaded", async () => {
-      const store = mockStore(DUAL_CHANNEL_LOADED_STATE);
-      const { user } = renderComponent(store);
+      const { store, user } = renderComponent(DUAL_CHANNEL_LOADED_STATE);
 
       await user.click(closeButton());
 
-      expect(store.getActions()).toStrictEqual([
-        { payload: CHANNEL_1, type: "closeChannel" },
-      ]);
+      expect(store.getState()).toStrictEqual(EMPTY_STATE);
       expect(mockConfirm).toHaveBeenCalledTimes(1);
     });
 
     it("close channel 1 with both channels loaded then cancel on confirm", async () => {
       mockConfirm.mockReturnValue(false);
-      const store = mockStore(LOADED_STATE);
-      const { user } = renderComponent(store);
+      const { store, user } = renderComponent(DUAL_CHANNEL_LOADED_STATE);
 
       await user.click(closeButton());
 
-      expect(store.getActions()).toHaveLength(0);
+      await waitFor(() =>
+        expect(store.getState()).toStrictEqual(DUAL_CHANNEL_LOADED_STATE)
+      );
       expect(mockConfirm).toHaveBeenCalledTimes(1);
     });
 
     it("close channel 2 with both channels loaded", async () => {
-      const store = mockStore({
+      const { store, user } = renderComponent({
         ...DUAL_CHANNEL_LOADED_STATE,
         currentChannel: CHANNEL_2,
       });
-      const { user } = renderComponent(store);
 
       await user.click(closeButton());
 
-      expect(store.getActions()).toStrictEqual([
-        { payload: CHANNEL_2, type: "closeChannel" },
-      ]);
+      expect(store.getState()).toEqual(LOADED_STATE);
       expect(mockConfirm).not.toHaveBeenCalled();
     });
   });
@@ -407,8 +402,8 @@ describe("component FileAccessView", () => {
   const closeButton = (): HTMLButtonElement =>
     document.querySelector("#closeChannel")!;
 
-  function renderComponent(store: Store = mockStore(EMPTY_STATE)) {
-    return renderWithProvider(<FileAccessView />, store);
+  function renderComponent(preloadedState: RoiDataModelState = EMPTY_STATE) {
+    return renderWithProvider(<FileAccessView />, { preloadedState });
   }
 
   function triggerFileLoad() {

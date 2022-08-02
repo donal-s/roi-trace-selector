@@ -66,7 +66,6 @@
     "@types/node": "^16.11.43",
     "@types/react": "^18.0.14",
     "@types/react-dom": "^18.0.6",
-    "@types/redux-mock-store": "^1.0.3",
     "@typescript-eslint/eslint-plugin": "^5.10.0",
     "@typescript-eslint/parser": "^5.10.0",
     "babel-eslint": "^10.1.0",
@@ -99,7 +98,6 @@
     "mini-css-extract-plugin": "^2.5.2",
     "raw-loader": "^4.0.2",
     "react-dev-utils": "^12.0.0",
-    "redux-mock-store": "^1.5.4",
     "resize-observer-polyfill": "^1.5.1",
     "resolve": "^1.21.1",
     "resolve-url-loader": "^5.0.0",
@@ -118,6 +116,7 @@
   },
   "jest": {
     "verbose": true,
+    "coverage": true,
     "clearMocks": true,
     "preset": "ts-jest",
     "roots": [

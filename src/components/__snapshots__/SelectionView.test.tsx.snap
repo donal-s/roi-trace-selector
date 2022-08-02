@@ -1,0 +1,539 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`component SelectionView render selection choices - first channel 1`] = `
+<div>
+  <div
+    id="selectionPanel"
+  >
+    <select
+      id="selectionMode"
+    >
+      <option
+        value="manual"
+      >
+        Manual
+      </option>
+      <option
+        value="percentChange"
+      >
+        % Change
+      </option>
+      <option
+        value="stdev"
+      >
+        STDEV
+      </option>
+      <option
+        value="minimumStdevByTraceCount"
+      >
+        Remove Outliers
+      </option>
+    </select>
+    <div
+      class="optionsPanel"
+    />
+  </div>
+</div>
+`;
+
+exports[`component SelectionView render selection choices - first channel 2`] = `
+<div>
+  <div
+    id="selectionPanel"
+  >
+    <select
+      id="selectionMode"
+    >
+      <option
+        value="manual"
+      >
+        Manual
+      </option>
+      <option
+        value="percentChange"
+      >
+        % Change
+      </option>
+      <option
+        value="stdev"
+      >
+        STDEV
+      </option>
+      <option
+        value="minimumStdevByTraceCount"
+      >
+        Remove Outliers
+      </option>
+    </select>
+    <div
+      class="optionsPanel"
+    >
+      <label
+        for="startFrame"
+      >
+        Start frame
+      </label>
+      <input
+        id="startFrame"
+        max="5"
+        min="1"
+        type="number"
+        value="1"
+      />
+      <label
+        for="endFrame"
+      >
+        End frame
+      </label>
+      <input
+        id="endFrame"
+        max="5"
+        min="1"
+        type="number"
+        value="3"
+      />
+      <label
+        for="percentChange"
+      >
+        % of total change
+      </label>
+      <input
+        id="percentChange"
+        max="100"
+        min="1"
+        step="1"
+        type="number"
+        value="10"
+      />
+    </div>
+  </div>
+</div>
+`;
+
+exports[`component SelectionView render selection choices - first channel 3`] = `
+<div>
+  <div
+    id="selectionPanel"
+  >
+    <select
+      id="selectionMode"
+    >
+      <option
+        value="manual"
+      >
+        Manual
+      </option>
+      <option
+        value="percentChange"
+      >
+        % Change
+      </option>
+      <option
+        value="stdev"
+      >
+        STDEV
+      </option>
+      <option
+        value="minimumStdevByTraceCount"
+      >
+        Remove Outliers
+      </option>
+    </select>
+    <div
+      class="optionsPanel"
+    >
+      <label
+        for="startBaselineFrame"
+      >
+        Start baseline frame
+      </label>
+      <input
+        id="startBaselineFrame"
+        max="5"
+        min="1"
+        type="number"
+        value="1"
+      />
+      <label
+        for="endBaselineFrame"
+      >
+        End baseline frame
+      </label>
+      <input
+        id="endBaselineFrame"
+        max="5"
+        min="1"
+        type="number"
+        value="3"
+      />
+      <label
+        for="startDetectionFrame"
+      >
+        Start detection frame
+      </label>
+      <input
+        id="startDetectionFrame"
+        max="5"
+        min="1"
+        type="number"
+        value="4"
+      />
+      <label
+        for="endDetectionFrame"
+      >
+        End detection frame
+      </label>
+      <input
+        id="endDetectionFrame"
+        max="5"
+        min="1"
+        type="number"
+        value="5"
+      />
+      <label
+        for="stdevMultiple"
+      >
+        x STDEV minimum
+      </label>
+      <input
+        id="stdevMultiple"
+        max="10"
+        min="0.1"
+        step="0.1"
+        type="number"
+        value="1"
+      />
+    </div>
+  </div>
+</div>
+`;
+
+exports[`component SelectionView render selection choices - first channel 4`] = `
+<div>
+  <div
+    id="selectionPanel"
+  >
+    <select
+      id="selectionMode"
+    >
+      <option
+        value="manual"
+      >
+        Manual
+      </option>
+      <option
+        value="percentChange"
+      >
+        % Change
+      </option>
+      <option
+        value="stdev"
+      >
+        STDEV
+      </option>
+      <option
+        value="minimumStdevByTraceCount"
+      >
+        Remove Outliers
+      </option>
+    </select>
+    <div
+      class="optionsPanel"
+    >
+      <label
+        for="selectedTraceCount"
+      >
+        Selected trace count
+      </label>
+      <input
+        id="selectedTraceCount"
+        max="4"
+        min="2"
+        step="1"
+        type="number"
+        value="4"
+      />
+      <label
+        id="selectedStdevLabel"
+      >
+        STDEV of selected
+      </label>
+      <div
+        aria-labelledby="selectedStdevLabel"
+        id="selectedStdev"
+      >
+        2.49
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`component SelectionView render selection choices - second channel 1`] = `
+<div>
+  <div
+    id="selectionPanel"
+  >
+    <select
+      id="selectionMode"
+    >
+      <option
+        value="manual"
+      >
+        Manual
+      </option>
+      <option
+        value="percentChange"
+      >
+        % Change
+      </option>
+      <option
+        value="stdev"
+      >
+        STDEV
+      </option>
+      <option
+        value="minimumStdevByTraceCount"
+      >
+        Remove Outliers
+      </option>
+    </select>
+    <div
+      class="optionsPanel"
+    />
+  </div>
+</div>
+`;
+
+exports[`component SelectionView render selection choices - second channel 2`] = `
+<div>
+  <div
+    id="selectionPanel"
+  >
+    <select
+      id="selectionMode"
+    >
+      <option
+        value="manual"
+      >
+        Manual
+      </option>
+      <option
+        value="percentChange"
+      >
+        % Change
+      </option>
+      <option
+        value="stdev"
+      >
+        STDEV
+      </option>
+      <option
+        value="minimumStdevByTraceCount"
+      >
+        Remove Outliers
+      </option>
+    </select>
+    <div
+      class="optionsPanel"
+    >
+      <label
+        for="startFrame"
+      >
+        Start frame
+      </label>
+      <input
+        id="startFrame"
+        max="5"
+        min="1"
+        type="number"
+        value="1"
+      />
+      <label
+        for="endFrame"
+      >
+        End frame
+      </label>
+      <input
+        id="endFrame"
+        max="5"
+        min="1"
+        type="number"
+        value="3"
+      />
+      <label
+        for="percentChange"
+      >
+        % of total change
+      </label>
+      <input
+        id="percentChange"
+        max="100"
+        min="1"
+        step="1"
+        type="number"
+        value="10"
+      />
+    </div>
+  </div>
+</div>
+`;
+
+exports[`component SelectionView render selection choices - second channel 3`] = `
+<div>
+  <div
+    id="selectionPanel"
+  >
+    <select
+      id="selectionMode"
+    >
+      <option
+        value="manual"
+      >
+        Manual
+      </option>
+      <option
+        value="percentChange"
+      >
+        % Change
+      </option>
+      <option
+        value="stdev"
+      >
+        STDEV
+      </option>
+      <option
+        value="minimumStdevByTraceCount"
+      >
+        Remove Outliers
+      </option>
+    </select>
+    <div
+      class="optionsPanel"
+    >
+      <label
+        for="startBaselineFrame"
+      >
+        Start baseline frame
+      </label>
+      <input
+        id="startBaselineFrame"
+        max="5"
+        min="1"
+        type="number"
+        value="1"
+      />
+      <label
+        for="endBaselineFrame"
+      >
+        End baseline frame
+      </label>
+      <input
+        id="endBaselineFrame"
+        max="5"
+        min="1"
+        type="number"
+        value="3"
+      />
+      <label
+        for="startDetectionFrame"
+      >
+        Start detection frame
+      </label>
+      <input
+        id="startDetectionFrame"
+        max="5"
+        min="1"
+        type="number"
+        value="4"
+      />
+      <label
+        for="endDetectionFrame"
+      >
+        End detection frame
+      </label>
+      <input
+        id="endDetectionFrame"
+        max="5"
+        min="1"
+        type="number"
+        value="5"
+      />
+      <label
+        for="stdevMultiple"
+      >
+        x STDEV minimum
+      </label>
+      <input
+        id="stdevMultiple"
+        max="10"
+        min="0.1"
+        step="0.1"
+        type="number"
+        value="1"
+      />
+    </div>
+  </div>
+</div>
+`;
+
+exports[`component SelectionView render selection choices - second channel 4`] = `
+<div>
+  <div
+    id="selectionPanel"
+  >
+    <select
+      id="selectionMode"
+    >
+      <option
+        value="manual"
+      >
+        Manual
+      </option>
+      <option
+        value="percentChange"
+      >
+        % Change
+      </option>
+      <option
+        value="stdev"
+      >
+        STDEV
+      </option>
+      <option
+        value="minimumStdevByTraceCount"
+      >
+        Remove Outliers
+      </option>
+    </select>
+    <div
+      class="optionsPanel"
+    >
+      <label
+        for="selectedTraceCount"
+      >
+        Selected trace count
+      </label>
+      <input
+        id="selectedTraceCount"
+        max="4"
+        min="2"
+        step="1"
+        type="number"
+        value="4"
+      />
+      <label
+        id="selectedStdevLabel"
+      >
+        STDEV of selected
+      </label>
+      <div
+        aria-labelledby="selectedStdevLabel"
+        id="selectedStdev"
+      >
+        2.49
+      </div>
+    </div>
+  </div>
+</div>
+`;

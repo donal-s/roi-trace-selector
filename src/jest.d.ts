@@ -4,7 +4,7 @@ declare global {
     interface Expect {
       closeTo(expected: number): number;
     }
-    interface Matchers<R> {
+    interface Matchers {
       closeTo(expected: number): CustomMatcherResult;
     }
   }

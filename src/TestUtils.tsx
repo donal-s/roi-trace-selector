@@ -1,18 +1,18 @@
 import React from "react";
 import { loadChannelAction } from "./model/Actions";
-import roiDataStore, {
+import {
   RoiDataModelState,
+  RoiDataModelStore,
   roiDataReducer,
   RoiDataset,
 } from "./model/RoiDataModel";
 import { CHANNEL_1, Channel, CHANNEL_2, SELECTION_MANUAL } from "./model/Types";
-import configureMockStore from "redux-mock-store";
-import thunk, { ThunkDispatch } from "redux-thunk";
-import { AnyAction } from "redux";
+import { PreloadedState } from "redux";
 import "core-js/features/set-immediate";
-import { act, render } from "@testing-library/react";
+import { act, render, RenderOptions } from "@testing-library/react";
 import { Provider } from "react-redux";
 import userEvent from "@testing-library/user-event";
+import { configureStore } from "@reduxjs/toolkit";
 
 // test constants
 
@@ -161,9 +161,13 @@ export const EXPECTED_DUAL_CHANNEL_LOADED_STATE: RoiDataModelState = {
 
 // test functions
 
-export function setCsvData(csvData: string, channel: Channel = CHANNEL_1) {
+export function setCsvData(
+  store: RoiDataModelStore,
+  csvData: string,
+  channel: Channel = CHANNEL_1
+) {
   act(() => {
-    roiDataStore.dispatch(
+    store.dispatch(
       loadChannelAction({
         csvData: csvData,
         channel,
@@ -177,23 +181,25 @@ export function classesContain(classes: string | null, expected: string) {
   return classes !== null && classes.split(" ").includes(expected);
 }
 
-export const configureAppMockStore = () =>
-  configureMockStore<
-    RoiDataModelState,
-    ThunkDispatch<RoiDataModelState, void, AnyAction>
-  >([thunk]);
-
 export const flushPromises = () => new Promise(setImmediate);
+
+interface ExtendedRenderOptions extends Omit<RenderOptions, "queries"> {
+  preloadedState?: PreloadedState<Partial<RoiDataModelState>>;
+}
 
 // render with redux store
 export function renderWithProvider(
   component: React.ReactElement,
-  store = roiDataStore
+  { preloadedState = undefined, ...renderOptions }: ExtendedRenderOptions = {}
 ) {
+  const store = configureStore({
+    reducer: roiDataReducer,
+    preloadedState,
+  });
   const user = userEvent.setup();
   return {
-    store,
+    store: store as unknown as RoiDataModelStore,
     user,
-    ...render(<Provider store={store}>{component}</Provider>),
+    ...render(<Provider store={store}>{component}</Provider>, renderOptions),
   };
 }

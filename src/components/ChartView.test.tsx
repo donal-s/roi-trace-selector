@@ -2,17 +2,20 @@
 
 import React from "react";
 import ChartView from "./ChartView";
-import roiDataStore from "../model/RoiDataModel";
 import plot from "../plot/Plot";
-import { CSV_DATA, renderWithProvider, setCsvData } from "../TestUtils";
+import {
+  DUAL_CHANNEL_LOADED_STATE,
+  LOADED_STATE,
+  renderWithProvider,
+} from "../TestUtils";
 import {
   fullscreenModeAction,
-  resetStateAction,
   setOutlineChannelAction,
   toggleCurrentItemSelectedAction,
 } from "../model/Actions";
 import { act, createEvent, fireEvent, waitFor } from "@testing-library/react";
 import { CHANNEL_1, CHANNEL_2 } from "../model/Types";
+import { RoiDataModelStore } from "../model/RoiDataModel";
 
 const EXPECTED_X_DATA = [1, 2, 3, 4, 5];
 const EXPECTED_Y_DATA = [
@@ -48,10 +51,6 @@ describe("component ChartView", () => {
   });
 
   describe("data tests", () => {
-    beforeEach(() => {
-      setCsvData(CSV_DATA);
-    });
-
     function checkInitialChartCreation() {
       expect(plot).toHaveBeenCalledWith(
         chart1Div(),
@@ -67,12 +66,16 @@ describe("component ChartView", () => {
     }
 
     it("initial chart", () => {
-      renderWithProvider(<ChartView />);
+      renderWithProvider(<ChartView />, {
+        preloadedState: LOADED_STATE,
+      });
       checkInitialChartCreation();
     });
 
     it("mouse scroll to change current trace", async () => {
-      renderWithProvider(<ChartView />);
+      renderWithProvider(<ChartView />, {
+        preloadedState: LOADED_STATE,
+      });
       checkInitialChartCreation();
       // Next trace
       fireEvent(chart1Div(), createEvent.wheel(chart1Div(), { deltaY: 5 }));
@@ -101,11 +104,13 @@ describe("component ChartView", () => {
     });
 
     it("single trace mode", async () => {
-      renderWithProvider(<ChartView />);
+      const { store } = renderWithProvider(<ChartView />, {
+        preloadedState: LOADED_STATE,
+      });
       checkInitialChartCreation();
       // Set fullscreen
       act(() => {
-        roiDataStore.dispatch(fullscreenModeAction(true));
+        store.dispatch(fullscreenModeAction(true));
       });
 
       await waitFor(() =>
@@ -115,7 +120,7 @@ describe("component ChartView", () => {
 
       // Unset fullscreen
       act(() => {
-        roiDataStore.dispatch(fullscreenModeAction(false));
+        store.dispatch(fullscreenModeAction(false));
       });
 
       await waitFor(() =>
@@ -125,10 +130,12 @@ describe("component ChartView", () => {
     });
 
     it("toggle trace", async () => {
-      renderWithProvider(<ChartView />);
+      const { store } = renderWithProvider(<ChartView />, {
+        preloadedState: LOADED_STATE,
+      });
       checkInitialChartCreation();
       // Set selected
-      simulateItemToggle();
+      simulateItemToggle(store);
 
       await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(1));
       expect(mockSetSeries).toHaveBeenCalledWith(0, undefined, "navy");
@@ -147,12 +154,12 @@ describe("component ChartView", () => {
         "rgba(0,0,128,0.16)"
       );
 
-      simulateItemToggle();
+      simulateItemToggle(store);
 
       await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(3));
       expect(mockSetSeries).toHaveBeenLastCalledWith(1, undefined, "navy");
 
-      simulateItemToggle();
+      simulateItemToggle(store);
 
       await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(4));
       expect(mockSetSeries).toHaveBeenLastCalledWith(
@@ -175,12 +182,12 @@ describe("component ChartView", () => {
         "rgba(164,0,0,0.2)"
       );
 
-      simulateItemToggle();
+      simulateItemToggle(store);
 
       await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(3));
       expect(mockSetSeries).toHaveBeenLastCalledWith(2, undefined, "navy");
 
-      simulateItemToggle();
+      simulateItemToggle(store);
 
       await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(4));
       expect(mockSetSeries).toHaveBeenLastCalledWith(
@@ -189,7 +196,7 @@ describe("component ChartView", () => {
         "rgba(164,0,0)"
       );
 
-      simulateItemToggle();
+      simulateItemToggle(store);
 
       await waitFor(() => expect(mockSetSeries).toHaveBeenCalledTimes(5));
       expect(mockSetSeries).toHaveBeenLastCalledWith(2, undefined, "black");
@@ -197,54 +204,55 @@ describe("component ChartView", () => {
   });
 
   describe("chart outline tests", () => {
-    beforeEach(() => {
-      roiDataStore.dispatch(resetStateAction());
-    });
-
     it("single chart view - no outline", async () => {
-      setCsvData(CSV_DATA);
-      roiDataStore.dispatch(setOutlineChannelAction(CHANNEL_1));
-      renderWithProvider(<ChartView />);
+      const { store } = renderWithProvider(<ChartView />, {
+        preloadedState: LOADED_STATE,
+      });
+      act(() => {
+        store.dispatch(setOutlineChannelAction(CHANNEL_1));
+      });
 
       expect(chart1Div()).not.toHaveClass("outline");
     });
 
     it("dual chart view", async () => {
-      setCsvData(CSV_DATA);
-      setCsvData(CSV_DATA, CHANNEL_2);
-
       // No outline
-      renderWithProvider(<ChartView />);
+      const { store } = renderWithProvider(<ChartView />, {
+        preloadedState: DUAL_CHANNEL_LOADED_STATE,
+      });
       expect(chart1Div()).not.toHaveClass("outline");
       expect(chart2Div()).not.toHaveClass("outline");
 
       // Chart 1 outline
       act(() => {
-        roiDataStore.dispatch(setOutlineChannelAction(CHANNEL_1));
+        store.dispatch(setOutlineChannelAction(CHANNEL_1));
       });
       expect(chart1Div()).toHaveClass("outline");
       expect(chart2Div()).not.toHaveClass("outline");
-      
+
       // Chart 2 outline
       act(() => {
-        roiDataStore.dispatch(setOutlineChannelAction(CHANNEL_2));
+        store.dispatch(setOutlineChannelAction(CHANNEL_2));
       });
       expect(chart1Div()).not.toHaveClass("outline");
       await waitFor(() => expect(chart2Div()).toHaveClass("outline"));
 
       // No outline
       act(() => {
-        roiDataStore.dispatch(setOutlineChannelAction(undefined));
+        store.dispatch(setOutlineChannelAction(undefined));
       });
       expect(chart1Div()).not.toHaveClass("outline");
       expect(chart2Div()).not.toHaveClass("outline");
     });
 
     it("dual chart view, fullscreen - no outline", async () => {
-      setCsvData(CSV_DATA);
-      setCsvData(CSV_DATA, CHANNEL_2);
-      roiDataStore.dispatch(setOutlineChannelAction(CHANNEL_1));
-
+      const { store } = renderWithProvider(<ChartView />, {
+        preloadedState: DUAL_CHANNEL_LOADED_STATE,
+      });
+      act(() => {
+        store.dispatch(setOutlineChannelAction(CHANNEL_1));
+      });
+      
       renderWithProvider(<ChartView />);
 
       // Chart 1 outline
@@ -253,7 +261,7 @@ describe("component ChartView", () => {
 
       // Set fullscreen
       act(() => {
-        roiDataStore.dispatch(fullscreenModeAction(true));
+        store.dispatch(fullscreenModeAction(true));
       });
 
       expect(chart1Div()).not.toHaveClass("outline");
@@ -261,7 +269,7 @@ describe("component ChartView", () => {
 
       // Unset fullscreen
       act(() => {
-        roiDataStore.dispatch(fullscreenModeAction(false));
+        store.dispatch(fullscreenModeAction(false));
       });
 
       expect(chart1Div()).toHaveClass("outline");
@@ -269,9 +277,9 @@ describe("component ChartView", () => {
     });
   });
 
-  const simulateItemToggle = () =>
+  const simulateItemToggle = (store: RoiDataModelStore) =>
     act(() => {
-      roiDataStore.dispatch(toggleCurrentItemSelectedAction());
+      store.dispatch(toggleCurrentItemSelectedAction());
     });
 
   const chart1Div = (): HTMLDivElement =>

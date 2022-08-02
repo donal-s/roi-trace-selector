@@ -7,23 +7,23 @@ import {
   setCsvData,
   classesContain,
   renderWithProvider,
+  LOADED_STATE,
 } from "../TestUtils";
 import { fireEvent } from "@testing-library/react";
 
 describe("component RoiSelectionListView", () => {
   it("initialisation", () => {
-    renderWithProvider(<RoiSelectionListView />);
+    const {store} =  renderWithProvider(<RoiSelectionListView />);
     checkChartListSelections([], 0);
     checkChartRoiCounts(0, 0, 0);
 
-    setCsvData(CSV_DATA);
+    setCsvData(store, CSV_DATA);
     checkChartListSelections([CLEAR, CLEAR, CLEAR, CLEAR], 0);
     checkChartRoiCounts(0, 4, 0);
   });
 
   it("display model selections", () => {
-    setCsvData(CSV_DATA);
-    renderWithProvider(<RoiSelectionListView />);
+    renderWithProvider(<RoiSelectionListView />, {preloadedState: LOADED_STATE});
     checkChartListSelections([CLEAR, CLEAR, CLEAR, CLEAR], 0);
     checkChartRoiCounts(0, 4, 0);
 
