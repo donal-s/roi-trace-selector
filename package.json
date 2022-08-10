@@ -76,7 +76,6 @@
     "babel-loader": "^8.2.3",
     "babel-plugin-named-asset-import": "^0.3.8",
     "babel-preset-react-app": "^10.0.1",
-    "base64-loader": "^1.0.0",
     "copy-webpack-plugin": "^11.0.0",
     "core-js": "^3.20.3",
     "css-loader": "^6.5.1",
@@ -140,7 +139,6 @@
     ],
     "testEnvironment": "jsdom",
     "transform": {
-      "^.+stdevCalc\\.js$": "<rootDir>/node_modules/babel-jest",
       "^.+\\.test\\.(js|jsx|ts|tsx)$": "<rootDir>/node_modules/babel-jest",
       "^.+\\.css$": "<rootDir>/config/jest/cssTransform.js",
       "^.+\\.csv$": "<rootDir>/config/jest/rawTransform.js"

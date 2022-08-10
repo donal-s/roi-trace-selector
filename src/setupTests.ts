@@ -11,15 +11,9 @@ fetchMock.enableMocks();
 // Handle loading the WebAssembly payload in tests
 fetchMock.mockResponse((request: Request) => {
   if (request.url.endsWith("stdevCalc.wasm")) {
-    return Promise.resolve({
-      status: 200,
-      body: wasmFile as any,
-    });
+    return Promise.resolve({ status: 200, body: wasmFile as any });
   } else {
-    return Promise.resolve({
-      status: 404,
-      body: "Not Found",
-    });
+    return Promise.resolve({ status: 404, body: "Not Found" });
   }
 });
 
