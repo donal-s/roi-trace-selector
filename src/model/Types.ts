@@ -67,13 +67,11 @@ export const SELECTION_PERCENT_CHANGE = "percentChange";
 export const SELECTION_STDEV = "stdev";
 export const SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT =
   "minimumStdevByTraceCount";
-export const SELECTION_MINIMUM_STDEV_BY_STDEV = "minimumStdevByStdev";
 export type SelectionType =
   | typeof SELECTION_MANUAL
   | typeof SELECTION_PERCENT_CHANGE
   | typeof SELECTION_STDEV
-  | typeof SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT
-  | typeof SELECTION_MINIMUM_STDEV_BY_STDEV;
+  | typeof SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT;
 
 export type SelectionManual = {
   type: typeof SELECTION_MANUAL;
@@ -96,9 +94,7 @@ export type SelectionStdev = {
 };
 
 export type SelectionMinimumStdev = {
-  type:
-    | typeof SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT
-    | typeof SELECTION_MINIMUM_STDEV_BY_STDEV;
+  type: typeof SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT;
   selectedTraceCount: number;
   selectedStdev: number;
 };

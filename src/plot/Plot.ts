@@ -124,6 +124,8 @@ export default function plot(
 
   container.appendChild(root);
 
+  let queuedCommit = false;
+
   const ctx: CanvasRenderingContext2D = can.getContext("2d")!;
 
   function setPxRatio() {
@@ -428,8 +430,6 @@ export default function plot(
       ctx.strokeRect(x0, y0, x1, y1);
     });
   }
-
-  let queuedCommit = false;
 
   function commit() {
     if (!queuedCommit) {

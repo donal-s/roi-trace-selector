@@ -73,6 +73,14 @@ import {
 import getStoredState from "redux-persist/lib/getStoredState";
 import storage from "redux-persist/lib/storage"; // defaults to localStorage for web
 import { PersistPartial } from "redux-persist/es/persistReducer";
+import * as MinimumStdevStatus from "./MinimumStdevStatus";
+
+const ALL_SELECTED: ScanStatus[] = [
+  SCANSTATUS_SELECTED,
+  SCANSTATUS_SELECTED,
+  SCANSTATUS_SELECTED,
+  SCANSTATUS_SELECTED,
+];
 
 describe("roiDataReducer", () => {
   beforeEach(() => {
@@ -1159,12 +1167,25 @@ describe("roiDataReducer", () => {
   });
 
   describe("setSelectionAction", () => {
-    const ALL_SELECTED: ScanStatus[] = [
-      SCANSTATUS_SELECTED,
-      SCANSTATUS_SELECTED,
-      SCANSTATUS_SELECTED,
-      SCANSTATUS_SELECTED,
-    ];
+    let getMinimumStdevStatusSpy: jest.SpyInstance;
+
+    beforeAll(() => {
+      getMinimumStdevStatusSpy = jest
+        .spyOn(MinimumStdevStatus, "getMinimumStdevStatus")
+        .mockImplementation(() => ({
+          scanStatus: [
+            SCANSTATUS_UNSELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_SELECTED,
+            SCANSTATUS_UNSELECTED,
+          ],
+          selectedStdev: 0.57,
+        }));
+    });
+
+    afterAll(() => {
+      getMinimumStdevStatusSpy.mockRestore();
+    });
 
     it("empty state - no effect", async () => {
       const selection: SelectionMinimumStdev = {
@@ -1469,58 +1490,6 @@ describe("roiDataReducer", () => {
       );
     });
 
-    it("minimum stdev selection by trace count - 4 traces", async () => {
-      const selection: SelectionMinimumStdev = {
-        type: SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT,
-        selectedTraceCount: 4,
-        selectedStdev: 0,
-      };
-
-      await checkReducerAndStore(
-        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
-        setSelectionAction(selection),
-        {
-          ...EXPECTED_LOADED_STATE,
-          scanStatus: [
-            SCANSTATUS_SELECTED,
-            SCANSTATUS_SELECTED,
-            SCANSTATUS_SELECTED,
-            SCANSTATUS_SELECTED,
-          ],
-          channel1Dataset: {
-            ...EXPECTED_CHANNEL1_DATASET,
-            selection: { ...selection, selectedStdev: expect.closeTo(2.49) },
-          },
-        }
-      );
-    });
-
-    it("minimum stdev selection by trace count - 3 traces", async () => {
-      const selection: SelectionMinimumStdev = {
-        type: SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT,
-        selectedTraceCount: 3,
-        selectedStdev: 0,
-      };
-
-      await checkReducerAndStore(
-        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
-        setSelectionAction(selection),
-        {
-          ...EXPECTED_LOADED_STATE,
-          scanStatus: [
-            SCANSTATUS_UNSELECTED,
-            SCANSTATUS_SELECTED,
-            SCANSTATUS_SELECTED,
-            SCANSTATUS_SELECTED,
-          ],
-          channel1Dataset: {
-            ...EXPECTED_CHANNEL1_DATASET,
-            selection: { ...selection, selectedStdev: expect.closeTo(1.0) },
-          },
-        }
-      );
-    });
-
     it("minimum stdev selection by trace count - 2 traces", async () => {
       const selection: SelectionMinimumStdev = {
         type: SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT,
@@ -1545,31 +1514,11 @@ describe("roiDataReducer", () => {
           },
         }
       );
-    });
 
-    it("minimum stdev selection by trace count - pick last of last 2 traces", async () => {
-      const selection: SelectionMinimumStdev = {
-        type: SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT,
-        selectedTraceCount: 1,
-        selectedStdev: 0,
-      };
-
-      await checkReducerAndStore(
-        { ...LOADED_STATE, scanStatus: [...ALL_SELECTED] },
-        setSelectionAction(selection),
-        {
-          ...EXPECTED_LOADED_STATE,
-          scanStatus: [
-            SCANSTATUS_UNSELECTED,
-            SCANSTATUS_UNSELECTED,
-            SCANSTATUS_SELECTED,
-            SCANSTATUS_UNSELECTED,
-          ],
-          channel1Dataset: {
-            ...EXPECTED_CHANNEL1_DATASET,
-            selection: { ...selection, selectedStdev: 0 },
-          },
-        }
+      expect(getMinimumStdevStatusSpy).toHaveBeenCalledTimes(1);
+      expect(getMinimumStdevStatusSpy).toHaveBeenCalledWith(
+        2,
+        EXPECTED_CHANNEL1_DATASET.chartData
       );
     });
 

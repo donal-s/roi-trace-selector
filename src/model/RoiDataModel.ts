@@ -15,10 +15,8 @@ import {
   SELECTION_MANUAL,
   SELECTION_PERCENT_CHANGE,
   SELECTION_STDEV,
-  // SELECTION_MINIMUM_STDEV_BY_STDEV,
   SelectionPercentChange,
   SelectionStdev,
-  SelectionMinimumStdev,
   SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT,
 } from "./Types";
 import { loadFile, parseCsvData } from "./CsvHandling";
@@ -26,6 +24,7 @@ import {
   AnyAction,
   configureStore,
   createReducer,
+  current,
   Reducer,
 } from "@reduxjs/toolkit";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
@@ -59,6 +58,7 @@ import {
   REHYDRATE,
 } from "redux-persist/lib/constants";
 import autoMergeLevel1 from "redux-persist/lib/stateReconciler/autoMergeLevel1";
+import { getMinimumStdevStatus } from "./MinimumStdevStatus";
 
 export type RoiDataset = {
   filename: string;
@@ -126,7 +126,7 @@ export const roiDataReducer: Reducer<RoiDataModelState> = createReducer(
         updateChartAlignment(state, action.payload)
       )
       .addCase(setSelectionAction, (state, action) =>
-        setSelection(state, action.payload)
+        setSelection(current(state), action.payload)
       )
       .addCase(loadChannelAction, (state, action) =>
         loadData(state, action.payload)
@@ -389,8 +389,11 @@ function calculateChannelAutoSelection(channelDataset: RoiDataset | undefined) {
       status = getStdevStatus(channelDataset);
       break;
     case SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT:
-      const { scanStatus, selectedStdev } =
-        getMinimumStdevStatus(channelDataset);
+      const { scanStatus, selectedStdev } = getMinimumStdevStatus(
+        channelDataset.selection.selectedTraceCount,
+        channelDataset.chartData
+      );
+
       status = scanStatus;
       channelDataset = {
         ...channelDataset,
@@ -493,114 +496,10 @@ function calculateRawStandardDeviation(
   return Math.sqrt(variance / (endFrame - startFrame));
 }
 
-type MinimumStdevResult = {
+export type MinimumStdevResult = {
   scanStatus: ScanStatus[];
   selectedStdev: number;
 };
-
-function getMinimumStdevStatus(dataset: RoiDataset): MinimumStdevResult {
-  const { selectedTraceCount } = dataset.selection as SelectionMinimumStdev;
-
-  let currentTraceCount = dataset.chartData.length;
-  let selectedTraces = Array(currentTraceCount);
-  selectedTraces.fill(true);
-  let meanStdev = calculateMeanStdev(dataset.chartData, selectedTraces);
-  let currentStdev = meanStdev.stdev;
-
-  while (currentTraceCount > selectedTraceCount) {
-    currentStdev = removeRoiAndReduceDeviation(
-      dataset.chartData,
-      selectedTraces,
-      meanStdev.pointVariances
-    );
-    currentTraceCount--;
-  }
-
-  return {
-    scanStatus: selectedTraces.map((selected) =>
-      selected ? SCANSTATUS_SELECTED : SCANSTATUS_UNSELECTED
-    ),
-    selectedStdev: currentStdev,
-  };
-}
-
-function removeRoiAndReduceDeviation(
-  traces: number[][],
-  selectedTraces: boolean[],
-  pointVariances: number[][]
-) {
-  const frameCount = traces[0].length;
-
-  // Calculate trace variance sums
-  let traceVariances: number[] = Array(traces.length).fill(0);
-  for (let traceIndex = 0; traceIndex < traces.length; traceIndex++) {
-    if (selectedTraces[traceIndex]) {
-      for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
-        traceVariances[traceIndex] += pointVariances[traceIndex][frameIndex];
-      }
-    }
-  }
-
-  // Candidate has max point variance sum
-  var candidateIndex = traceVariances.reduce(
-    (maxIndex, x, i, arr) => (x > arr[maxIndex] ? i : maxIndex),
-    0
-  );
-
-  // Remove candidate and recalculate stdev
-  selectedTraces[candidateIndex] = false;
-  let candidateStdev = calculateMeanStdev(traces, selectedTraces).stdev;
-
-  return candidateStdev;
-}
-
-function calculateMeanStdev(traces: number[][], selectedRois: boolean[]) {
-  const pointVariances = Array(traces.length)
-    .fill(0)
-    .map((x) => Array(traces[0].length).fill(0));
-  const selectedRoiCount = selectedRois.filter(Boolean).length;
-  const frameCount = traces[0].length;
-  if (selectedRoiCount < 2) {
-    return { stdev: 0, pointVariances: [] };
-  }
-
-  const means: number[] = [];
-  for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
-    let sum = 0;
-    traces.forEach((trace, traceIndex) => {
-      if (selectedRois[traceIndex]) {
-        sum += trace[frameIndex];
-      }
-    });
-    means[frameIndex] = sum / selectedRoiCount;
-  }
-
-  for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
-    traces.forEach((trace, i) => {
-      if (selectedRois[i]) {
-        pointVariances[i][frameIndex] =
-          (trace[frameIndex] - means[frameIndex]) *
-          (trace[frameIndex] - means[frameIndex]);
-      }
-    });
-  }
-
-  let variance: number[] = [];
-  for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
-    let sum = 0;
-    for (let traceIndex = 0; traceIndex < traces.length; traceIndex++) {
-      sum += pointVariances[traceIndex][frameIndex];
-    }
-    variance[frameIndex] = Math.sqrt(sum / (selectedRoiCount - 1));
-  }
-
-  let sum = 0;
-  variance.forEach((current) => {
-    sum += current;
-  });
-
-  return { stdev: sum / frameCount, pointVariances };
-}
 
 function arraysEqual(array1: any[], array2: any[]) {
   return (

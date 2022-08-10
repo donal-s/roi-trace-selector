@@ -1,6 +1,6 @@
 {
   "name": "react-trace-selector",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "private": true,
   "dependencies": {
     "@babel/runtime": "^7.16.7",
@@ -21,7 +21,10 @@
     "test": "NODE_ENV=test BABEL_ENV=test jest --watch",
     "test:ci": "NODE_ENV=test BABEL_ENV=test jest",
     "analyze": "source-map-explorer 'build/static/js/*.js'",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "asbuild:debug": "asc assembly/index.ts --exportRuntime --target debug",
+    "asbuild:release": "asc assembly/index.ts --exportRuntime --target release",
+    "asbuild": "npm run asbuild:debug && npm run asbuild:release"
   },
   "eslintConfig": {
     "env": {
@@ -67,6 +70,7 @@
     "@types/react-dom": "^18.0.6",
     "@typescript-eslint/eslint-plugin": "^5.10.0",
     "@typescript-eslint/parser": "^5.10.0",
+    "assemblyscript": "^0.20.16",
     "babel-eslint": "^10.1.0",
     "babel-jest": "^28.1.2",
     "babel-loader": "^8.2.3",
@@ -91,6 +95,7 @@
     "jest": "^28.1.2",
     "jest-canvas-mock": "^2.3.1",
     "jest-environment-jsdom": "^28.1.2",
+    "jest-fetch-mock": "^3.0.3",
     "jest-watch-typeahead": "^1.0.0",
     "mini-css-extract-plugin": "^2.5.2",
     "raw-loader": "^4.0.2",
@@ -113,7 +118,6 @@
   },
   "jest": {
     "verbose": true,
-    "coverage": true,
     "clearMocks": true,
     "preset": "ts-jest",
     "roots": [

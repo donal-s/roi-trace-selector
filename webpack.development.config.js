@@ -132,9 +132,5 @@ module.exports = {
         PUBLIC_URL: JSON.stringify("."),
       },
     }),
-    new webpack.IgnorePlugin({
-      resourceRegExp: /^\.\/locale$/,
-      contextRegExp: /moment$/,
-    }),
   ],
 };

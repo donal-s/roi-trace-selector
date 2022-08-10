@@ -216,10 +216,6 @@ module.exports = {
         return { files: manifestFiles, entrypoints: entrypointFiles };
       },
     }),
-    new webpack.IgnorePlugin({
-      resourceRegExp: /^\.\/locale$/,
-      contextRegExp: /moment$/,
-    }),
     new WorkboxWebpackPlugin.GenerateSW({
       clientsClaim: true,
       exclude: [/\.map$/, /asset-manifest\.json$/],
