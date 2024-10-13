@@ -72,8 +72,8 @@ import {
 } from "./Actions";
 import getStoredState from "redux-persist/lib/getStoredState";
 import storage from "redux-persist/lib/storage"; // defaults to localStorage for web
-import { PersistPartial } from "redux-persist/es/persistReducer";
 import * as MinimumStdevStatus from "./MinimumStdevStatus";
+import { PersistPartial } from "redux-persist/lib/persistReducer";
 
 const ALL_SELECTED: ScanStatus[] = [
   SCANSTATUS_SELECTED,
@@ -84,7 +84,7 @@ const ALL_SELECTED: ScanStatus[] = [
 
 describe("roiDataReducer", () => {
   beforeEach(() => {
-    persistor.purge();
+    void persistor.purge();
   });
 
   // Sanity check to verify test data
@@ -103,7 +103,7 @@ describe("roiDataReducer", () => {
     expect(LOADED_STATE).toMatchObject(EXPECTED_LOADED_STATE);
 
     expect(DUAL_CHANNEL_LOADED_STATE).toStrictEqual(
-      EXPECTED_DUAL_CHANNEL_LOADED_STATE
+      EXPECTED_DUAL_CHANNEL_LOADED_STATE,
     );
   });
 
@@ -145,55 +145,55 @@ describe("roiDataReducer", () => {
     await checkReducerAndEmptyStore(
       EMPTY_STATE,
       setCurrentNextAction(),
-      EMPTY_STATE
+      EMPTY_STATE,
     );
 
     await checkReducerAndEmptyStore(
       EMPTY_STATE,
       setCurrentPreviousAction(),
-      EMPTY_STATE
+      EMPTY_STATE,
     );
 
     // With data: 0 -- -> no change
     await checkReducerAndEmptyStore(
       { ...LOADED_STATE, currentIndex: 0 },
       setCurrentPreviousAction(),
-      { ...LOADED_STATE, currentIndex: 0 }
+      { ...LOADED_STATE, currentIndex: 0 },
     );
 
     // With data: 0 ++ -> 1
     await checkReducerAndEmptyStore(
       { ...LOADED_STATE, currentIndex: 0 },
       setCurrentNextAction(),
-      { ...LOADED_STATE, currentIndex: 1 }
+      { ...LOADED_STATE, currentIndex: 1 },
     );
 
     // With data: 1 -- -> 0
     await checkReducerAndEmptyStore(
       { ...LOADED_STATE, currentIndex: 1 },
       setCurrentPreviousAction(),
-      { ...LOADED_STATE, currentIndex: 0 }
+      { ...LOADED_STATE, currentIndex: 0 },
     );
 
     // With data: 3 ++ -> no change
     await checkReducerAndEmptyStore(
       { ...LOADED_STATE, currentIndex: 3 },
       setCurrentNextAction(),
-      { ...LOADED_STATE, currentIndex: 3 }
+      { ...LOADED_STATE, currentIndex: 3 },
     );
 
     // With data: 3 -- -> 2
     await checkReducerAndEmptyStore(
       { ...LOADED_STATE, currentIndex: 3 },
       setCurrentPreviousAction(),
-      { ...LOADED_STATE, currentIndex: 2 }
+      { ...LOADED_STATE, currentIndex: 2 },
     );
 
     // With data: 2 ++ -> 3
     await checkReducerAndEmptyStore(
       { ...LOADED_STATE, currentIndex: 2 },
       setCurrentNextAction(),
-      { ...LOADED_STATE, currentIndex: 3 }
+      { ...LOADED_STATE, currentIndex: 3 },
     );
   });
 
@@ -202,7 +202,7 @@ describe("roiDataReducer", () => {
       await checkReducerAndEmptyStore(
         EMPTY_STATE,
         setCurrentNextUnscannedAction(),
-        EMPTY_STATE
+        EMPTY_STATE,
       );
     });
 
@@ -210,7 +210,7 @@ describe("roiDataReducer", () => {
       await checkReducerAndEmptyStore(
         { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
         setCurrentNextUnscannedAction(),
-        { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] }
+        { ...LOADED_STATE, currentIndex: 2, scanStatus: ["y", "y", "n", "n"] },
       );
     });
 
@@ -222,7 +222,7 @@ describe("roiDataReducer", () => {
           ...EXPECTED_LOADED_STATE,
           currentIndex: 1,
           scanStatus: ["?", "?", "?", "?"],
-        }
+        },
       );
     });
 
@@ -234,7 +234,7 @@ describe("roiDataReducer", () => {
           ...EXPECTED_LOADED_STATE,
           currentIndex: 3,
           scanStatus: ["?", "y", "n", "?"],
-        }
+        },
       );
     });
 
@@ -246,7 +246,7 @@ describe("roiDataReducer", () => {
           ...EXPECTED_LOADED_STATE,
           currentIndex: 1,
           scanStatus: ["n", "?", "?", "y"],
-        }
+        },
       );
     });
   });
@@ -256,7 +256,7 @@ describe("roiDataReducer", () => {
     await checkReducerAndEmptyStore(
       EMPTY_STATE,
       setCurrentScanStatusAction(SCANSTATUS_UNSELECTED),
-      EMPTY_STATE
+      EMPTY_STATE,
     );
 
     // With data
@@ -267,7 +267,7 @@ describe("roiDataReducer", () => {
         ...EXPECTED_LOADED_STATE,
         currentIndex: 2,
         scanStatus: ["y", "y", "?", "n"],
-      }
+      },
     );
 
     await checkReducerAndStore(
@@ -277,7 +277,7 @@ describe("roiDataReducer", () => {
         ...EXPECTED_LOADED_STATE,
         currentIndex: 2,
         scanStatus: ["y", "y", "y", "n"],
-      }
+      },
     );
 
     await checkReducerAndStore(
@@ -287,7 +287,7 @@ describe("roiDataReducer", () => {
         ...EXPECTED_LOADED_STATE,
         currentIndex: 1,
         scanStatus: ["y", "n", "n", "n"],
-      }
+      },
     );
   });
 
@@ -296,7 +296,7 @@ describe("roiDataReducer", () => {
     await checkReducerAndEmptyStore(
       EMPTY_STATE,
       toggleCurrentItemSelectedAction(),
-      EMPTY_STATE
+      EMPTY_STATE,
     );
 
     // With data
@@ -307,7 +307,7 @@ describe("roiDataReducer", () => {
         ...EXPECTED_LOADED_STATE,
         currentIndex: 2,
         scanStatus: ["y", "y", "?", "n"],
-      }
+      },
     );
 
     await checkReducerAndStore(
@@ -317,7 +317,7 @@ describe("roiDataReducer", () => {
         ...EXPECTED_LOADED_STATE,
         currentIndex: 2,
         scanStatus: ["y", "y", "y", "n"],
-      }
+      },
     );
 
     await checkReducerAndStore(
@@ -327,7 +327,7 @@ describe("roiDataReducer", () => {
         ...EXPECTED_LOADED_STATE,
         currentIndex: 2,
         scanStatus: ["y", "y", "n", "n"],
-      }
+      },
     );
   });
 
@@ -336,49 +336,49 @@ describe("roiDataReducer", () => {
     await checkReducerAndEmptyStore(
       EMPTY_STATE,
       selectAllItemsAction(),
-      EMPTY_STATE
+      EMPTY_STATE,
     );
 
     // With data all clear -> selected
     await checkReducerAndStore(
       { ...LOADED_STATE, scanStatus: ["?", "?", "?", "?"] },
       selectAllItemsAction(),
-      { ...EXPECTED_LOADED_STATE, scanStatus: ["y", "y", "y", "y"] }
+      { ...EXPECTED_LOADED_STATE, scanStatus: ["y", "y", "y", "y"] },
     );
 
     // With data all selected -> unselected
     await checkReducerAndStore(
       { ...LOADED_STATE, scanStatus: ["y", "y", "y", "y"] },
       selectAllItemsAction(),
-      { ...EXPECTED_LOADED_STATE, scanStatus: ["n", "n", "n", "n"] }
+      { ...EXPECTED_LOADED_STATE, scanStatus: ["n", "n", "n", "n"] },
     );
 
     // With data all unselected -> clear
     await checkReducerAndStore(
       { ...LOADED_STATE, scanStatus: ["n", "n", "n", "n"] },
       selectAllItemsAction(),
-      { ...EXPECTED_LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
+      { ...EXPECTED_LOADED_STATE, scanStatus: ["?", "?", "?", "?"] },
     );
 
     // With data 1 selected -> clear
     await checkReducerAndStore(
       { ...LOADED_STATE, scanStatus: ["?", "y", "?", "?"] },
       selectAllItemsAction(),
-      { ...EXPECTED_LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
+      { ...EXPECTED_LOADED_STATE, scanStatus: ["?", "?", "?", "?"] },
     );
 
     // With data 1 unselected -> clear
     await checkReducerAndStore(
       { ...LOADED_STATE, scanStatus: ["?", "n", "?", "?"] },
       selectAllItemsAction(),
-      { ...EXPECTED_LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
+      { ...EXPECTED_LOADED_STATE, scanStatus: ["?", "?", "?", "?"] },
     );
 
     // With data mix -> clear
     await checkReducerAndStore(
       { ...LOADED_STATE, scanStatus: ["?", "n", "y", "?"] },
       selectAllItemsAction(),
-      { ...EXPECTED_LOADED_STATE, scanStatus: ["?", "?", "?", "?"] }
+      { ...EXPECTED_LOADED_STATE, scanStatus: ["?", "?", "?", "?"] },
     );
   });
 
@@ -393,12 +393,12 @@ describe("roiDataReducer", () => {
         false,
         false,
         0,
-        0
+        0,
       );
       await checkReducerAndEmptyStore(
         EMPTY_STATE,
         updateChartAlignmentAction(params),
-        EMPTY_STATE
+        EMPTY_STATE,
       );
     });
 
@@ -412,7 +412,7 @@ describe("roiDataReducer", () => {
         false,
         false,
         0,
-        0
+        0,
       );
       await checkReducerAndStore(
         LOADED_STATE,
@@ -420,7 +420,7 @@ describe("roiDataReducer", () => {
         {
           ...EXPECTED_LOADED_STATE,
           channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, alignment: params },
-        }
+        },
       );
     });
 
@@ -434,7 +434,7 @@ describe("roiDataReducer", () => {
         false,
         false,
         0,
-        0
+        0,
       );
       await checkReducerAndStore(
         LOADED_STATE,
@@ -451,7 +451,7 @@ describe("roiDataReducer", () => {
             ],
             alignment: params,
           },
-        }
+        },
       );
     });
 
@@ -465,7 +465,7 @@ describe("roiDataReducer", () => {
         false,
         false,
         0,
-        0
+        0,
       );
       await checkReducerAndStore(
         LOADED_STATE,
@@ -482,7 +482,7 @@ describe("roiDataReducer", () => {
             ],
             alignment: params,
           },
-        }
+        },
       );
     });
 
@@ -496,7 +496,7 @@ describe("roiDataReducer", () => {
         false,
         false,
         0,
-        0
+        0,
       );
       await checkReducerAndStore(
         LOADED_STATE,
@@ -516,7 +516,7 @@ describe("roiDataReducer", () => {
             ],
             alignment: params,
           },
-        }
+        },
       );
     });
 
@@ -530,7 +530,7 @@ describe("roiDataReducer", () => {
         true,
         false,
         1,
-        5
+        5,
       );
       await checkReducerAndStore(
         LOADED_STATE,
@@ -553,7 +553,7 @@ describe("roiDataReducer", () => {
             ],
             alignment: params,
           },
-        }
+        },
       );
     });
 
@@ -567,7 +567,7 @@ describe("roiDataReducer", () => {
         true,
         true,
         1,
-        5
+        5,
       );
       await checkReducerAndStore(
         LOADED_STATE,
@@ -590,7 +590,7 @@ describe("roiDataReducer", () => {
             ],
             alignment: params,
           },
-        }
+        },
       );
     });
 
@@ -604,7 +604,7 @@ describe("roiDataReducer", () => {
         true,
         true,
         1,
-        5
+        5,
       );
       await checkReducerAndStore(
         DUAL_CHANNEL_LOADED_STATE,
@@ -627,7 +627,7 @@ describe("roiDataReducer", () => {
             ],
             alignment: params,
           },
-        }
+        },
       );
     });
 
@@ -641,10 +641,10 @@ describe("roiDataReducer", () => {
         false,
         false,
         0,
-        0
+        0,
       );
       expect(() =>
-        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
+        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params)),
       ).toThrow("Invalid frame index: 0, 0");
 
       params = getAlignmentParams(
@@ -656,10 +656,10 @@ describe("roiDataReducer", () => {
         false,
         false,
         0,
-        0
+        0,
       );
       expect(() =>
-        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
+        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params)),
       ).toThrow("Invalid frame index: 0, 6");
     });
 
@@ -673,10 +673,10 @@ describe("roiDataReducer", () => {
         true,
         false,
         0,
-        0
+        0,
       );
       expect(() =>
-        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
+        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params)),
       ).toThrow("Invalid frame index: 0, 1");
 
       params = getAlignmentParams(
@@ -688,10 +688,10 @@ describe("roiDataReducer", () => {
         true,
         false,
         0,
-        6
+        6,
       );
       expect(() =>
-        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params))
+        roiDataReducer(LOADED_STATE, updateChartAlignmentAction(params)),
       ).toThrow("Invalid frame index: 6, 1");
     });
   });
@@ -705,7 +705,7 @@ describe("roiDataReducer", () => {
           channel: CHANNEL_1,
           filename: "new file",
         }),
-        EXPECTED_LOADED_STATE
+        EXPECTED_LOADED_STATE,
       );
     });
 
@@ -717,7 +717,7 @@ describe("roiDataReducer", () => {
           channel: CHANNEL_1,
           filename: "new file",
         }),
-        EXPECTED_LOADED_STATE
+        EXPECTED_LOADED_STATE,
       );
     });
 
@@ -735,7 +735,7 @@ describe("roiDataReducer", () => {
             ...EXPECTED_DUAL_CHANNEL_LOADED_STATE.channel1Dataset!,
             filename: "new file3",
           },
-        }
+        },
       );
     });
 
@@ -785,11 +785,11 @@ describe("roiDataReducer", () => {
           chartFrameLabels: [1, 2, 3, 4, 5],
           items: ["ROI-1", "ROI-2", "ROI-3"],
           scanStatus: ["?", "?", "?"],
-        }
+        },
       );
     });
 
-    it("second channel should fail if first channel not loaded", async () => {
+    it("second channel should fail if first channel not loaded", () => {
       expect(() =>
         roiDataReducer(
           EMPTY_STATE,
@@ -797,12 +797,12 @@ describe("roiDataReducer", () => {
             csvData: CSV_DATA_2,
             channel: CHANNEL_2,
             filename: "new file2",
-          })
-        )
+          }),
+        ),
       ).toThrow("Channel 1 not loaded");
     });
 
-    it("second channel should fail if item count mismatch", async () => {
+    it("second channel should fail if item count mismatch", () => {
       const state = roiDataReducer(
         EMPTY_STATE,
         loadChannelAction({
@@ -815,7 +815,7 @@ describe("roiDataReducer", () => {
             "5, 3.000,     1.5,   1.1",
           channel: CHANNEL_1,
           filename: "new file",
-        })
+        }),
       );
       expect(() =>
         roiDataReducer(
@@ -824,8 +824,8 @@ describe("roiDataReducer", () => {
             csvData: CSV_DATA_2,
             channel: CHANNEL_2,
             filename: "new file2",
-          })
-        )
+          }),
+        ),
       ).toThrow("Channel 2 item count mismatch");
     });
 
@@ -841,7 +841,7 @@ describe("roiDataReducer", () => {
             "4, 4.000,     1.5,   2.2,   4",
           channel: CHANNEL_1,
           filename: "new file",
-        })
+        }),
       );
       expect(() =>
         roiDataReducer(
@@ -850,8 +850,8 @@ describe("roiDataReducer", () => {
             csvData: CSV_DATA_2,
             channel: CHANNEL_2,
             filename: "new file2",
-          })
-        )
+          }),
+        ),
       ).toThrow("Channel 2 frame count mismatch");
     });
 
@@ -863,7 +863,7 @@ describe("roiDataReducer", () => {
           channel: CHANNEL_2,
           filename: "new file2",
         }),
-        EXPECTED_DUAL_CHANNEL_LOADED_STATE
+        EXPECTED_DUAL_CHANNEL_LOADED_STATE,
       );
     });
   });
@@ -873,7 +873,7 @@ describe("roiDataReducer", () => {
       await checkReducerAndStore(
         LOADED_STATE,
         closeChannelAction(CHANNEL_1),
-        EMPTY_STATE
+        EMPTY_STATE,
       );
     });
 
@@ -881,7 +881,7 @@ describe("roiDataReducer", () => {
       await checkReducerAndStore(
         DUAL_CHANNEL_LOADED_STATE,
         closeChannelAction(CHANNEL_1),
-        EMPTY_STATE
+        EMPTY_STATE,
       );
     });
 
@@ -898,7 +898,7 @@ describe("roiDataReducer", () => {
           channel2Dataset: undefined,
           currentIndex: 2,
           scanStatus: ["?", "n", "y", "?"],
-        }
+        },
       );
     });
 
@@ -909,7 +909,7 @@ describe("roiDataReducer", () => {
           currentChannel: CHANNEL_2,
         },
         closeChannelAction(CHANNEL_1),
-        EMPTY_STATE
+        EMPTY_STATE,
       );
     });
 
@@ -920,7 +920,7 @@ describe("roiDataReducer", () => {
           currentChannel: CHANNEL_2,
         },
         closeChannelAction(CHANNEL_2),
-        { ...EXPECTED_LOADED_STATE, channel2Dataset: undefined }
+        { ...EXPECTED_LOADED_STATE, channel2Dataset: undefined },
       );
     });
   });
@@ -930,13 +930,13 @@ describe("roiDataReducer", () => {
       await checkReducerAndStore(
         EMPTY_STATE,
         setCurrentChannelAction(CHANNEL_1),
-        EMPTY_STATE
+        EMPTY_STATE,
       );
     });
 
-    it("set channel 2 when channel 1 not loaded should fail", async () => {
+    it("set channel 2 when channel 1 not loaded should fail", () => {
       expect(() =>
-        roiDataReducer(EMPTY_STATE, setCurrentChannelAction(CHANNEL_2))
+        roiDataReducer(EMPTY_STATE, setCurrentChannelAction(CHANNEL_2)),
       ).toThrow("Channel 1 not loaded");
     });
 
@@ -944,13 +944,13 @@ describe("roiDataReducer", () => {
       await checkReducerAndStore(
         LOADED_STATE,
         setCurrentChannelAction(CHANNEL_2),
-        { ...EXPECTED_LOADED_STATE, currentChannel: CHANNEL_2 }
+        { ...EXPECTED_LOADED_STATE, currentChannel: CHANNEL_2 },
       );
 
       await checkReducerAndStore(
         { ...LOADED_STATE, currentChannel: CHANNEL_2 },
         setCurrentChannelAction(CHANNEL_1),
-        EXPECTED_LOADED_STATE
+        EXPECTED_LOADED_STATE,
       );
     });
   });
@@ -960,37 +960,37 @@ describe("roiDataReducer", () => {
       await checkReducerAndStore(
         EMPTY_STATE,
         setOutlineChannelAction(CHANNEL_1),
-        { ...EMPTY_STATE, outlineChannel: CHANNEL_1 }
+        { ...EMPTY_STATE, outlineChannel: CHANNEL_1 },
       );
 
       await checkReducerAndStore(
         { ...EMPTY_STATE, outlineChannel: CHANNEL_1 },
         setOutlineChannelAction(undefined),
-        EMPTY_STATE
+        EMPTY_STATE,
       );
 
       await checkReducerAndStore(
         EMPTY_STATE,
         setOutlineChannelAction(CHANNEL_2),
-        { ...EMPTY_STATE, outlineChannel: CHANNEL_2 }
+        { ...EMPTY_STATE, outlineChannel: CHANNEL_2 },
       );
 
       await checkReducerAndStore(
         { ...EMPTY_STATE, outlineChannel: CHANNEL_2 },
         setOutlineChannelAction(undefined),
-        EMPTY_STATE
+        EMPTY_STATE,
       );
 
       await checkReducerAndStore(
         { ...EMPTY_STATE, outlineChannel: CHANNEL_1 },
         setOutlineChannelAction(CHANNEL_2),
-        { ...EMPTY_STATE, outlineChannel: CHANNEL_2 }
+        { ...EMPTY_STATE, outlineChannel: CHANNEL_2 },
       );
 
       await checkReducerAndStore(
         { ...EMPTY_STATE, outlineChannel: CHANNEL_2 },
         setOutlineChannelAction(CHANNEL_1),
-        { ...EMPTY_STATE, outlineChannel: CHANNEL_1 }
+        { ...EMPTY_STATE, outlineChannel: CHANNEL_1 },
       );
     });
   });
@@ -1012,7 +1012,7 @@ describe("roiDataReducer", () => {
     enableYMinAlignment: boolean,
     alignToYMin: boolean,
     yMinValue: number,
-    yMinFrame: number
+    yMinFrame: number,
   ): ChartAlignment {
     return {
       channel,
@@ -1032,7 +1032,7 @@ describe("roiDataReducer", () => {
     await checkReducerAndEmptyStore(
       EMPTY_STATE,
       setCurrentUnselectedAction(),
-      EMPTY_STATE
+      EMPTY_STATE,
     );
 
     // With data
@@ -1043,7 +1043,7 @@ describe("roiDataReducer", () => {
         ...EXPECTED_LOADED_STATE,
         currentIndex: 2,
         scanStatus: ["y", "y", "?", "n"],
-      }
+      },
     );
   });
 
@@ -1055,7 +1055,7 @@ describe("roiDataReducer", () => {
         ...EXPECTED_LOADED_STATE,
         currentIndex: 2,
         scanStatus: ["y", "y", "y", "n"],
-      }
+      },
     );
   });
 
@@ -1067,7 +1067,7 @@ describe("roiDataReducer", () => {
         ...EXPECTED_LOADED_STATE,
         currentIndex: 1,
         scanStatus: ["y", "n", "n", "n"],
-      }
+      },
     );
   });
 
@@ -1083,7 +1083,7 @@ describe("roiDataReducer", () => {
         markers: [
           { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_2 },
         ],
-      }
+      },
     );
 
     await checkReducerAndStore(
@@ -1103,7 +1103,7 @@ describe("roiDataReducer", () => {
           { name: "test1", axis: AXIS_H, value: 5, channel: CHANNEL_BOTH },
           { name: "test2", axis: AXIS_V, value: 15, channel: CHANNEL_2 },
         ],
-      }
+      },
     );
 
     await checkReducerAndStore(
@@ -1114,7 +1114,7 @@ describe("roiDataReducer", () => {
         ],
       },
       updateMarkersAction([]),
-      { ...EXPECTED_LOADED_STATE, markers: [] }
+      { ...EXPECTED_LOADED_STATE, markers: [] },
     );
   });
 
@@ -1142,7 +1142,7 @@ describe("roiDataReducer", () => {
             channel: CHANNEL_1,
           },
         },
-      }
+      },
     );
 
     await checkReducerAndStore(
@@ -1162,7 +1162,7 @@ describe("roiDataReducer", () => {
       {
         ...EXPECTED_LOADED_STATE,
         editMarker: undefined,
-      }
+      },
     );
   });
 
@@ -1196,7 +1196,7 @@ describe("roiDataReducer", () => {
       await checkReducerAndEmptyStore(
         EMPTY_STATE,
         setSelectionAction(selection),
-        EMPTY_STATE
+        EMPTY_STATE,
       );
     });
 
@@ -1215,7 +1215,7 @@ describe("roiDataReducer", () => {
           ...EXPECTED_LOADED_STATE,
           scanStatus: ALL_SELECTED,
           channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
-        }
+        },
       );
     });
 
@@ -1239,7 +1239,7 @@ describe("roiDataReducer", () => {
             SCANSTATUS_UNSELECTED,
           ],
           channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
-        }
+        },
       );
     });
 
@@ -1263,7 +1263,7 @@ describe("roiDataReducer", () => {
             SCANSTATUS_UNSELECTED,
           ],
           channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
-        }
+        },
       );
     });
 
@@ -1295,7 +1295,7 @@ describe("roiDataReducer", () => {
             SCANSTATUS_SELECTED,
           ],
           channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
-        }
+        },
       );
     });
 
@@ -1326,7 +1326,7 @@ describe("roiDataReducer", () => {
             SCANSTATUS_UNSELECTED,
           ],
           channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
-        }
+        },
       );
     });
 
@@ -1358,7 +1358,7 @@ describe("roiDataReducer", () => {
             SCANSTATUS_SELECTED,
           ],
           channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
-        }
+        },
       );
     });
 
@@ -1390,7 +1390,7 @@ describe("roiDataReducer", () => {
             SCANSTATUS_SELECTED,
           ],
           channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
-        }
+        },
       );
     });
 
@@ -1422,7 +1422,7 @@ describe("roiDataReducer", () => {
             SCANSTATUS_SELECTED,
           ],
           channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
-        }
+        },
       );
     });
 
@@ -1454,7 +1454,7 @@ describe("roiDataReducer", () => {
             SCANSTATUS_SELECTED,
           ],
           channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
-        }
+        },
       );
     });
 
@@ -1486,7 +1486,7 @@ describe("roiDataReducer", () => {
             SCANSTATUS_UNSELECTED,
           ],
           channel1Dataset: { ...EXPECTED_CHANNEL1_DATASET, selection },
-        }
+        },
       );
     });
 
@@ -1512,13 +1512,13 @@ describe("roiDataReducer", () => {
             ...EXPECTED_CHANNEL1_DATASET,
             selection: { ...selection, selectedStdev: expect.closeTo(0.57) },
           },
-        }
+        },
       );
 
       expect(getMinimumStdevStatusSpy).toHaveBeenCalledTimes(1);
       expect(getMinimumStdevStatusSpy).toHaveBeenCalledWith(
         2,
-        EXPECTED_CHANNEL1_DATASET.chartData
+        EXPECTED_CHANNEL1_DATASET.chartData,
       );
     });
 
@@ -1637,10 +1637,10 @@ describe("roiDataReducer", () => {
   async function checkReducerAndStore(
     initialState: RoiDataModelState,
     action: AnyAction,
-    expectedState: RoiDataModelState
+    expectedState: RoiDataModelState,
   ) {
     expect(
-      persistedReducer({ ...initialState, ...PERSIST_PARTIAL }, action)
+      persistedReducer({ ...initialState, ...PERSIST_PARTIAL }, action),
     ).toMatchObject({ ...expectedState, ...PERSIST_PARTIAL });
     await flushPromises();
     await persistor.flush();
@@ -1660,17 +1660,17 @@ describe("roiDataReducer", () => {
     }
 
     expect(await getStoredState({ key: "rts-assay", storage })).toMatchObject(
-      expectedPeristence
+      expectedPeristence,
     );
   }
 
   async function checkReducerAndEmptyStore(
     initialState: RoiDataModelState,
     action: AnyAction,
-    expectedState: RoiDataModelState
+    expectedState: RoiDataModelState,
   ) {
     expect(
-      persistedReducer({ ...initialState, ...PERSIST_PARTIAL }, action)
+      persistedReducer({ ...initialState, ...PERSIST_PARTIAL }, action),
     ).toStrictEqual({ ...expectedState, ...PERSIST_PARTIAL });
     await flushPromises();
     await persistor.flush();
@@ -1687,7 +1687,7 @@ describe("miscellaneous functions", () => {
         selectedCount: 0,
         unselectedCount: 0,
         unscannedCount: 0,
-      })
+      }),
     ).toStrictEqual("Select All");
     // All selected
     expect(
@@ -1695,7 +1695,7 @@ describe("miscellaneous functions", () => {
         selectedCount: 2,
         unselectedCount: 0,
         unscannedCount: 0,
-      })
+      }),
     ).toStrictEqual("Unselect All");
     // All unselected
     expect(
@@ -1703,7 +1703,7 @@ describe("miscellaneous functions", () => {
         selectedCount: 0,
         unselectedCount: 2,
         unscannedCount: 0,
-      })
+      }),
     ).toStrictEqual("Clear All");
     // All clear
     expect(
@@ -1711,7 +1711,7 @@ describe("miscellaneous functions", () => {
         selectedCount: 0,
         unselectedCount: 0,
         unscannedCount: 2,
-      })
+      }),
     ).toStrictEqual("Select All");
     // Mixed items
     expect(
@@ -1719,7 +1719,7 @@ describe("miscellaneous functions", () => {
         selectedCount: 1,
         unselectedCount: 1,
         unscannedCount: 1,
-      })
+      }),
     ).toStrictEqual("Clear All");
   });
 
@@ -1736,28 +1736,28 @@ describe("miscellaneous functions", () => {
 
   it("isCurrentChannelLoaded", () => {
     expect(
-      isCurrentChannelLoaded({ ...EMPTY_STATE, currentChannel: CHANNEL_1 })
+      isCurrentChannelLoaded({ ...EMPTY_STATE, currentChannel: CHANNEL_1 }),
     ).toBe(false);
     expect(
-      isCurrentChannelLoaded({ ...EMPTY_STATE, currentChannel: CHANNEL_2 })
+      isCurrentChannelLoaded({ ...EMPTY_STATE, currentChannel: CHANNEL_2 }),
     ).toBe(false);
     expect(
-      isCurrentChannelLoaded({ ...LOADED_STATE, currentChannel: CHANNEL_1 })
+      isCurrentChannelLoaded({ ...LOADED_STATE, currentChannel: CHANNEL_1 }),
     ).toBe(true);
     expect(
-      isCurrentChannelLoaded({ ...LOADED_STATE, currentChannel: CHANNEL_2 })
+      isCurrentChannelLoaded({ ...LOADED_STATE, currentChannel: CHANNEL_2 }),
     ).toBe(false);
     expect(
       isCurrentChannelLoaded({
         ...DUAL_CHANNEL_LOADED_STATE,
         currentChannel: CHANNEL_1,
-      })
+      }),
     ).toBe(true);
     expect(
       isCurrentChannelLoaded({
         ...DUAL_CHANNEL_LOADED_STATE,
         currentChannel: CHANNEL_2,
-      })
+      }),
     ).toBe(true);
   });
 
@@ -1767,15 +1767,15 @@ describe("miscellaneous functions", () => {
 
       // reducer SET_CURRENT_INDEX
       expect(() =>
-        roiDataReducer(EMPTY_STATE, setCurrentIndexAction(index))
+        roiDataReducer(EMPTY_STATE, setCurrentIndexAction(index)),
       ).toThrow(expectedMessage);
 
       expect(() => isItemSelected(state.scanStatus, index)).toThrow(
-        expectedMessage
+        expectedMessage,
       );
 
       expect(() => isItemUnselected(state.scanStatus, index)).toThrow(
-        expectedMessage
+        expectedMessage,
       );
     }
 
@@ -1809,37 +1809,37 @@ describe("selection functions", () => {
 
   it("isCurrentSelected", () => {
     expect(
-      isCurrentSelected({ ...model, currentIndex: 0 } as RoiDataModelState)
+      isCurrentSelected({ ...model, currentIndex: 0 } as RoiDataModelState),
     ).toBe(false);
     expect(
-      isCurrentSelected({ ...model, currentIndex: 1 } as RoiDataModelState)
+      isCurrentSelected({ ...model, currentIndex: 1 } as RoiDataModelState),
     ).toBe(true);
     expect(
-      isCurrentSelected({ ...model, currentIndex: 2 } as RoiDataModelState)
+      isCurrentSelected({ ...model, currentIndex: 2 } as RoiDataModelState),
     ).toBe(false);
   });
 
   it("isCurrentUnselected", () => {
     expect(
-      isCurrentUnselected({ ...model, currentIndex: 0 } as RoiDataModelState)
+      isCurrentUnselected({ ...model, currentIndex: 0 } as RoiDataModelState),
     ).toBe(false);
     expect(
-      isCurrentUnselected({ ...model, currentIndex: 1 } as RoiDataModelState)
+      isCurrentUnselected({ ...model, currentIndex: 1 } as RoiDataModelState),
     ).toBe(false);
     expect(
-      isCurrentUnselected({ ...model, currentIndex: 2 } as RoiDataModelState)
+      isCurrentUnselected({ ...model, currentIndex: 2 } as RoiDataModelState),
     ).toBe(true);
   });
 
   it("isCurrentUnscanned", () => {
     expect(
-      isCurrentUnscanned({ ...model, currentIndex: 0 } as RoiDataModelState)
+      isCurrentUnscanned({ ...model, currentIndex: 0 } as RoiDataModelState),
     ).toBe(true);
     expect(
-      isCurrentUnscanned({ ...model, currentIndex: 1 } as RoiDataModelState)
+      isCurrentUnscanned({ ...model, currentIndex: 1 } as RoiDataModelState),
     ).toBe(false);
     expect(
-      isCurrentUnscanned({ ...model, currentIndex: 2 } as RoiDataModelState)
+      isCurrentUnscanned({ ...model, currentIndex: 2 } as RoiDataModelState),
     ).toBe(false);
   });
 });

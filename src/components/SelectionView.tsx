@@ -27,13 +27,13 @@ export default function SelectionView() {
   const channelSelection = useAppSelector((state) =>
     currentChannel === CHANNEL_1
       ? state.channel1Dataset?.selection
-      : state.channel2Dataset?.selection
+      : state.channel2Dataset?.selection,
   );
 
   const selection: Selection = channelSelection || DEFAULT_SELECTION;
 
   const datasetFrameCount = useAppSelector(
-    (state) => state.chartFrameLabels.length || 1
+    (state) => state.chartFrameLabels.length || 1,
   );
 
   const datasetItemCount = useAppSelector(getItemCount);
@@ -58,14 +58,14 @@ export default function SelectionView() {
         <input
           type="number"
           id={key}
-          value={(selection as any)[key]}
+          value={(selection as unknown as Record<string, number>)[key]}
           onChange={(event) => {
             if (event.target.value !== "") {
               dispatch(
                 setSelectionAction({
                   ...selection,
                   [key]: Number(event.target.value),
-                })
+                }),
               );
             }
           }}
@@ -88,14 +88,16 @@ export default function SelectionView() {
         <input
           type="number"
           id={key}
-          value={Math.round((selection as any)[key] * 100)}
+          value={Math.round(
+            (selection as unknown as Record<string, number>)[key] * 100,
+          )}
           onChange={(event) => {
             if (event.target.value !== "") {
               dispatch(
                 setSelectionAction({
                   ...selection,
                   [key]: Number(event.target.value) / 100,
-                })
+                }),
               );
             }
           }}
@@ -113,14 +115,18 @@ export default function SelectionView() {
         <input
           type="number"
           id={key}
-          value={chartFrameLabels[(selection as any)[key]]}
+          value={
+            chartFrameLabels[
+              (selection as unknown as Record<string, number>)[key]
+            ]
+          }
           onChange={(event) => {
             if (event.target.value !== "") {
               dispatch(
                 setSelectionAction({
                   ...selection,
                   [key]: Number(event.target.value) - 1,
-                })
+                }),
               );
             }
           }}

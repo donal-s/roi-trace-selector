@@ -4,25 +4,31 @@ import {
   SCANSTATUS_UNSELECTED,
 } from "./Types";
 
-let getWasmMinimumStdevStatus: Function;
+let getWasmMinimumStdevStatus: (
+  selectedTraceCount: number,
+  chartData: number,
+) => number;
 let memory: WebAssembly.Memory;
-let __new: Function;
-let __pin: Function;
-let __unpin: Function;
+let __new: (size: number, id: number) => number;
+let __pin: (ptr: number) => number;
+let __unpin: (ptr: number) => void;
 let wasmInstantiated = false;
 
-(async () => {
+void (async () => {
   const { exports } = await WebAssembly.instantiate(
     await WebAssembly.compile(
-      await fetch("./stdevCalc.wasm").then((response) => response.arrayBuffer())
+      await fetch("./stdevCalc.wasm").then((response) =>
+        response.arrayBuffer(),
+      ),
     ),
-    { env: { abort } }
+    { env: { abort } },
   );
-  getWasmMinimumStdevStatus = exports.getMinimumStdevStatus as Function;
+  getWasmMinimumStdevStatus =
+    exports.getMinimumStdevStatus as typeof getWasmMinimumStdevStatus;
   memory = exports.memory as WebAssembly.Memory;
-  __new = exports.__new as Function;
-  __pin = exports.__pin as Function;
-  __unpin = exports.__unpin as Function;
+  __new = exports.__new as typeof __new;
+  __pin = exports.__pin as typeof __pin;
+  __unpin = exports.__unpin as typeof __unpin;
 
   wasmInstantiated = true;
 })();
@@ -35,7 +41,7 @@ function abort(
   messagePtr: number,
   fileNamePtr: number,
   lineNumber: number,
-  columnNumber: number
+  columnNumber: number,
 ) {
   const message = liftString(messagePtr >>> 0);
   const fileName = liftString(fileNamePtr >>> 0);
@@ -53,7 +59,7 @@ export type MinimumStdevResult = {
 
 export function getMinimumStdevStatus(
   selectedTraceCount: number,
-  chartData: number[][]
+  chartData: number[][],
 ): MinimumStdevResult {
   if (!wasmInstantiated) {
     throw new Error("WebAssembly code not yet instantiated");
@@ -63,10 +69,7 @@ export function getMinimumStdevStatus(
     const chartDataRef = lowerStaticArray(pinnedMemory, chartData);
 
     return liftResult(
-      (getWasmMinimumStdevStatus as Function)(
-        selectedTraceCount,
-        chartDataRef
-      ) >>> 0
+      getWasmMinimumStdevStatus(selectedTraceCount, chartDataRef) >>> 0,
     );
   } finally {
     for (let i = pinnedMemory.length - 1; i >= 0; --i) {
@@ -105,7 +108,7 @@ export function liftString(pointer: number): string | null {
     string = "";
   while (end - start > 1024)
     string += String.fromCharCode(
-      ...memoryU16.subarray(start, (start += 1024))
+      ...memoryU16.subarray(start, (start += 1024)),
     );
   return string + String.fromCharCode(...memoryU16.subarray(start, end));
 }

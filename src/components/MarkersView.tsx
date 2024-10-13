@@ -19,7 +19,7 @@ export default function MarkersView() {
       updateEditMarkerAction({
         index: markers.length,
         marker: { name: "", axis: AXIS_V, value: 1, channel: CHANNEL_BOTH },
-      })
+      }),
     );
   }
 
@@ -50,7 +50,9 @@ export default function MarkersView() {
       {editMarker && (
         <>
           <div id="markersHeading">
-            <span id="markersTitle" className="unselectable">Edit Marker</span>
+            <span id="markersTitle" className="unselectable">
+              Edit Marker
+            </span>
           </div>
           <EditMarkerPanel />
         </>

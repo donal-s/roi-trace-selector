@@ -8,7 +8,7 @@ import {
   LOADED_STATE,
   renderWithProvider,
 } from "../TestUtils";
-import { CHANNEL_2 } from "../model/Types";
+import { CHANNEL_2, ChannelData } from "../model/Types";
 import { fireEvent, waitFor } from "@testing-library/react";
 import { RoiDataModelState } from "../model/RoiDataModel";
 
@@ -125,11 +125,11 @@ describe("component FileAccessView", () => {
             channel1Dataset: expect.objectContaining({
               chartData: CHART_DATA,
               filename: "newTestFile.csv",
-            }),
+            }) as ChannelData,
             chartFrameLabels: [1, 2, 3],
             items: CHART_ITEMS,
-          })
-        )
+          }),
+        ),
       );
       expect(mockConfirm).not.toHaveBeenCalled();
     });
@@ -145,11 +145,11 @@ describe("component FileAccessView", () => {
             channel1Dataset: expect.objectContaining({
               chartData: CHART_DATA,
               filename: "newTestFile.csv",
-            }),
+            }) as ChannelData,
             chartFrameLabels: [1, 2, 3],
             items: CHART_ITEMS,
-          })
-        )
+          }),
+        ),
       );
       expect(mockConfirm).toHaveBeenCalledTimes(1);
     });
@@ -175,12 +175,12 @@ describe("component FileAccessView", () => {
             channel1Dataset: expect.objectContaining({
               chartData: CHART_DATA,
               filename: "newTestFile.csv",
-            }),
+            }) as ChannelData,
             chartFrameLabels: [1, 2, 3],
             items: CHART_ITEMS,
             channel2Dataset: undefined,
-          })
-        )
+          }),
+        ),
       );
       expect(mockConfirm).toHaveBeenCalledTimes(1);
     });
@@ -193,7 +193,7 @@ describe("component FileAccessView", () => {
 
       await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
       await waitFor(() =>
-        expect(store.getState()).toStrictEqual(DUAL_CHANNEL_LOADED_STATE)
+        expect(store.getState()).toStrictEqual(DUAL_CHANNEL_LOADED_STATE),
       );
     });
 
@@ -217,9 +217,9 @@ describe("component FileAccessView", () => {
           expect.objectContaining({
             channel2Dataset: expect.objectContaining({
               filename: "newTestFile.csv",
-            }),
-          })
-        )
+            }) as ChannelData,
+          }),
+        ),
       );
       expect(mockConfirm).not.toHaveBeenCalled();
     });
@@ -243,9 +243,9 @@ describe("component FileAccessView", () => {
           expect.objectContaining({
             channel2Dataset: expect.objectContaining({
               filename: "newTestFile.csv",
-            }),
-          })
-        )
+            }) as ChannelData,
+          }),
+        ),
       );
       expect(mockConfirm).not.toHaveBeenCalled();
     });
@@ -258,9 +258,8 @@ describe("component FileAccessView", () => {
       saveAsSpy = jest.spyOn(FileSaver, "saveAs").mockImplementation(() => {});
       blobSpy = jest
         .spyOn(global, "Blob")
-        //@ts-ignore
         .mockImplementation((content, options) => {
-          return { content, options };
+          return { content, options } as unknown as Blob;
         });
     });
 
@@ -300,7 +299,7 @@ describe("component FileAccessView", () => {
           ],
           options: { endings: "native", type: "text/csv" },
         },
-        "new file_output.csv"
+        "new file_output.csv",
       );
     });
 
@@ -325,7 +324,7 @@ describe("component FileAccessView", () => {
           ],
           options: { endings: "native", type: "text/csv" },
         },
-        "new file2_output.csv"
+        "new file2_output.csv",
       );
     });
   });
@@ -375,7 +374,7 @@ describe("component FileAccessView", () => {
       await user.click(closeButton());
 
       await waitFor(() =>
-        expect(store.getState()).toStrictEqual(DUAL_CHANNEL_LOADED_STATE)
+        expect(store.getState()).toStrictEqual(DUAL_CHANNEL_LOADED_STATE),
       );
       expect(mockConfirm).toHaveBeenCalledTimes(1);
     });

@@ -18,52 +18,52 @@ function withPayloadType<T>() {
 
 export const fullscreenModeAction = createAction(
   "setFullscreenMode",
-  withPayloadType<boolean>()
+  withPayloadType<boolean>(),
 );
 export const setCurrentIndexAction = createAction(
   "setCurrentIndex",
-  withPayloadType<number>()
+  withPayloadType<number>(),
 );
 export const setCurrentNextAction = createAction("setCurrentNext");
 export const setCurrentPreviousAction = createAction("setCurrentPrevious");
 export const setCurrentNextUnscannedAction = createAction(
-  "setCurrentNextUnscanned"
+  "setCurrentNextUnscanned",
 );
 export const toggleCurrentItemSelectedAction = createAction(
-  "toggleCurrentItemSelected"
+  "toggleCurrentItemSelected",
 );
 export const selectAllItemsAction = createAction("selectAllItems");
 export const updateChartAlignmentAction = createAction(
   "updateChartAlignment",
-  withPayloadType<ChartAlignment>()
+  withPayloadType<ChartAlignment>(),
 );
 export const setCurrentChannelAction = createAction(
   "setCurrentChannel",
-  withPayloadType<Channel>()
+  withPayloadType<Channel>(),
 );
 export const setOutlineChannelAction = createAction(
   "setOutlineChannel",
-  withPayloadType<Channel|undefined>()
+  withPayloadType<Channel | undefined>(),
 );
 export const loadChannelAction = createAction(
   "loadChannel",
-  withPayloadType<ChannelData>()
+  withPayloadType<ChannelData>(),
 );
 export const closeChannelAction = createAction(
   "closeChannel",
-  withPayloadType<Channel>()
+  withPayloadType<Channel>(),
 );
 
 export const setSelectionAction = createAction(
   "setSelection",
-  withPayloadType<Selection>()
+  withPayloadType<Selection>(),
 );
 
 export const resetStateAction = createAction("resetState");
 
 export const setCurrentScanStatusAction = createAction(
   "setCurrentScanStatus",
-  withPayloadType<ScanStatus>()
+  withPayloadType<ScanStatus>(),
 );
 export const setCurrentSelectedAction = () =>
   setCurrentScanStatusAction(SCANSTATUS_SELECTED);
@@ -74,10 +74,10 @@ export const setCurrentUnscannedAction = () =>
 
 export const updateMarkersAction = createAction(
   "updateMarkers",
-  withPayloadType<Marker[]>()
+  withPayloadType<Marker[]>(),
 );
 
 export const updateEditMarkerAction = createAction(
   "updateEditMarker",
-  withPayloadType<EditMarker | undefined>()
+  withPayloadType<EditMarker | undefined>(),
 );

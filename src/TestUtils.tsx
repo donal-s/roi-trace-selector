@@ -7,7 +7,6 @@ import {
   RoiDataset,
 } from "./model/RoiDataModel";
 import { CHANNEL_1, Channel, CHANNEL_2, SELECTION_MANUAL } from "./model/Types";
-import { PreloadedState } from "redux";
 import "core-js/features/set-immediate";
 import { act, render, RenderOptions } from "@testing-library/react";
 import { Provider } from "react-redux";
@@ -49,7 +48,7 @@ export const LOADED_STATE = roiDataReducer(
     csvData: CSV_DATA,
     channel: CHANNEL_1,
     filename: "new file",
-  })
+  }),
 );
 
 // Floating point issues - add rounding matchers
@@ -106,7 +105,7 @@ export const DUAL_CHANNEL_LOADED_STATE = roiDataReducer(
     csvData: CSV_DATA_2,
     channel: CHANNEL_2,
     filename: "new file2",
-  })
+  }),
 );
 
 // Floating point issues - add rounding matchers
@@ -152,7 +151,7 @@ export const EXPECTED_DUAL_CHANNEL_LOADED_STATE: RoiDataModelState = {
 export function setCsvData(
   store: RoiDataModelStore,
   csvData: string,
-  channel: Channel = CHANNEL_1
+  channel: Channel = CHANNEL_1,
 ) {
   act(() => {
     store.dispatch(
@@ -160,7 +159,7 @@ export function setCsvData(
         csvData: csvData,
         channel,
         filename: channel === CHANNEL_1 ? "Example data" : "Example data2",
-      })
+      }),
     );
   });
 }
@@ -172,17 +171,17 @@ export function classesContain(classes: string | null, expected: string) {
 export const flushPromises = () => new Promise(setImmediate);
 
 interface ExtendedRenderOptions extends Omit<RenderOptions, "queries"> {
-  preloadedState?: PreloadedState<Partial<RoiDataModelState>>;
+  preloadedState?: Partial<RoiDataModelState>;
 }
 
 // render with redux store
 export function renderWithProvider(
   component: React.ReactElement,
-  { preloadedState = undefined, ...renderOptions }: ExtendedRenderOptions = {}
+  { preloadedState = undefined, ...renderOptions }: ExtendedRenderOptions = {},
 ) {
   const store = configureStore({
     reducer: roiDataReducer,
-    preloadedState,
+    preloadedState: preloadedState as RoiDataModelState,
   });
   const user = userEvent.setup();
   return {

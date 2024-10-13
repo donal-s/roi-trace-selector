@@ -21,7 +21,7 @@ describe("component SelectionView", () => {
 
   it("render selection choices - first channel", async () => {
     const { container, store, user } = renderComponent(
-      DUAL_CHANNEL_LOADED_STATE
+      DUAL_CHANNEL_LOADED_STATE,
     );
 
     // No selection = default to Manual selection
@@ -37,7 +37,7 @@ describe("component SelectionView", () => {
         percentChange: 0.1,
         startFrame: 0,
         type: "percentChange",
-      })
+      }),
     );
     expect(screen.getByLabelText("Start frame")).toHaveValue(1);
     expect(screen.getByLabelText("End frame")).toHaveValue(3);
@@ -56,7 +56,7 @@ describe("component SelectionView", () => {
         startDetectionFrame: 3,
         stdevMultiple: 1,
         type: "stdev",
-      })
+      }),
     );
 
     expect(screen.getByLabelText("Start baseline frame")).toHaveValue(1);
@@ -75,12 +75,12 @@ describe("component SelectionView", () => {
         selectedStdev: expect.closeTo(2.49),
         selectedTraceCount: 4,
         type: "minimumStdevByTraceCount",
-      })
+      }),
     );
 
     expect(screen.getByLabelText("Selected trace count")).toHaveValue(4);
     expect(screen.getByLabelText("STDEV of selected")).toHaveTextContent(
-      "2.49"
+      "2.49",
     );
 
     expect(container).toMatchSnapshot();
@@ -105,7 +105,7 @@ describe("component SelectionView", () => {
         percentChange: 0.1,
         startFrame: 0,
         type: "percentChange",
-      })
+      }),
     );
     expect(screen.getByLabelText("Start frame")).toHaveValue(1);
     expect(screen.getByLabelText("End frame")).toHaveValue(3);
@@ -124,7 +124,7 @@ describe("component SelectionView", () => {
         startDetectionFrame: 3,
         stdevMultiple: 1,
         type: "stdev",
-      })
+      }),
     );
 
     expect(screen.getByLabelText("Start baseline frame")).toHaveValue(1);
@@ -143,12 +143,12 @@ describe("component SelectionView", () => {
         selectedStdev: expect.closeTo(2.49),
         selectedTraceCount: 4,
         type: "minimumStdevByTraceCount",
-      })
+      }),
     );
 
     expect(screen.getByLabelText("Selected trace count")).toHaveValue(4);
     expect(screen.getByLabelText("STDEV of selected")).toHaveTextContent(
-      "2.49"
+      "2.49",
     );
 
     expect(container).toMatchSnapshot();

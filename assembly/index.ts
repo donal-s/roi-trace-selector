@@ -1,25 +1,25 @@
 // The entry file of your WebAssembly module.
 
 class MinimumStdevResult {
-  scanStatus: bool[];
-  selectedStdev: f64;
+  scanStatus!: bool[];
+  selectedStdev!: f64;
 }
 
 export function getMinimumStdevStatus(
   selectedTraceCount: i32,
-  chartData: StaticArray<StaticArray<f64> | null>
+  chartData: StaticArray<StaticArray<f64> | null>,
 ): MinimumStdevResult {
   let currentTraceCount = chartData.length;
-  let selectedTraces = new Array<bool>(currentTraceCount);
+  const selectedTraces = new Array<bool>(currentTraceCount);
   selectedTraces.fill(true);
-  let meanStdev = calculateMeanStdev(chartData, selectedTraces);
+  const meanStdev = calculateMeanStdev(chartData, selectedTraces);
   let currentStdev = meanStdev.stdev;
 
   while (currentTraceCount > selectedTraceCount) {
     currentStdev = removeRoiAndReduceDeviation(
       chartData,
       selectedTraces,
-      meanStdev.pointVariances
+      meanStdev.pointVariances,
     );
     currentTraceCount--;
   }
@@ -33,12 +33,12 @@ export function getMinimumStdevStatus(
 function removeRoiAndReduceDeviation(
   traces: StaticArray<StaticArray<f64> | null>,
   selectedTraces: bool[],
-  pointVariances: StaticArray<StaticArray<f64> | null>
+  pointVariances: StaticArray<StaticArray<f64> | null>,
 ): f64 {
   const frameCount = traces[0]!.length;
 
   // Calculate trace variance sums
-  let traceVariances: f64[] = new Array<f64>(traces.length).fill(0);
+  const traceVariances: f64[] = new Array<f64>(traces.length).fill(0);
   for (let traceIndex = 0; traceIndex < traces.length; traceIndex++) {
     if (selectedTraces[traceIndex]) {
       for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
@@ -48,14 +48,14 @@ function removeRoiAndReduceDeviation(
   }
 
   // Candidate has max point variance sum
-  var candidateIndex = traceVariances.reduce(
+  const candidateIndex = traceVariances.reduce(
     (maxIndex, x, i, arr) => (x > arr[maxIndex] ? i : maxIndex),
-    0
+    0,
   );
 
   // Remove candidate and recalculate stdev
   selectedTraces[candidateIndex] = false;
-  let candidateStdev = calculateMeanStdev(traces, selectedTraces).stdev;
+  const candidateStdev = calculateMeanStdev(traces, selectedTraces).stdev;
 
   return candidateStdev;
 }
@@ -63,13 +63,13 @@ function removeRoiAndReduceDeviation(
 class MeanStdevResult {
   constructor(
     public stdev: f64,
-    public pointVariances: StaticArray<StaticArray<f64> | null>
+    public pointVariances: StaticArray<StaticArray<f64> | null>,
   ) {}
 }
 
 function calculateMeanStdev(
   traces: StaticArray<StaticArray<f64> | null>,
-  selectedRois: bool[]
+  selectedRois: bool[],
 ): MeanStdevResult {
   const traceCount = traces.length;
   const frameCount = traces[0]!.length;
@@ -108,7 +108,7 @@ function calculateMeanStdev(
     }
   }
 
-  let variance: f64[] = [];
+  const variance: f64[] = [];
   for (let frameIndex = 0; frameIndex < frameCount; frameIndex++) {
     let sum: f64 = 0;
     for (let traceIndex = 0; traceIndex < traceCount; traceIndex++) {

@@ -26,7 +26,10 @@ describe("component MarkersView", () => {
 
     act(() => {
       store.dispatch(
-        updateMarkersAction([TEST_MARKER, { ...TEST_MARKER, name: "marker 2" }])
+        updateMarkersAction([
+          TEST_MARKER,
+          { ...TEST_MARKER, name: "marker 2" },
+        ]),
       );
     });
 
@@ -48,7 +51,10 @@ describe("component MarkersView", () => {
     const { store, user } = renderWithProvider(<MarkersView />);
     act(() => {
       store.dispatch(
-        updateMarkersAction([TEST_MARKER, { ...TEST_MARKER, name: "marker 2" }])
+        updateMarkersAction([
+          TEST_MARKER,
+          { ...TEST_MARKER, name: "marker 2" },
+        ]),
       );
       store.dispatch(updateEditMarkerAction(undefined));
     });
@@ -65,7 +71,10 @@ describe("component MarkersView", () => {
     const { store, user } = renderWithProvider(<MarkersView />);
     act(() => {
       store.dispatch(
-        updateMarkersAction([TEST_MARKER, { ...TEST_MARKER, name: "marker 2" }])
+        updateMarkersAction([
+          TEST_MARKER,
+          { ...TEST_MARKER, name: "marker 2" },
+        ]),
       );
       store.dispatch(updateEditMarkerAction(undefined));
     });

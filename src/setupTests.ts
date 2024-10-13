@@ -1,8 +1,9 @@
 import "@testing-library/jest-dom";
 import "jest-canvas-mock";
-import fetchMock from "jest-fetch-mock";
+import fetchMock, { MockResponseInit } from "jest-fetch-mock";
 import { readFileSync } from "fs";
-global.ResizeObserver = require("resize-observer-polyfill");
+import ResizeObserver from "resize-observer-polyfill";
+global.ResizeObserver = ResizeObserver;
 
 const wasmFile = readFileSync("./public/stdevCalc.wasm");
 
@@ -11,7 +12,10 @@ fetchMock.enableMocks();
 // Handle loading the WebAssembly payload in tests
 fetchMock.mockResponse((request: Request) => {
   if (request.url.endsWith("stdevCalc.wasm")) {
-    return Promise.resolve({ status: 200, body: wasmFile as any });
+    return Promise.resolve({
+      status: 200,
+      body: wasmFile,
+    } as unknown as MockResponseInit);
   } else {
     return Promise.resolve({ status: 404, body: "Not Found" });
   }
@@ -19,7 +23,7 @@ fetchMock.mockResponse((request: Request) => {
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: jest.fn().mockImplementation((query) => ({
+  value: jest.fn().mockImplementation((query: string) => ({
     matches: false,
     media: query,
     onchange: null,

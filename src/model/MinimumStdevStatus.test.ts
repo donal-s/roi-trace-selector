@@ -8,12 +8,14 @@ import { waitFor } from "@testing-library/react";
 
 describe("getMinimumStdevStatus", () => {
   beforeAll(async () => {
-    await waitFor(() => expect(isWasmInstantiated()).toBe(true));
+    await waitFor(() =>
+      isWasmInstantiated() ? Promise.resolve() : Promise.reject(new Error()),
+    );
   });
 
-  it("minimum stdev selection by trace count - 4 traces", async () => {
+  it("minimum stdev selection by trace count - 4 traces", () => {
     expect(
-      getMinimumStdevStatus(4, EXPECTED_CHANNEL1_DATASET.chartData)
+      getMinimumStdevStatus(4, EXPECTED_CHANNEL1_DATASET.chartData),
     ).toEqual({
       scanStatus: [
         SCANSTATUS_SELECTED,
@@ -25,9 +27,9 @@ describe("getMinimumStdevStatus", () => {
     });
   });
 
-  it("minimum stdev selection by trace count - 3 traces", async () => {
+  it("minimum stdev selection by trace count - 3 traces", () => {
     expect(
-      getMinimumStdevStatus(3, EXPECTED_CHANNEL1_DATASET.chartData)
+      getMinimumStdevStatus(3, EXPECTED_CHANNEL1_DATASET.chartData),
     ).toEqual({
       scanStatus: [
         SCANSTATUS_UNSELECTED,
@@ -39,9 +41,9 @@ describe("getMinimumStdevStatus", () => {
     });
   });
 
-  it("minimum stdev selection by trace count - 2 traces", async () => {
+  it("minimum stdev selection by trace count - 2 traces", () => {
     expect(
-      getMinimumStdevStatus(2, EXPECTED_CHANNEL1_DATASET.chartData)
+      getMinimumStdevStatus(2, EXPECTED_CHANNEL1_DATASET.chartData),
     ).toEqual({
       scanStatus: [
         SCANSTATUS_UNSELECTED,
@@ -53,9 +55,9 @@ describe("getMinimumStdevStatus", () => {
     });
   });
 
-  it("minimum stdev selection by trace count - pick last of last 2 traces", async () => {
+  it("minimum stdev selection by trace count - pick last of last 2 traces", () => {
     expect(
-      getMinimumStdevStatus(1, EXPECTED_CHANNEL1_DATASET.chartData)
+      getMinimumStdevStatus(1, EXPECTED_CHANNEL1_DATASET.chartData),
     ).toEqual({
       scanStatus: [
         SCANSTATUS_UNSELECTED,

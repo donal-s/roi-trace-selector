@@ -1,7 +1,6 @@
 /* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect", "checkBadInput"] }] */
 
 import { loadTestData, loadFile, saveFile, parseCsvData } from "./CsvHandling";
-//@ts-ignore
 import FileSaver from "file-saver";
 import {
   CSV_DATA,
@@ -12,8 +11,8 @@ import {
   LOADED_STATE,
 } from "../TestUtils";
 import { CHANNEL_1, CHANNEL_2 } from "./Types";
-import { configureStore, unwrapResult } from "@reduxjs/toolkit";
-import { roiDataReducer } from "./RoiDataModel";
+import { configureStore } from "@reduxjs/toolkit";
+import { AppDispatch, roiDataReducer } from "./RoiDataModel";
 
 describe("loadTestData", () => {
   it("loadTestData", () => {
@@ -28,14 +27,14 @@ describe("loadTestData", () => {
       expect.objectContaining({
         currentChannel: "1",
         currentIndex: 0,
-      })
+      }),
     );
     expect(state.chartFrameLabels).toHaveLength(50);
     expect(state.items).toHaveLength(65);
     expect(state.scanStatus).toHaveLength(65);
 
     expect(state.channel1Dataset).toEqual(
-      expect.objectContaining({ filename: "Example data" })
+      expect.objectContaining({ filename: "Example data" }),
     );
     expect(state.channel1Dataset!.chartData).toHaveLength(65);
     expect(state.channel1Dataset!.originalTraceData).toHaveLength(65);
@@ -53,7 +52,9 @@ describe("loadFile", () => {
     const file: File = new File([CSV_DATA], "new file", {
       type: "mimeType",
     });
-    await store.dispatch(loadFile({ file, channel: CHANNEL_1 }) as any);
+    await (store.dispatch as AppDispatch)(
+      loadFile({ file, channel: CHANNEL_1 }),
+    );
 
     expect(store.getState()).toEqual(EXPECTED_LOADED_STATE);
   });
@@ -67,15 +68,16 @@ describe("loadFile", () => {
     const file: File = new File([CSV_DATA_2], "new file2", {
       type: "mimeType",
     });
-    await store.dispatch(loadFile({ file, channel: CHANNEL_2 }) as any);
+    await (store.dispatch as AppDispatch)(
+      loadFile({ file, channel: CHANNEL_2 }),
+    );
     expect(store.getState()).toEqual(EXPECTED_DUAL_CHANNEL_LOADED_STATE);
   });
 
   it("platform without FileReader", async () => {
     const savedFileReader = window.FileReader;
     try {
-      // @ts-ignore
-      window.FileReader = undefined;
+      window.FileReader = undefined as unknown as typeof savedFileReader;
       const store = configureStore({
         reducer: roiDataReducer,
         preloadedState: EMPTY_STATE,
@@ -85,9 +87,9 @@ describe("loadFile", () => {
       });
       await expect(
         async () =>
-          await store
-            .dispatch(loadFile({ file, channel: CHANNEL_1 }) as any)
-            .then(unwrapResult)
+          await (store.dispatch as AppDispatch)(
+            loadFile({ file, channel: CHANNEL_1 }),
+          ).unwrap(),
       ).rejects.toStrictEqual("FileReader is not supported in this browser.");
     } finally {
       window.FileReader = savedFileReader;
@@ -104,9 +106,9 @@ describe("loadFile", () => {
     });
     await expect(
       async () =>
-        await store
-          .dispatch(loadFile({ file, channel: CHANNEL_1 }) as any)
-          .then(unwrapResult)
+        await (store.dispatch as AppDispatch)(
+          loadFile({ file, channel: CHANNEL_1 }),
+        ).unwrap(),
     ).rejects.toEqual(new Error("Data file is empty"));
 
     expect(store.getState()).toEqual(EMPTY_STATE);
@@ -129,9 +131,9 @@ describe("loadFile", () => {
       });
       await expect(
         async () =>
-          await store
-            .dispatch(loadFile({ file, channel: CHANNEL_1 }) as any)
-            .then(unwrapResult)
+          await (store.dispatch as AppDispatch)(
+            loadFile({ file, channel: CHANNEL_1 }),
+          ).unwrap(),
       ).rejects.toStrictEqual("Cannot read file !");
     } finally {
       readAsTextSpy.mockRestore();
@@ -189,7 +191,7 @@ describe("parseCsvData", () => {
 
   it("success single frame", () => {
     const result = parseCsvData(
-      " , ROI-1, ROI-2, ROI-3, ROI-4\n1, 10.000,    1.5,   1.1,   1\n2, 9.000,     1.5,   2.2,   2\n"
+      " , ROI-1, ROI-2, ROI-3, ROI-4\n1, 10.000,    1.5,   1.1,   1\n2, 9.000,     1.5,   2.2,   2\n",
     );
     expect(result).toStrictEqual({
       chartData: [
@@ -224,14 +226,14 @@ describe("parseCsvData", () => {
   it("file with no data rows", () => {
     checkBadInput(
       " , ROI-1, ROI-2, ROI-3, ROI-4",
-      "Data file has no frame data"
+      "Data file has no frame data",
     );
   });
 
   it("file with single data row", () => {
     checkBadInput(
       " , ROI-1, ROI-2, ROI-3, ROI-4\n1, 10.000,    1.5,   1.1,   1",
-      "Data file has no frame data"
+      "Data file has no frame data",
     );
   });
 
@@ -247,7 +249,7 @@ describe("parseCsvData", () => {
         "3, 5.000,     1.5,   3.3\n" +
         "4, 4.000,     1.5,   2.2,   4\n" +
         "5, 3.000,     1.5,   1.1,   5",
-      "Data file rows have different cell counts"
+      "Data file rows have different cell counts",
     );
   });
 
@@ -259,7 +261,7 @@ describe("parseCsvData", () => {
         "3, 5.000,     1.5,   3.3,   3, 111\n" +
         "4, 4.000,     1.5,   2.2,   4\n" +
         "5, 3.000,     1.5,   1.1,   5",
-      "Data file rows have different cell counts"
+      "Data file rows have different cell counts",
     );
   });
 
@@ -271,7 +273,7 @@ describe("parseCsvData", () => {
         "ZZ, 5.000,     1.5,   3.3,   3\n" +
         "4, 4.000,     1.5,   2.2,   4\n" +
         "5, 3.000,     1.5,   1.1,   5",
-      "Data file has non-numeric frame label: 'ZZ'"
+      "Data file has non-numeric frame label: 'ZZ'",
     );
   });
 
@@ -283,7 +285,7 @@ describe("parseCsvData", () => {
         ", 5.000,     1.5,   3.3,   3\n" +
         "4, 4.000,     1.5,   2.2,   4\n" +
         "5, 3.000,     1.5,   1.1,   5",
-      "Data file has missing frame label"
+      "Data file has missing frame label",
     );
   });
 
@@ -295,7 +297,7 @@ describe("parseCsvData", () => {
         "3, 5.000,     1.5,   3.3,   3\n" +
         "4, 4.000,     1.5,   2.2,   4\n" +
         "5, 3.000,     1.5,   1.1,   5",
-      "Data file has missing item label"
+      "Data file has missing item label",
     );
   });
 
@@ -307,7 +309,7 @@ describe("parseCsvData", () => {
         "3, 5.000,     XX,   3.3,   3\n" +
         "4, 4.000,     1.5,   2.2,   4\n" +
         "5, 3.000,     1.5,   1.1,   5",
-      "Data file has non-numeric value cell: 'XX'"
+      "Data file has non-numeric value cell: 'XX'",
     );
   });
 
@@ -319,7 +321,7 @@ describe("parseCsvData", () => {
         "3, 5.000,     ,   3.3,   3\n" +
         "4, 4.000,     1.5,   2.2,   4\n" +
         "5, 3.000,     1.5,   1.1,   5",
-      "Data file has non-numeric value cell: ''"
+      "Data file has non-numeric value cell: ''",
     );
   });
 
@@ -331,7 +333,7 @@ describe("parseCsvData", () => {
         "3, 5.000,     1.5,   3.3,   3\n" +
         "2, 4.000,     1.5,   2.2,   4\n" +
         "5, 3.000,     1.5,   1.1,   5",
-      "Data file has duplicate frame label"
+      "Data file has duplicate frame label",
     );
   });
 
@@ -343,7 +345,7 @@ describe("parseCsvData", () => {
         "3, 5.000,     1.5,   3.3,   3\n" +
         "4, 4.000,     1.5,   2.2,   4\n" +
         "5, 3.000,     1.5,   1.1,   5",
-      "Data file has duplicate item label"
+      "Data file has duplicate item label",
     );
   });
 
@@ -359,8 +361,9 @@ describe("saveFile", () => {
     saveAsSpy = jest.spyOn(FileSaver, "saveAs").mockImplementation(() => {});
     blobSpy = jest
       .spyOn(global, "Blob")
-      //@ts-ignore
-      .mockImplementation((content, options) => ({ content, options }));
+      .mockImplementation(
+        (content, options) => ({ content, options }) as unknown as Blob,
+      );
   });
 
   afterEach(() => {
@@ -370,7 +373,7 @@ describe("saveFile", () => {
 
   it("empty state", () => {
     expect(() => saveFile(EMPTY_STATE, CHANNEL_1)).toThrow(
-      "No channel data file loaded"
+      "No channel data file loaded",
     );
   });
 
@@ -381,7 +384,7 @@ describe("saveFile", () => {
         content: ["\n1\n2\n3\n4\n5"],
         options: { endings: "native", type: "text/csv" },
       },
-      "new file_output.csv"
+      "new file_output.csv",
     );
   });
 
@@ -399,7 +402,7 @@ describe("saveFile", () => {
         ],
         options: { endings: "native", type: "text/csv" },
       },
-      "new file_output.csv"
+      "new file_output.csv",
     );
   });
 
@@ -417,7 +420,7 @@ describe("saveFile", () => {
         ],
         options: { endings: "native", type: "text/csv" },
       },
-      "new file_output.csv"
+      "new file_output.csv",
     );
   });
 
@@ -436,7 +439,7 @@ describe("saveFile", () => {
         },
         scanStatus: ["y", "n", "y", "?"],
       },
-      CHANNEL_1
+      CHANNEL_1,
     );
     expect(FileSaver.saveAs).toHaveBeenCalledWith(
       {
@@ -450,7 +453,7 @@ describe("saveFile", () => {
         ],
         options: { endings: "native", type: "text/csv" },
       },
-      "new file_output.csv"
+      "new file_output.csv",
     );
   });
 });

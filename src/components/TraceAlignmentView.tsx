@@ -21,7 +21,7 @@ export default function TraceAlignmentView() {
   const channelAlignment = useAppSelector((state) =>
     currentChannel === CHANNEL_1
       ? state.channel1Dataset?.alignment
-      : state.channel2Dataset?.alignment
+      : state.channel2Dataset?.alignment,
   );
 
   const alignment: ChartAlignment = channelAlignment || DEFAULT_ALIGNMENT;
@@ -30,7 +30,7 @@ export default function TraceAlignmentView() {
   const disabledMax = !alignment.enableYMaxAlignment;
   const disabledMin = disabledMax || !alignment.enableYMinAlignment;
   const datasetFrameCount = useAppSelector(
-    (state) => state.chartFrameLabels.length || 1
+    (state) => state.chartFrameLabels.length || 1,
   );
 
   function handleFluorescenceMaxBlur() {
@@ -39,7 +39,7 @@ export default function TraceAlignmentView() {
         updateChartAlignmentAction({
           ...alignment,
           yMaxValue: alignment.yMinValue + 1,
-        })
+        }),
       );
     }
   }
@@ -50,7 +50,7 @@ export default function TraceAlignmentView() {
         updateChartAlignmentAction({
           ...alignment,
           yMinValue: alignment.yMaxValue - 1,
-        })
+        }),
       );
     }
   }
@@ -59,7 +59,7 @@ export default function TraceAlignmentView() {
     key: string;
     title: string;
     disabled: boolean;
-    onBlur?: any;
+    onBlur?: () => void;
     min?: number;
     max?: number;
   };
@@ -73,13 +73,13 @@ export default function TraceAlignmentView() {
         <input
           type="checkbox"
           id={key}
-          checked={(alignment as any)[key]}
+          checked={(alignment as unknown as Record<string, boolean>)[key]}
           onChange={(event) => {
             dispatch(
               updateChartAlignmentAction({
                 ...alignment,
                 [key]: event.target.checked,
-              })
+              }),
             );
           }}
           disabled={disabled}
@@ -102,14 +102,14 @@ export default function TraceAlignmentView() {
         <input
           type="number"
           id={key}
-          value={(alignment as any)[key]}
+          value={(alignment as unknown as Record<string, number>)[key]}
           onChange={(event) => {
             if (event.target.value !== "") {
               dispatch(
                 updateChartAlignmentAction({
                   ...alignment,
                   [key]: Number(event.target.value),
-                })
+                }),
               );
             }
           }}

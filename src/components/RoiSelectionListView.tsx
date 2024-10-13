@@ -21,10 +21,10 @@ export default function RoiSelectionListView() {
   const currentIndex = useAppSelector((state) => state.currentIndex);
 
   useEffect(() => {
-    let currentItem = selectionListRef.current?.children[currentIndex];
+    const currentItem = selectionListRef.current?.children[currentIndex];
     if (currentItem) {
-      let itemBounding = currentItem.getBoundingClientRect();
-      let listBounding = selectionListRef.current!.getBoundingClientRect();
+      const itemBounding = currentItem.getBoundingClientRect();
+      const listBounding = selectionListRef.current!.getBoundingClientRect();
       if (itemBounding.top < listBounding.top) {
         currentItem.scrollIntoView(true);
       } else if (itemBounding.bottom > listBounding.bottom) {

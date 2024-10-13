@@ -25,7 +25,7 @@ describe("component App", () => {
     expect(loadTestFileButton()).toBeNull();
   });
 
-  it("keyboard events", async () => {
+  it("keyboard events", () => {
     const { store } = renderWithProvider(<App />, {
       preloadedState: LOADED_STATE,
     });

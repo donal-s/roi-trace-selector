@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 //@ts-ignore
 import sampleRoiTraces from "./sampleRoiTraces.csv";
 import { saveAs } from "file-saver";
@@ -16,7 +17,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 
 export function loadTestData() {
   return loadChannelAction({
-    csvData: sampleRoiTraces,
+    csvData: sampleRoiTraces as string,
     channel: CHANNEL_1,
     filename: "Example data",
   });
@@ -33,20 +34,21 @@ export const loadFile = createAsyncThunk<
   return readFileAsync(file)
     .then((csv: string) => {
       const result: ChannelData = {
-        csvData: csv as string,
+        csvData: csv,
         channel,
         filename: file.name,
       };
       return result;
     })
     .catch((err) => {
+      console.error(err);
       return rejectWithValue("Cannot read file !");
     });
 });
 
 export function readFileAsync(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
-    let reader = new FileReader();
+    const reader = new FileReader();
 
     reader.onload = () => {
       resolve(reader.result as string);
@@ -59,7 +61,7 @@ export function readFileAsync(file: File): Promise<string> {
 }
 
 export function parseCsvData(csv: string) {
-  let allTextLines = csv.split(/\r\n|\n/);
+  const allTextLines = csv.split(/\r\n|\n/);
   let lines: string[][] = [];
 
   allTextLines.forEach((line) => {
@@ -72,7 +74,7 @@ export function parseCsvData(csv: string) {
     throw new Error("Data file is empty");
   }
 
-  let columnCount = lines[0].length;
+  const columnCount = lines[0].length;
   lines.forEach((line) => {
     if (line.length !== columnCount) {
       throw new Error("Data file rows have different cell counts");
@@ -87,17 +89,17 @@ export function parseCsvData(csv: string) {
     throw new Error("Data file has no item data");
   }
 
-  let chartData: number[][] = [];
-  let originalTraceData: number[][] = [];
-  let roiLabels: string[] = [];
+  const chartData: number[][] = [];
+  const originalTraceData: number[][] = [];
+  const roiLabels: string[] = [];
 
-  lines.forEach((roiData, i) => {
+  lines.forEach((roiData) => {
     roiData = roiData.map((s) => s.trim());
-    let roiLabel: string = roiData.shift()!;
+    const roiLabel: string = roiData.shift()!;
     if (roiLabel === "") {
       throw new Error("Data file has missing item label");
     }
-    let roiNumberData = roiData.map((s) => {
+    const roiNumberData = roiData.map((s) => {
       const result = Number(s);
       if (s === "" || Number.isNaN(result)) {
         throw new Error(`Data file has non-numeric value cell: '${s}'`);
@@ -110,8 +112,8 @@ export function parseCsvData(csv: string) {
     roiLabels.push(roiLabel);
   });
 
-  let scaledTraceData: number[][] = originalTraceData.map((series, i) => {
-    let yOffset =  Math.min(...series);
+  const scaledTraceData: number[][] = originalTraceData.map((series) => {
+    const yOffset = Math.min(...series);
     let yScale = 1 / (Math.max(...series) - yOffset);
     if (!Number.isFinite(yScale)) {
       yScale = 1;
@@ -125,7 +127,7 @@ export function parseCsvData(csv: string) {
     throw new Error("Data file has duplicate item label");
   }
 
-  let scanStatus: ScanStatus[] = [];
+  const scanStatus: ScanStatus[] = [];
   scanStatus.length = roiLabels.length;
   scanStatus.fill(SCANSTATUS_UNSCANNED);
 
@@ -174,9 +176,9 @@ export function saveFile(model: RoiDataModelState, channel: Channel) {
     throw new Error("No channel data file loaded");
   }
 
-  let data = getSelectedSubsetCsvData(model, channelData);
-  let filename = channelData.filename + "_output.csv";
-  let blob = new Blob([data], {
+  const data = getSelectedSubsetCsvData(model, channelData);
+  const filename = channelData.filename + "_output.csv";
+  const blob = new Blob([data], {
     type: "text/csv",
     endings: "native",
   });
@@ -185,15 +187,14 @@ export function saveFile(model: RoiDataModelState, channel: Channel) {
 
 function transpose(a: string[][]) {
   // Calculate the width and height of the Array
-  let w = a.length,
+  const w = a.length,
     h = a[0].length;
 
   // @var {Number} i Counter
   // @var {Number} j Counter
   // @var {Array} t Transposed data is stored in this array.
-  let i,
-    j,
-    t: string[][] = [];
+  let i, j;
+  const t: string[][] = [];
 
   // Loop through every item in the outer array (height)
   for (i = 0; i < h; i++) {
@@ -212,11 +213,11 @@ function transpose(a: string[][]) {
 
 function getSelectedSubsetCsvData(
   { items, chartFrameLabels, scanStatus }: RoiDataModelState,
-  { chartData }: RoiDataset
+  { chartData }: RoiDataset,
 ) {
   let result = "";
-  let totalTraces = items.length;
-  let totalFrames = chartFrameLabels.length;
+  const totalTraces = items.length;
+  const totalFrames = chartFrameLabels.length;
   // Add trace names
   for (let i = 0; i < totalTraces; i++) {
     if (scanStatus[i] === SCANSTATUS_SELECTED) {

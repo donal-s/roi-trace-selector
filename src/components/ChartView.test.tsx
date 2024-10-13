@@ -58,7 +58,7 @@ describe("component ChartView", () => {
         EXPECTED_X_DATA,
         EXPECTED_Y_DATA,
         [],
-        []
+        [],
       );
       expect(mockSetSeries).toHaveBeenCalledTimes(1);
       expect(mockSetSeries).toHaveBeenCalledWith(0, true);
@@ -86,7 +86,7 @@ describe("component ChartView", () => {
         2,
         0,
         undefined,
-        "rgba(0,0,0,0.1)"
+        "rgba(0,0,0,0.1)",
       );
       mockSetSeries.mockClear();
 
@@ -99,7 +99,7 @@ describe("component ChartView", () => {
         2,
         1,
         undefined,
-        "rgba(0,0,0,0.1)"
+        "rgba(0,0,0,0.1)",
       );
     });
 
@@ -114,7 +114,7 @@ describe("component ChartView", () => {
       });
 
       await waitFor(() =>
-        expect(mockShowUnfocussedSeries).toHaveBeenCalledTimes(1)
+        expect(mockShowUnfocussedSeries).toHaveBeenCalledTimes(1),
       );
       expect(mockShowUnfocussedSeries).toHaveBeenCalledWith(false);
 
@@ -124,7 +124,7 @@ describe("component ChartView", () => {
       });
 
       await waitFor(() =>
-        expect(mockShowUnfocussedSeries).toHaveBeenCalledTimes(2)
+        expect(mockShowUnfocussedSeries).toHaveBeenCalledTimes(2),
       );
       expect(mockShowUnfocussedSeries).toHaveBeenLastCalledWith(true);
     });
@@ -151,7 +151,7 @@ describe("component ChartView", () => {
         2,
         0,
         undefined,
-        "rgba(0,0,128,0.16)"
+        "rgba(0,0,128,0.16)",
       );
 
       simulateItemToggle(store);
@@ -165,7 +165,7 @@ describe("component ChartView", () => {
       expect(mockSetSeries).toHaveBeenLastCalledWith(
         1,
         undefined,
-        "rgba(164,0,0)"
+        "rgba(164,0,0)",
       );
       mockSetSeries.mockClear();
 
@@ -179,7 +179,7 @@ describe("component ChartView", () => {
         2,
         1,
         undefined,
-        "rgba(164,0,0,0.2)"
+        "rgba(164,0,0,0.2)",
       );
 
       simulateItemToggle(store);
@@ -193,7 +193,7 @@ describe("component ChartView", () => {
       expect(mockSetSeries).toHaveBeenLastCalledWith(
         2,
         undefined,
-        "rgba(164,0,0)"
+        "rgba(164,0,0)",
       );
 
       simulateItemToggle(store);
@@ -204,7 +204,7 @@ describe("component ChartView", () => {
   });
 
   describe("chart outline tests", () => {
-    it("single chart view - no outline", async () => {
+    it("single chart view - no outline", () => {
       const { store } = renderWithProvider(<ChartView />, {
         preloadedState: LOADED_STATE,
       });
@@ -245,14 +245,14 @@ describe("component ChartView", () => {
       expect(chart2Div()).not.toHaveClass("outline");
     });
 
-    it("dual chart view, fullscreen - no outline", async () => {
+    it("dual chart view, fullscreen - no outline", () => {
       const { store } = renderWithProvider(<ChartView />, {
         preloadedState: DUAL_CHANNEL_LOADED_STATE,
       });
       act(() => {
         store.dispatch(setOutlineChannelAction(CHANNEL_1));
       });
-      
+
       renderWithProvider(<ChartView />);
 
       // Chart 1 outline

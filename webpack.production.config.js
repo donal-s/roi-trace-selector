@@ -168,7 +168,7 @@ module.exports = {
     ],
   },
   plugins: [
-    new ESLintPlugin({ extensions: ["js", "mjs", "jsx", "ts", "tsx"] }),
+    new ESLintPlugin({ extensions: ["js", "mjs", "jsx", "ts", "tsx"], configType: 'flat' }),
     new HtmlWebpackPlugin({
       inject: true,
       template: path.resolve("public/index.html"),

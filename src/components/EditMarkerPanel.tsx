@@ -1,8 +1,5 @@
 import React from "react";
-import {
-  updateMarkersAction,
-  updateEditMarkerAction,
-} from "../model/Actions";
+import { updateMarkersAction, updateEditMarkerAction } from "../model/Actions";
 import { useAppDispatch, useAppSelector } from "../model/RoiDataModel";
 import {
   MarkerChannel,
@@ -51,7 +48,7 @@ export default function EditMarkerPanel() {
     id: string,
     propertyName: "axis" | "channel",
     value: Axis | MarkerChannel,
-    label: string
+    label: string,
   ) {
     return (
       <label htmlFor={id}>
@@ -60,13 +57,13 @@ export default function EditMarkerPanel() {
           type="radio"
           name={propertyName}
           value={value}
-          checked={(marker as Record<string, any>)[propertyName] === value}
+          checked={marker[propertyName] === value}
           onChange={() =>
             dispatch(
               updateEditMarkerAction({
                 ...editMarker,
                 marker: { ...marker, [propertyName]: value },
-              } as EditMarker)
+              } as EditMarker),
             )
           }
         />
@@ -79,11 +76,7 @@ export default function EditMarkerPanel() {
     return radioButton(id, "axis", value, label);
   }
 
-  function channelRadioButton(
-    id: string,
-    value: MarkerChannel,
-    label: string
-  ) {
+  function channelRadioButton(id: string, value: MarkerChannel, label: string) {
     return radioButton(id, "channel", value, label);
   }
 
@@ -101,7 +94,7 @@ export default function EditMarkerPanel() {
                 updateEditMarkerAction({
                   ...editMarker,
                   marker: { ...marker, name: event.target.value },
-                })
+                }),
               )
             }
           />
@@ -124,7 +117,7 @@ export default function EditMarkerPanel() {
                     ...marker,
                     value: Number(event.target.value),
                   },
-                })
+                }),
               )
             }
           />
@@ -134,7 +127,7 @@ export default function EditMarkerPanel() {
           {channelRadioButton(
             "editMarkerChannelBoth",
             CHANNEL_BOTH,
-            "Both channels"
+            "Both channels",
           )}
           <span></span>
           {channelRadioButton("editMarkerChannel1", CHANNEL_1, "Channel 1")}

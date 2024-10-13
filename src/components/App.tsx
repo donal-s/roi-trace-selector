@@ -33,7 +33,7 @@ type OptionsTab = typeof OPTIONS_ALIGNMENT | typeof OPTIONS_SELECTION;
 export default function App() {
   const dispatch = useAppDispatch();
   const isEditingMarker = useAppSelector(
-    (state) => state.editMarker !== undefined
+    (state) => state.editMarker !== undefined,
   );
   const showSingleTrace = useAppSelector((state) => state.showSingleTrace);
   const channel1Loaded = useAppSelector(isChannel1Loaded);

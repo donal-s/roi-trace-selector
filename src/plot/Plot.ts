@@ -109,7 +109,7 @@ export default function plot(
   xData: number[],
   yData: number[][],
   _markers: LineMarkerType[],
-  _rangeMarkers?: RangeMarker[]
+  _rangeMarkers?: RangeMarker[],
 ): Plot {
   const root = document.createElement("div");
   root.classList.add("u-hz");
@@ -129,12 +129,12 @@ export default function plot(
   const ctx: CanvasRenderingContext2D = can.getContext("2d")!;
 
   function setPxRatio() {
-    let scale = window.devicePixelRatio;
+    const scale = window.devicePixelRatio;
 
     matchMedia(`screen and (resolution: ${scale}dppx)`).addEventListener(
       change,
       setPxRatio,
-      { passive: true, once: true }
+      { passive: true, once: true },
     );
 
     ctx.scale(scale, scale);
@@ -197,12 +197,12 @@ export default function plot(
     });
   });
 
-  let minMax = rangeNum(yScale.min, yScale.max);
+  const minMax = rangeNum(yScale.min, yScale.max);
   yScale.min = minMax[0];
   yScale.max = minMax[1];
 
   function resizeToFit() {
-    let rect = container.getBoundingClientRect();
+    const rect = container.getBoundingClientRect();
 
     if (rect.width !== can.width || rect.height !== can.height) {
       can.width = rect.width;
@@ -210,10 +210,14 @@ export default function plot(
 
       ctx.font = AXIS_FONT;
       const yMinTextSize = ctx.measureText(
-        fmtNum(Math.abs(yScale.min) < 1 ? yScale.min / 10 : yScale.min * 10)
+        fmtNum.format(
+          Math.abs(yScale.min) < 1 ? yScale.min / 10 : yScale.min * 10,
+        ),
       );
       const yMaxTextSize = ctx.measureText(
-        fmtNum(Math.abs(yScale.max) < 1 ? yScale.max / 10 : yScale.max * 10)
+        fmtNum.format(
+          Math.abs(yScale.max) < 1 ? yScale.max / 10 : yScale.max * 10,
+        ),
       );
 
       xAxis.plotLabelHeight =
@@ -265,8 +269,8 @@ export default function plot(
     const path = new Path2D();
 
     for (let i = 0; i < xData.length; i++) {
-      let x = xScale.getPos(xData[i], plotWidth, plotLeft);
-      let y = yScale.getPos(dataY[i], plotHeight, plotTop);
+      const x = xScale.getPos(xData[i], plotWidth, plotLeft);
+      const y = yScale.getPos(dataY[i], plotHeight, plotTop);
 
       if (i === 0) {
         path.moveTo(x, y);
@@ -288,16 +292,19 @@ export default function plot(
       axis.tickValues = undefined;
       axis.textTickValues = undefined;
 
-      const fullDim = axis.ori === 0 ? plotWidth : plotHeight;
+      const fullDim =
+        axis.ori === Orientation.Horizontal ? plotWidth : plotHeight;
       if (fullDim <= 0) return;
 
-      let { min, max } = axis.scale;
-      let [increment, space] = findIncr(min, max, fullDim, axis.space);
+      const { min, max } = axis.scale;
+      const [increment, space] = findIncr(min, max, fullDim, axis.space);
 
       if (space === 0) return;
 
       axis.tickValues = getAxisTickValues(min, max, increment);
-      axis.textTickValues = axis.tickValues.map(fmtNum);
+      axis.textTickValues = axis.tickValues.map((value) =>
+        fmtNum.format(value),
+      );
     });
   }
 
@@ -311,11 +318,11 @@ export default function plot(
     const fixedTextX = plotLeft - shiftAmt;
     const fixedTextY = plotTop + plotHeight + shiftAmt;
 
-    const xOffsets = xAxis.tickValues!.map((val) =>
-      xScale.getPos(val, plotWidth, plotLeft)
+    const xOffsets = xAxis.tickValues.map((val) =>
+      xScale.getPos(val, plotWidth, plotLeft),
     );
-    const yOffsets = yAxis.tickValues!.map((val) =>
-      yScale.getPos(val, plotHeight, plotTop)
+    const yOffsets = yAxis.tickValues.map((val) =>
+      yScale.getPos(val, plotHeight, plotTop),
     );
 
     ctx.font = AXIS_FONT;
@@ -358,16 +365,16 @@ export default function plot(
         xTextCenter: number,
         yTextCenter: number;
 
-      let textSize = ctx.measureText(marker.label);
-      let textRectWidth = textSize.width + 8;
-      let textRectHeight =
+      const textSize = ctx.measureText(marker.label);
+      const textRectWidth = textSize.width + 8;
+      const textRectHeight =
         textSize.actualBoundingBoxAscent +
         textSize.actualBoundingBoxDescent +
         6;
 
-      let ori = marker.ori;
-      if (ori === 0) {
-        let value = yAxis.scale.getPos(marker.value, plotHeight, plotTop);
+      const ori = marker.ori;
+      if (ori === Orientation.Horizontal) {
+        const value = yAxis.scale.getPos(marker.value, plotHeight, plotTop);
 
         x0 = plotLeft;
         y0 = value;
@@ -377,7 +384,7 @@ export default function plot(
         xTextCenter = plotLeft + plotWidth - textRectWidth / 2;
         yTextCenter = value;
       } else {
-        let value = xAxis.scale.getPos(marker.value, plotWidth, plotLeft);
+        const value = xAxis.scale.getPos(marker.value, plotWidth, plotLeft);
 
         x0 = value;
         y0 = plotTop + textRectHeight;
@@ -393,7 +400,7 @@ export default function plot(
         xTextCenter - textRectWidth / 2,
         yTextCenter - textRectHeight / 2,
         textRectWidth,
-        textRectHeight
+        textRectHeight,
       );
 
       ctx.fillStyle = "white";
@@ -433,9 +440,11 @@ export default function plot(
 
   function commit() {
     if (!queuedCommit) {
-      typeof queueMicrotask == "undefined"
-        ? Promise.resolve().then(_commit)
-        : queueMicrotask(_commit);
+      if (queueMicrotask == undefined) {
+        void Promise.resolve().then(_commit);
+      } else {
+        queueMicrotask(_commit);
+      }
       queuedCommit = true;
     }
   }
@@ -510,11 +519,11 @@ export default function plot(
   };
 }
 
-const fmtNum = new Intl.NumberFormat(navigator.language).format;
+const fmtNum = new Intl.NumberFormat(navigator.language);
 
 // default formatters:
 
-const fixedDec = new Map();
+const fixedDec = new Map<number, number>();
 
 const allMults = [1, 2, 2.5, 5];
 
@@ -529,11 +538,11 @@ const numIncrs = decIncrs.concat(oneIncrs);
 function getAxisTickValues(
   scaleMin: number,
   scaleMax: number,
-  foundIncr: number
+  foundIncr: number,
 ) {
-  let splits = [];
+  const splits = [];
 
-  let numDec = fixedDec.get(foundIncr) || 0;
+  const numDec = fixedDec.get(foundIncr) || 0;
 
   scaleMin = roundDec(Math.ceil(scaleMin / foundIncr) * foundIncr, numDec);
 
@@ -554,15 +563,15 @@ export function rangeNum(min: number, max: number) {
     delta = 0;
   }
 
-  let nonZeroDelta = delta || Math.abs(max) || 1000;
-  let orderOfMagnitude = Math.floor(Math.log10(nonZeroDelta));
-  let baseTenth = Math.pow(10, orderOfMagnitude - 1);
+  const nonZeroDelta = delta || Math.abs(max) || 1000;
+  const orderOfMagnitude = Math.floor(Math.log10(nonZeroDelta));
+  const baseTenth = Math.pow(10, orderOfMagnitude - 1);
 
-  let paddingMinimum =
+  const paddingMinimum =
     nonZeroDelta * (delta === 0 ? (min === 0 ? 0.1 : 1) : 0.1);
   let rangeMinimum = Math.floor((min - paddingMinimum) / baseTenth) * baseTenth;
 
-  let paddingMaximum =
+  const paddingMaximum =
     nonZeroDelta * (delta === 0 ? (max === 0 ? 0.1 : 1) : 0.1);
   let rangeMaximum = Math.ceil((max + paddingMaximum) / baseTenth) * baseTenth;
 
@@ -585,22 +594,22 @@ function genIncrs(
   base: number,
   minExp: number,
   maxExp: number,
-  mults: number[]
+  mults: number[],
 ) {
-  let incrs = [];
+  const incrs = [];
 
-  let multDec = mults.map(guessDec);
+  const multDec = mults.map(guessDec);
 
   for (let exp = minExp; exp < maxExp; exp++) {
-    let expa = Math.abs(exp);
-    let mag = roundDec(Math.pow(base, exp), expa);
+    const expa = Math.abs(exp);
+    const mag = roundDec(Math.pow(base, exp), expa);
 
     for (let i = 0; i < mults.length; i++) {
-      let _incr = mults[i] * mag;
-      let dec =
+      const _incr = mults[i] * mag;
+      const dec =
         (_incr >= 0 && exp >= 0 ? 0 : expa) +
         (exp >= multDec[i] ? 0 : multDec[i]);
-      let incr = roundDec(_incr, dec);
+      const incr = roundDec(_incr, dec);
       incrs.push(incr);
       fixedDec.set(incr, dec);
     }
@@ -611,14 +620,14 @@ function genIncrs(
 
 // dim is logical (getClientBoundingRect) pixels, not canvas pixels
 function findIncr(min: number, max: number, dim: number, minSpace: number) {
-  let pxPerUnit = dim / (max - min);
+  const pxPerUnit = dim / (max - min);
 
-  let minDec = ("" + Math.floor(min)).length;
+  const minDec = ("" + Math.floor(min)).length;
 
-  for (var i = 0; i < numIncrs.length; i++) {
-    let space = numIncrs[i] * pxPerUnit;
+  for (let i = 0; i < numIncrs.length; i++) {
+    const space = numIncrs[i] * pxPerUnit;
 
-    let incrDec = numIncrs[i] < 10 ? fixedDec.get(numIncrs[i]) : 0;
+    const incrDec = numIncrs[i] < 10 ? (fixedDec.get(numIncrs[i]) ?? 0) : 0;
 
     if (space >= minSpace && minDec + incrDec < 17) return [numIncrs[i], space];
   }

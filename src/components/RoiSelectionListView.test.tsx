@@ -13,7 +13,7 @@ import { fireEvent } from "@testing-library/react";
 
 describe("component RoiSelectionListView", () => {
   it("initialisation", () => {
-    const {store} =  renderWithProvider(<RoiSelectionListView />);
+    const { store } = renderWithProvider(<RoiSelectionListView />);
     checkChartListSelections([], 0);
     checkChartRoiCounts(0, 0, 0);
 
@@ -23,7 +23,9 @@ describe("component RoiSelectionListView", () => {
   });
 
   it("display model selections", () => {
-    renderWithProvider(<RoiSelectionListView />, {preloadedState: LOADED_STATE});
+    renderWithProvider(<RoiSelectionListView />, {
+      preloadedState: LOADED_STATE,
+    });
     checkChartListSelections([CLEAR, CLEAR, CLEAR, CLEAR], 0);
     checkChartRoiCounts(0, 4, 0);
 
@@ -68,12 +70,12 @@ describe("component RoiSelectionListView", () => {
 
   function checkChartListSelections(
     expectedSelections: ClassFilter[],
-    expectedCurrentIndex: number
+    expectedCurrentIndex: number,
   ) {
     expect(roiItemList().childElementCount).toBe(expectedSelections.length);
 
     expectedSelections.forEach((expectedSelection, index) => {
-      let element = roiItemList().children[index];
+      const element = roiItemList().children[index];
       const classes = element.className;
       // Ensure element classes contains expected class
       expect(expectedSelection(classes)).toBe(true);
@@ -86,16 +88,16 @@ describe("component RoiSelectionListView", () => {
   function checkChartRoiCounts(
     expectedUnselectedCount: number,
     expectedClearCount: number,
-    expectedSelectedCount: number
+    expectedSelectedCount: number,
   ) {
     expect(unselectedRoiCount()).toHaveTextContent(
-      expectedUnselectedCount.toString()
+      expectedUnselectedCount.toString(),
     );
     expect(unscannedRoiCount()).toHaveTextContent(
-      expectedClearCount.toString()
+      expectedClearCount.toString(),
     );
     expect(selectedRoiCount()).toHaveTextContent(
-      expectedSelectedCount.toString()
+      expectedSelectedCount.toString(),
     );
   }
 

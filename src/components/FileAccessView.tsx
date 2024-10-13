@@ -2,7 +2,6 @@ import React from "react";
 import {
   isChannel1Loaded,
   isCurrentChannelLoaded,
-  RoiDataModelState,
   useAppDispatch,
   useAppSelector,
 } from "../model/RoiDataModel";
@@ -24,11 +23,11 @@ export default function FileAccessView() {
   const model = useAppSelector((state) => state);
 
   const channel1Filename = useAppSelector(
-    (state) => state.channel1Dataset?.filename
+    (state) => state.channel1Dataset?.filename,
   );
 
   const channel2Filename = useAppSelector(
-    (state) => state.channel2Dataset?.filename
+    (state) => state.channel2Dataset?.filename,
   );
 
   const currentChannelFilename =
@@ -56,11 +55,11 @@ export default function FileAccessView() {
               !channel1Loaded ||
               window.confirm(CONFIRM_OPEN)
             ) {
-              dispatch(
+              void dispatch(
                 loadFile({
                   file: event.target.files![0],
                   channel: currentChannel,
-                })
+                }),
               );
             }
             event.target.blur();
@@ -72,8 +71,7 @@ export default function FileAccessView() {
           id="saveChannel"
           aria-label="save file"
           onClick={() =>
-            currentChannelLoaded &&
-            saveFile(model as RoiDataModelState, currentChannel)
+            currentChannelLoaded && saveFile(model, currentChannel)
           }
           className={`fileInput${currentChannelLoaded ? "" : " disabled"}`}
         />

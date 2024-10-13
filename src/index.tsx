@@ -14,7 +14,7 @@ createRoot(document.getElementById("root")!).render(
         <App />
       </React.StrictMode>
     </PersistGate>
-  </Provider>
+  </Provider>,
 );
 
 // If you want your app to work offline and load faster, you can change

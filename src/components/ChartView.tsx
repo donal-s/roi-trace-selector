@@ -49,16 +49,16 @@ export default function ChartView() {
 
   const channel2Loaded = useAppSelector(isChannel2Loaded);
   const channel1ChartData = useAppSelector(
-    (state) => state.channel1Dataset?.chartData
+    (state) => state.channel1Dataset?.chartData,
   );
   const channel2ChartData = useAppSelector(
-    (state) => state.channel2Dataset?.chartData
+    (state) => state.channel2Dataset?.chartData,
   );
   const channel1Selection = useAppSelector(
-    (state) => state.channel1Dataset?.selection
+    (state) => state.channel1Dataset?.selection,
   );
   const channel2Selection = useAppSelector(
-    (state) => state.channel2Dataset?.selection
+    (state) => state.channel2Dataset?.selection,
   );
   const items = useAppSelector((state) => state.items);
   const currentIndex = useAppSelector((state) => state.currentIndex);
@@ -101,7 +101,7 @@ export default function ChartView() {
         .filter(
           ({ channel }, index) =>
             (channel === chartChannel || channel === CHANNEL_BOTH) &&
-            (showSingleTrace || !editMarker || editMarker.index !== index)
+            (showSingleTrace || !editMarker || editMarker.index !== index),
         )
         .map((marker) => ({
           colour: "#00000080",
@@ -185,12 +185,12 @@ export default function ChartView() {
       chartXData: number[],
       chartYData: number[][],
       chartSelection: Selection | undefined,
-      channel: Channel
+      channel: Channel,
     ) {
       if (!chart.current || chartDataUpdated) {
         const colours: string[] = [
           ...scanStatus.map((status, index) =>
-            calcTraceColour(status, currentIndex === index)
+            calcTraceColour(status, currentIndex === index),
           ),
         ];
         chart.current?.destroy();
@@ -200,10 +200,10 @@ export default function ChartView() {
           chartXData,
           chartYData,
           getMarkers(channel),
-          getRangeMarkers(chartSelection)
+          getRangeMarkers(chartSelection),
         );
         if (currentIndex >= 0) {
-          chart.current!.setSeries(currentIndex, true);
+          chart.current.setSeries(currentIndex, true);
         }
       } else if (showSingleTraceUpdated) {
         chart.current.showUnfocussedSeries(!showSingleTrace);
@@ -214,32 +214,32 @@ export default function ChartView() {
               chart.current!.setSeries(
                 index,
                 undefined,
-                calcTraceColour(scanStatus[index], currentIndex === index)
+                calcTraceColour(scanStatus[index], currentIndex === index),
               );
             }
           });
         }
 
         if (markersUpdated) {
-          chart.current!.setMarkers(getMarkers(channel));
+          chart.current.setMarkers(getMarkers(channel));
         }
 
         if (chartSelectionUpdated) {
-          chart.current!.setRangeMarkers(getRangeMarkers(chartSelection));
+          chart.current.setRangeMarkers(getRangeMarkers(chartSelection));
         }
 
         if (currentIndexUpdated && currentIndex >= 0) {
-          chart.current!.setSeries(
+          chart.current.setSeries(
             currentIndex,
             true,
-            calcTraceColour(scanStatus[currentIndex], true)
+            calcTraceColour(scanStatus[currentIndex], true),
           );
 
           if (prevCurrentIndex !== undefined && prevCurrentIndex >= 0) {
-            chart.current!.setSeries(
+            chart.current.setSeries(
               prevCurrentIndex,
               undefined,
-              calcTraceColour(scanStatus[prevCurrentIndex], false)
+              calcTraceColour(scanStatus[prevCurrentIndex], false),
             );
           }
         }
@@ -255,7 +255,7 @@ export default function ChartView() {
         chartFrameLabels,
         channel1ChartData,
         channel1Selection,
-        CHANNEL_1
+        CHANNEL_1,
       );
     }
 
@@ -268,7 +268,7 @@ export default function ChartView() {
         chartFrameLabels,
         channel2ChartData,
         channel2Selection,
-        CHANNEL_2
+        CHANNEL_2,
       );
     } else if (channel2Chart.current) {
       channel2Chart.current.destroy();
@@ -334,7 +334,7 @@ export default function ChartView() {
           dispatch(
             event.deltaY > 0
               ? setCurrentNextAction()
-              : setCurrentPreviousAction()
+              : setCurrentPreviousAction(),
           )
         }
         onClick={() => dispatch(toggleCurrentItemSelectedAction())}
@@ -351,7 +351,7 @@ export default function ChartView() {
             dispatch(
               event.deltaY > 0
                 ? setCurrentNextAction()
-                : setCurrentPreviousAction()
+                : setCurrentPreviousAction(),
             )
           }
           onClick={() => dispatch(toggleCurrentItemSelectedAction())}

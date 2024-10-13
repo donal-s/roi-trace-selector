@@ -105,40 +105,40 @@ export const roiDataReducer: Reducer<RoiDataModelState> = createReducer(
   (builder) => {
     builder
       .addCase(fullscreenModeAction, (state, action) =>
-        setFullscreenMode(state, action.payload)
+        setFullscreenMode(state, action.payload),
       )
       .addCase(setCurrentIndexAction, (state, action) =>
-        setCurrentIndex(state, action.payload)
+        setCurrentIndex(state, action.payload),
       )
       .addCase(setCurrentNextAction, (state) => setCurrentNext(state))
       .addCase(setCurrentPreviousAction, (state) => setCurrentPrevious(state))
       .addCase(setCurrentNextUnscannedAction, (state) =>
-        setCurrentNextUnscanned(state)
+        setCurrentNextUnscanned(state),
       )
       .addCase(setCurrentScanStatusAction, (state, action) =>
-        setCurrentScanStatus(state, action.payload)
+        setCurrentScanStatus(state, action.payload),
       )
       .addCase(toggleCurrentItemSelectedAction, (state) =>
-        toggleCurrentItemSelected(state)
+        toggleCurrentItemSelected(state),
       )
       .addCase(selectAllItemsAction, (state) => selectAllItems(state))
       .addCase(updateChartAlignmentAction, (state, action) =>
-        updateChartAlignment(state, action.payload)
+        updateChartAlignment(state, action.payload),
       )
       .addCase(setSelectionAction, (state, action) =>
-        setSelection(current(state), action.payload)
+        setSelection(current(state), action.payload),
       )
       .addCase(loadChannelAction, (state, action) =>
-        loadData(state, action.payload)
+        loadData(state, action.payload),
       )
       .addCase(loadFile.fulfilled, (state, action) =>
-        loadData(state, action.payload)
+        loadData(state, action.payload),
       )
       .addCase(closeChannelAction, (state, action) =>
-        closeChannel(state, action.payload)
+        closeChannel(state, action.payload),
       )
       .addCase(setCurrentChannelAction, (state, action) =>
-        setCurrentChannel(state, action.payload)
+        setCurrentChannel(state, action.payload),
       )
       .addCase(setOutlineChannelAction, (state, action) => ({
         ...state,
@@ -146,12 +146,12 @@ export const roiDataReducer: Reducer<RoiDataModelState> = createReducer(
       }))
       .addCase(resetStateAction, () => initialState)
       .addCase(updateMarkersAction, (state, action) =>
-        updateMarkers(state, action.payload)
+        updateMarkers(state, action.payload),
       )
       .addCase(updateEditMarkerAction, (state, action) =>
-        updateEditMarker(state, action.payload)
+        updateEditMarker(state, action.payload),
       );
-  }
+  },
 );
 
 const persistConfig = {
@@ -171,7 +171,7 @@ const persistConfig = {
 
 export const persistedReducer = persistReducer<RoiDataModelState, AnyAction>(
   persistConfig,
-  roiDataReducer
+  roiDataReducer,
 );
 
 function setFullscreenMode(state: RoiDataModelState, enable: boolean) {
@@ -202,7 +202,7 @@ function setCurrentPrevious(state: RoiDataModelState) {
 }
 
 function setCurrentNextUnscanned(state: RoiDataModelState) {
-  let itemCount = state.items.length;
+  const itemCount = state.items.length;
   if (itemCount > 0) {
     for (let i = state.currentIndex + 1; i < itemCount; i++) {
       if (state.scanStatus[i] === SCANSTATUS_UNSCANNED) {
@@ -221,10 +221,10 @@ function setCurrentNextUnscanned(state: RoiDataModelState) {
 
 function setCurrentScanStatus(
   state: RoiDataModelState,
-  newScanStatus: ScanStatus
+  newScanStatus: ScanStatus,
 ) {
   if (isValidIndex(state.scanStatus, state.currentIndex)) {
-    let scanStatus = [...state.scanStatus];
+    const scanStatus = [...state.scanStatus];
     scanStatus[state.currentIndex] = newScanStatus;
     return { ...state, scanStatus: scanStatus };
   }
@@ -234,7 +234,7 @@ function setCurrentScanStatus(
 function toggleCurrentItemSelected(state: RoiDataModelState) {
   const index = state.currentIndex;
   if (isValidIndex(state.scanStatus, index)) {
-    let scanStatus = [...state.scanStatus];
+    const scanStatus = [...state.scanStatus];
     if (scanStatus[index] === SCANSTATUS_SELECTED) {
       scanStatus[index] = SCANSTATUS_UNSELECTED;
     } else if (scanStatus[index] === SCANSTATUS_UNSELECTED) {
@@ -255,7 +255,7 @@ function selectAllItems(state: RoiDataModelState) {
   if (itemCount === 0) {
     return state;
   }
-  let newScanStatus = Array(itemCount);
+  const newScanStatus = Array(itemCount);
   newScanStatus.fill(itemStatus);
 
   return { ...state, scanStatus: newScanStatus };
@@ -263,7 +263,7 @@ function selectAllItems(state: RoiDataModelState) {
 
 function updateChartAlignment(
   state: RoiDataModelState,
-  alignment: ChartAlignment
+  alignment: ChartAlignment,
 ) {
   const {
     channel,
@@ -368,7 +368,7 @@ function calculateAutoSelection(state: RoiDataModelState) {
     status1 === SCANSTATUS_SELECTED &&
     channel2.status![i] === SCANSTATUS_SELECTED
       ? SCANSTATUS_SELECTED
-      : SCANSTATUS_UNSELECTED
+      : SCANSTATUS_UNSELECTED,
   );
   return {
     ...state,
@@ -389,16 +389,18 @@ function calculateChannelAutoSelection(channelDataset: RoiDataset | undefined) {
       status = getStdevStatus(channelDataset);
       break;
     case SELECTION_MINIMUM_STDEV_BY_TRACE_COUNT:
-      const { scanStatus, selectedStdev } = getMinimumStdevStatus(
-        channelDataset.selection.selectedTraceCount,
-        channelDataset.chartData
-      );
+      {
+        const { scanStatus, selectedStdev } = getMinimumStdevStatus(
+          channelDataset.selection.selectedTraceCount,
+          channelDataset.chartData,
+        );
 
-      status = scanStatus;
-      channelDataset = {
-        ...channelDataset,
-        selection: { ...channelDataset?.selection, selectedStdev },
-      } as RoiDataset;
+        status = scanStatus;
+        channelDataset = {
+          ...channelDataset,
+          selection: { ...channelDataset?.selection, selectedStdev },
+        } as RoiDataset;
+      }
       break;
   }
 
@@ -425,7 +427,7 @@ function getStdevStatus(dataset: RoiDataset): ScanStatus[] {
     stdevMultiple,
   } = dataset.selection as SelectionStdev;
 
-  return dataset.originalTraceData.map((series, i) => {
+  return dataset.originalTraceData.map((series) => {
     // if (startBaselineFrameIndex >= endBaselineFrameIndex || startDetectionFrameIndex > endDetectionFrameIndex) {
     //     roiSelected[roiIndex] = false;
     //     roiChoices[roiIndex].setSelected(false);
@@ -437,7 +439,7 @@ function getStdevStatus(dataset: RoiDataset): ScanStatus[] {
       mean,
       series,
       startBaselineFrame,
-      endBaselineFrame
+      endBaselineFrame,
     );
     const tolerance = standardDeviation * stdevMultiple;
 
@@ -459,7 +461,7 @@ function getStdevStatus(dataset: RoiDataset): ScanStatus[] {
 function calculateRawMean(
   series: number[],
   startFrame: number,
-  endFrame: number
+  endFrame: number,
 ): number {
   if (startFrame < 0 || startFrame >= series.length) {
     throw new Error("" + startFrame);
@@ -482,7 +484,7 @@ function calculateRawStandardDeviation(
   mean: number,
   series: number[],
   startFrame: number,
-  endFrame: number
+  endFrame: number,
 ) {
   if (startFrame >= endFrame) {
     return 0;
@@ -501,7 +503,7 @@ export type MinimumStdevResult = {
   selectedStdev: number;
 };
 
-function arraysEqual(array1: any[], array2: any[]) {
+function arraysEqual(array1: (string | number)[], array2: (string | number)[]) {
   return (
     array1.length === array2.length &&
     array1.every((item, i: number) => {
@@ -573,7 +575,7 @@ function loadData(state: RoiDataModelState, file: ChannelData) {
 
 function closeChannel(
   state: RoiDataModelState,
-  channel: Channel
+  channel: Channel,
 ): RoiDataModelState {
   if (channel === CHANNEL_1) {
     return {
@@ -672,7 +674,7 @@ export function getSelectAllActionName({
 export function getSelectedItemCounts({
   scanStatus,
 }: RoiDataModelState): SelectedItemCounts {
-  let result: SelectedItemCounts = {
+  const result: SelectedItemCounts = {
     selectedCount: 0,
     unselectedCount: 0,
     unscannedCount: 0,

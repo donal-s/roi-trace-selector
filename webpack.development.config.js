@@ -111,7 +111,7 @@ module.exports = {
     hot: true,
   },
   plugins: [
-    new ESLintPlugin({ extensions: ["js", "mjs", "jsx", "ts", "tsx"] }),
+    new ESLintPlugin({ extensions: ["js", "mjs", "jsx", "ts", "tsx"], configType: 'flat' }),
     // Generates an `index.html` file with the <script> injected.
     new HtmlWebpackPlugin({
       inject: true,

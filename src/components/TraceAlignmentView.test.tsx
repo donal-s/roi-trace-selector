@@ -40,7 +40,7 @@ describe("component TraceAlignmentView", () => {
         [1.1, 2.2, 3.3, 2.2, 1.1],
         [1, 2, 3, 4, 5],
       ],
-      CHANNEL_1
+      CHANNEL_1,
     );
   });
 
@@ -72,7 +72,7 @@ describe("component TraceAlignmentView", () => {
         [1.1, 2.2, 3.3, 2.2, 1.1],
         [1, 2, 3, 4, 5],
       ],
-      CHANNEL_1
+      CHANNEL_1,
     );
 
     // Align max frame 1, value 5
@@ -93,7 +93,7 @@ describe("component TraceAlignmentView", () => {
         [5, 6.1, 7.199999999999999, 6.1, 5],
         [5, 6, 7, 8, 9],
       ],
-      CHANNEL_1
+      CHANNEL_1,
     );
 
     // Align max frame 2, value 5
@@ -109,7 +109,7 @@ describe("component TraceAlignmentView", () => {
         [3.9, 5, 6.1, 5, 3.9],
         [4, 5, 6, 7, 8],
       ],
-      CHANNEL_1
+      CHANNEL_1,
     );
 
     // Align max, max frame, value 5
@@ -128,7 +128,7 @@ describe("component TraceAlignmentView", () => {
         ],
         [1, 2, 3, 4, 5],
       ],
-      CHANNEL_1
+      CHANNEL_1,
     );
 
     // Align max frame 1, value 5, min frame 5 value 1
@@ -147,7 +147,7 @@ describe("component TraceAlignmentView", () => {
         [5, 6.1, 7.199999999999999, 6.1, 5],
         [5, 4, 3, 2, 1],
       ],
-      CHANNEL_1
+      CHANNEL_1,
     );
 
     // Align max frame max, value 5, min frame min value 1
@@ -164,7 +164,7 @@ describe("component TraceAlignmentView", () => {
         [1, 3.0000000000000004, 5, 3.0000000000000004, 1],
         [1, 2, 3, 4, 5],
       ],
-      CHANNEL_1
+      CHANNEL_1,
     );
   });
 
@@ -186,7 +186,7 @@ describe("component TraceAlignmentView", () => {
         [21.1, 22.2, 23.3, 22.2, 21.1],
         [21, 22, 23, 24, 25],
       ],
-      CHANNEL_2
+      CHANNEL_2,
     );
 
     // Align max frame 1, value 5
@@ -207,7 +207,7 @@ describe("component TraceAlignmentView", () => {
         [5, 6.099999999999998, 7.199999999999999, 6.099999999999998, 5],
         [5, 6, 7, 8, 9],
       ],
-      CHANNEL_2
+      CHANNEL_2,
     );
   });
 
@@ -233,19 +233,19 @@ describe("component TraceAlignmentView", () => {
     checkValues(true, false, 100, 1, true, false, 0, 5);
 
     await user.type(yMinValueField(), "110", REPLACE_NUMBER);
-    fireEvent.blur(yMinValueField()!);
+    fireEvent.blur(yMinValueField());
 
     checkValues(true, false, 100, 1, true, false, 99, 5);
 
     await user.type(yMinValueField(), "100", REPLACE_NUMBER);
-    fireEvent.blur(yMinValueField()!);
+    fireEvent.blur(yMinValueField());
 
     checkValues(true, false, 100, 1, true, false, 99, 5);
 
     // Max > min
     await user.type(yMinValueField(), "4", REPLACE_NUMBER);
     await user.type(yMaxValueField(), "15", REPLACE_NUMBER);
-    fireEvent.blur(yMaxValueField()!);
+    fireEvent.blur(yMaxValueField());
 
     checkValues(true, false, 15, 1, true, false, 4, 5);
   });
@@ -293,7 +293,7 @@ describe("component TraceAlignmentView", () => {
     enableYMinAlignment: boolean,
     alignToYMin: boolean,
     yMinValue: boolean,
-    yMinFrame: boolean
+    yMinFrame: boolean,
   ) {
     expect(enableYMaxAlignmentField().disabled).toBe(!enableYMaxAlignment);
     expect(alignToYMaxField().disabled).toBe(!alignToYMax);
@@ -313,7 +313,7 @@ describe("component TraceAlignmentView", () => {
     enableYMinAlignment: boolean,
     alignToYMin: boolean,
     yMinValue: number,
-    yMinFrame: number
+    yMinFrame: number,
   ) {
     expect(enableYMaxAlignmentField().checked).toBe(enableYMaxAlignment);
     expect(alignToYMaxField().checked).toBe(alignToYMax);
@@ -328,7 +328,7 @@ describe("component TraceAlignmentView", () => {
   function checkAlignedChartData(
     store: RoiDataModelStore,
     expectedData: number[][] | undefined,
-    channel: Channel
+    channel: Channel,
   ) {
     const dataset =
       channel === CHANNEL_1

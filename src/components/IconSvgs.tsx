@@ -5,7 +5,7 @@ import React from "react";
 export type IconProps = {
   id?: string;
   className?: string;
-  onClick?: any;
+  onClick?: () => void;
 };
 
 export const CheckCircleIcon = (props: IconProps) => (

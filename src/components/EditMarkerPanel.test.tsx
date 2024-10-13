@@ -87,7 +87,7 @@ describe("component EditMarkerPanel", () => {
             value: 17,
             channel: CHANNEL_1,
           },
-        })
+        }),
       );
     });
 
@@ -115,7 +115,7 @@ describe("component EditMarkerPanel", () => {
         updateEditMarkerAction({
           index: 0,
           marker: TEST_MARKER,
-        })
+        }),
       );
     });
 
@@ -138,7 +138,7 @@ describe("component EditMarkerPanel", () => {
         updateEditMarkerAction({
           index: 0,
           marker: { ...TEST_MARKER, channel: CHANNEL_2 },
-        })
+        }),
       );
     });
 
@@ -164,7 +164,7 @@ describe("component EditMarkerPanel", () => {
         updateMarkersAction([
           TEST_MARKER,
           { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_BOTH },
-        ])
+        ]),
       );
       store.dispatch(updateEditMarkerAction({ index: 0, marker: TEST_MARKER }));
     });
@@ -186,7 +186,7 @@ describe("component EditMarkerPanel", () => {
         updateMarkersAction([
           TEST_MARKER,
           { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_2 },
-        ])
+        ]),
       );
       store.dispatch(updateEditMarkerAction({ index: 2, marker: TEST_MARKER }));
     });
@@ -202,7 +202,7 @@ describe("component EditMarkerPanel", () => {
         updateMarkersAction([
           TEST_MARKER,
           { name: "new value", axis: AXIS_V, value: 43, channel: CHANNEL_2 },
-        ])
+        ]),
       );
       store.dispatch(updateEditMarkerAction({ index: 0, marker: TEST_MARKER }));
     });

@@ -1,6 +1,15 @@
 import React from "react";
 import FullscreenButton from "./FullscreenButton";
-import { CSV_DATA, setCsvData, renderWithProvider, LOADED_STATE } from "../TestUtils";
+import {
+  CSV_DATA,
+  setCsvData,
+  renderWithProvider,
+  LOADED_STATE,
+} from "../TestUtils";
+
+type ExtendedDocument = Document & {
+  fullscreenElement: HTMLElement | null;
+};
 
 describe("component FullscreenButton", () => {
   let fullscreenContainer: HTMLElement;
@@ -13,14 +22,14 @@ describe("component FullscreenButton", () => {
     document.body.appendChild(fullscreenContainer);
 
     document.documentElement.requestFullscreen = () => {
-      (document as any).fullscreenElement = fullscreenContainer;
+      (document as ExtendedDocument).fullscreenElement = fullscreenContainer;
       return Promise.resolve();
     };
     document.exitFullscreen = () => {
-      (document as any).fullscreenElement = null;
+      (document as ExtendedDocument).fullscreenElement = null;
       return Promise.resolve();
     };
-    (document as any).fullscreenElement = null;
+    (document as ExtendedDocument).fullscreenElement = null;
 
     // To invoke document events
     document.addEventListener = jest.fn((event, callback) => {
@@ -31,7 +40,7 @@ describe("component FullscreenButton", () => {
   afterEach(() => {
     // cleanup on exiting
     fullscreenContainer.remove();
-    (document as any).fullscreenElement = null;
+    (document as ExtendedDocument).fullscreenElement = null;
   });
 
   it("disabled", async () => {
@@ -47,7 +56,7 @@ describe("component FullscreenButton", () => {
     expect(document.fullscreenElement).toBeNull();
 
     // In fullscreen
-    (document as any).fullscreenElement = fullscreenContainer;
+    (document as ExtendedDocument).fullscreenElement = fullscreenContainer;
     expect(fullscreenButton()).toHaveClass("disabled");
 
     // Click while disabled has no effect
@@ -57,7 +66,7 @@ describe("component FullscreenButton", () => {
   });
 
   it("load data", () => {
-    const {store} = renderWithProvider(<FullscreenButton />);
+    const { store } = renderWithProvider(<FullscreenButton />);
 
     expect(fullscreenButton()).toHaveClass("disabled");
     expect(store.getState().showSingleTrace).toBe(false);
@@ -68,7 +77,9 @@ describe("component FullscreenButton", () => {
   });
 
   it("enter fullscreen", async () => {
-    const { user } = renderWithProvider(<FullscreenButton />, {preloadedState: LOADED_STATE});
+    const { user } = renderWithProvider(<FullscreenButton />, {
+      preloadedState: LOADED_STATE,
+    });
 
     expect(fullscreenButton()).not.toHaveClass("disabled");
     expect(document.fullscreenElement).toBeNull();
@@ -79,8 +90,10 @@ describe("component FullscreenButton", () => {
   });
 
   it("leave fullscreen", async () => {
-    (document as any).fullscreenElement = fullscreenContainer;
-    const { user } = renderWithProvider(<FullscreenButton />, {preloadedState: LOADED_STATE});
+    (document as ExtendedDocument).fullscreenElement = fullscreenContainer;
+    const { user } = renderWithProvider(<FullscreenButton />, {
+      preloadedState: LOADED_STATE,
+    });
 
     expect(fullscreenButton()).not.toHaveClass("disabled");
 
@@ -90,26 +103,28 @@ describe("component FullscreenButton", () => {
   });
 
   it("document fullscreen listener", () => {
-    const {store} = renderWithProvider(<FullscreenButton />, {preloadedState: LOADED_STATE});
+    const { store } = renderWithProvider(<FullscreenButton />, {
+      preloadedState: LOADED_STATE,
+    });
 
     expect(fullscreenButton()).not.toHaveClass("disabled");
     expect(document.fullscreenElement).toBeNull();
     expect(store.getState().showSingleTrace).toBe(false);
 
     // Enter fullscreen
-    (document as any).fullscreenElement = fullscreenContainer;
+    (document as ExtendedDocument).fullscreenElement = fullscreenContainer;
     triggerFullscreenChange();
     expect(store.getState().showSingleTrace).toBe(true);
 
     // Leave fullscreen
-    (document as any).fullscreenElement = null;
+    (document as ExtendedDocument).fullscreenElement = null;
     triggerFullscreenChange();
     expect(store.getState().showSingleTrace).toBe(false);
   });
 
   function triggerFullscreenChange() {
     (documentEventMap.fullscreenchange as EventListener)(
-      new Event("fullscreen")
+      new Event("fullscreen"),
     );
   }
 
