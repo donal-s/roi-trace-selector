@@ -70,20 +70,23 @@ export default function ChartView() {
   const outlineChannel = useAppSelector((state) => state.outlineChannel);
 
   const prevChannel1ChartDataRef: MutableRefObject<number[][] | undefined> =
-    useRef();
+    useRef(undefined);
   const prevChannel2ChartDataRef: MutableRefObject<number[][] | undefined> =
-    useRef();
+    useRef(undefined);
   const prevChannel1SelectionRef: MutableRefObject<Selection | undefined> =
-    useRef();
+    useRef(undefined);
   const prevChannel2SelectionRef: MutableRefObject<Selection | undefined> =
-    useRef();
+    useRef(undefined);
   const prevShowSingleTraceRef: MutableRefObject<boolean | undefined> =
-    useRef();
-  const prevCurrentIndexRef: MutableRefObject<number | undefined> = useRef();
+    useRef(undefined);
+  const prevCurrentIndexRef: MutableRefObject<number | undefined> =
+    useRef(undefined);
   const prevScanStatusRef: MutableRefObject<ScanStatus[] | undefined> =
-    useRef();
-  const prevMarkersRef: MutableRefObject<Marker[] | undefined> = useRef();
-  const prevEditMarkerRef: MutableRefObject<EditMarker | undefined> = useRef();
+    useRef(undefined);
+  const prevMarkersRef: MutableRefObject<Marker[] | undefined> =
+    useRef(undefined);
+  const prevEditMarkerRef: MutableRefObject<EditMarker | undefined> =
+    useRef(undefined);
 
   useEffect(() => {
     const prevChannel1ChartData = prevChannel1ChartDataRef.current;
